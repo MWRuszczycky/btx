@@ -1,13 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module CoreIO
-    ( safeReadFile
-    , safeWriteFile
+    ( readOrMakeFile
+    , readFileExcept
+    , writeFileExcept
     ) where
 
 import qualified Types        as T
 import qualified Data.Text.IO as Tx
 import qualified Data.Text    as Tx
+import System.IO.Error      ( isDoesNotExistError )
 import Data.Text            ( Text )
 import Control.Exception    ( IOException, catch )
 import Control.Monad.Except ( liftEither )
@@ -16,16 +18,25 @@ import Control.Monad.Trans  ( liftIO )
 -- =============================================================== --
 -- IO with exception handling
 
-safeReadFile :: FilePath -> T.ErrMonad Text
-safeReadFile fp = do
+readOrMakeFile :: FilePath -> T.ErrMonad Text
+-- ^Try to read a file, and if it does not exist, then create it.
+readOrMakeFile fp = do
     content <- liftIO . catch ( Right <$> Tx.readFile fp ) $ hndlErr
     liftEither content
     where hndlErr :: IOException -> IO ( Either T.ErrString Text )
-          hndlErr e = return . Left $ "Cannot read file '" ++ fp ++ "'!"
+          hndlErr e | isDoesNotExistError e = return . Right $ Tx.empty
+                    | otherwise             = return . Left . show $ e
 
-safeWriteFile :: FilePath -> Text -> T.ErrMonad ()
-safeWriteFile fp x = do
+readFileExcept :: FilePath -> T.ErrMonad Text
+readFileExcept fp = do
+    content <- liftIO . catch ( Right <$> Tx.readFile fp ) $ hndlErr
+    liftEither content
+    where hndlErr :: IOException -> IO ( Either T.ErrString Text )
+          hndlErr = return . Left . show
+
+writeFileExcept :: FilePath -> Text -> T.ErrMonad ()
+writeFileExcept fp x = do
     content <- liftIO . catch ( Right <$> Tx.writeFile fp x ) $ hndlErr
     liftEither content
     where hndlErr :: IOException -> IO ( Either T.ErrString () )
-          hndlErr e = return . Left $ "Cannot write file '" ++ fp ++ "'!"
+          hndlErr = return . Left . show
