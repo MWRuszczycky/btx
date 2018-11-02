@@ -13,15 +13,19 @@ import qualified Data.Map.Strict        as Map
 import qualified Types                  as T
 import qualified Resources.Resources    as R
 import Data.Text                 ( Text )
+import Data.List                 ( foldl' )
+import Control.Monad             ( zipWithM )
 import Control.Monad.Except      ( throwError )
 import Control.Monad.State.Lazy  ( get
                                  , put
                                  , lift
                                  , liftIO )
-import CoreIO                    ( safeReadFile )
+import CoreIO                    ( safeReadFile
+                                 , safeWriteFile )
 import BibTeXParser              ( parseBibtex )
 import Formatting                ( refToBibtex
                                  , formatRef
+                                 , bibToBibtex
                                  , summarize )
 
 -- =============================================================== --
@@ -44,7 +48,7 @@ initBib b =  T.BtxState { T.inBib   = b
 -- Exported
 
 compile :: [ T.Command [T.Ref] ] -> [T.Ref] -> T.BtxStateMonad ()
-compile []                          _  = return ()
+compile []                          rs = update rs
 compile ((T.Command _ m xs _) : cs) rs = m xs rs >>= compile cs
 
 ---------------------------------------------------------------------
@@ -79,7 +83,17 @@ route "in"   xs = T.Command "in"   inCmd    xs "in help"
 route "view" xs = T.Command "view" viewCmd  xs "view help"
 route "get"  xs = T.Command "get"  getCmd   xs "get help"
 route "info" xs = T.Command "info" infoCmd  xs "info help"
+route "name" xs = T.Command "name" nameCmd  xs "name help"
 route c      _  = T.Command "err"  ( errCmd c ) [] []
+
+update :: [T.Ref] -> T.BtxStateMonad ()
+update rs = do
+    bst <- get
+    let oldBib  = T.inBib bst
+        newRefs = foldl' ( flip $ uncurry Map.insert ) ( T.refs oldBib ) rs
+        newBib  = oldBib { T.refs = newRefs }
+    put bst { T.inBib = newBib }
+    lift . safeWriteFile (T.path newBib) . bibToBibtex $ newBib
 
 -- =============================================================== --
 -- Commands
@@ -115,6 +129,23 @@ infoCmd _ _ = do
     bib <- T.inBib <$> get
     liftIO . Tx.putStrLn . summarize $ bib
     return []
+
+---------------------------------------------------------------------
+
+nameCmd :: T.CommandMonad [T.Ref]
+nameCmd ns rs
+    | length ns == length rs = zipWithM rename ns rs
+    | otherwise              = do liftIO . putStrLn $ "Cannot rename"
+                                  return rs
+
+rename :: String -> T.Ref -> T.BtxStateMonad T.Ref
+rename n (k,v) = do
+    bst <- get
+    let newKey  = Tx.pack n
+        oldBib  = T.inBib bst
+        newRefs = Map.insert newKey v . Map.delete k . T.refs $ oldBib
+    put bst { T.inBib = oldBib { T.refs = newRefs } }
+    return (newKey, v)
 
 ---------------------------------------------------------------------
 
