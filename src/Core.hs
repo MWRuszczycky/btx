@@ -7,10 +7,11 @@ module Core
     ) where
 
 import qualified Types          as T
-import Control.Monad.State.Lazy         ( execStateT, get   )
+import Control.Monad.State.Lazy         ( execStateT, get
+                                        , liftIO            )
 import Control.Monad.Except             ( throwError
                                         , liftEither        )
-import CoreIO                           ( safeReadFile      )
+import CoreIO                           ( readOrMakeFile    )
 import BibTeX.Parser                    ( parseBibliography )
 import Commands                         ( route, save
                                         , updateIn          )
@@ -25,7 +26,7 @@ initBtx :: ( a, FilePath ) -> T.ErrMonad ( a, T.BtxState )
 -- ^Generate the initial state.
 initBtx ( _, [] ) = throwError "No .bib file specified."
 initBtx ( x, fp ) = do
-    content <- safeReadFile fp
+    content <- readOrMakeFile fp
     bib <- liftEither . parseBibliography fp $ content
     return ( x, initBtxState bib )
 
@@ -53,6 +54,7 @@ finalize :: [T.Ref] -> T.BtxStateMonad ()
 -- ^Save the current context references to the in-bibliography and
 -- write both the in- and to-bibliographies.
 finalize rs = do
+    liftIO . putStrLn $ ""
     updateIn rs >>= save
     btxState <- get
     maybe ( return () ) save . T.toBib $ btxState
