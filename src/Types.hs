@@ -2,19 +2,20 @@
 
 module Types
     ( -- State
-      BtxState      (..)
-    , BtxStateMonad (..)
-    , ErrMonad      (..)
-    , ErrString     (..)
+      BtxState          (..)
+    , BtxStateMonad     (..)
+    , ErrMonad          (..)
+    , ErrString         (..)
     -- Bibliographies
-    , Bibliography  (..)
-    , Entry         (..)
-    , Field         (..)
-    , Ref           (..)
-    , References    (..)
+    , Bibliography      (..)
+    , Entry             (..)
+    , Field             (..)
+    , Ref               (..)
+    , References        (..)
     -- Commands
-    , Command       (..)
-    , CommandMonad  (..)
+    , Command           (..)
+    , CommandArgsMonad  (..)
+    , CommandMonad      (..)
     ) where
 
 import qualified Data.Map.Strict as Map
@@ -76,15 +77,16 @@ type Ref = ( Text, Entry )
 -- that lists of bibliography entries can be passed between commands.
 type CommandMonad a = [String] -> a -> BtxStateMonad a
 
+type CommandArgsMonad a = a -> BtxStateMonad a
+
 -- |Generalized Btx command that includes the monadic component and
 -- additional information including arguments and help strings.
 data Command a = Command {
-      cmdName :: String         -- User interface to the command
-    , cmdCmd  :: CommandMonad a -- Monadic Btx command
-    , cmdArgs :: [String]       -- User supplied arguments
-    , cmdHelp :: String         -- Help information for the command
+      cmdName  :: String         -- User interface to the command
+    , cmdCmd   :: CommandMonad a -- Monadic Btx command
+    , cmdSHelp :: Text           -- Short help information
+    , cmdLHelp :: Text           -- Long help information
     }
 
 instance Show ( Command a ) where
-    show ( Command n _ xs _ ) = n ++ " with args: "
-                                  ++ intercalate ", " xs
+    show = cmdName

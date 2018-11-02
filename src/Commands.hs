@@ -3,7 +3,7 @@
 module Commands
     ( compile
     , parseCmds
-    , initBib
+    , initBtxState
     , route
     ) where
 
@@ -15,7 +15,6 @@ import qualified Resources.Resources    as R
 import Data.Text                                ( Text              )
 import Data.List                                ( foldl'            )
 import Data.Maybe                               ( mapMaybe          )
-import Control.Monad                            ( zipWithM          )
 import Control.Monad.Except                     ( throwError        )
 import Control.Monad.State.Lazy                 ( get
                                                 , put
@@ -23,7 +22,7 @@ import Control.Monad.State.Lazy                 ( get
                                                 , liftIO            )
 import CoreIO                                   ( safeReadFile
                                                 , safeWriteFile     )
-import BibTeXParser                             ( parseBibtex       )
+import BibTeXParser                             ( parseBibliography )
 import Formatting                               ( refToBibtex
                                                 , formatRef
                                                 , bibToBibtex
@@ -34,11 +33,11 @@ import Formatting                               ( refToBibtex
 
 -- Exported
 
-initBib :: T.Bibliography -> T.BtxState
-initBib b =  T.BtxState { T.inBib   = b
-                        , T.toBib   = Nothing
-                        , T.fromBib = Nothing
-                        }
+initBtxState :: T.Bibliography -> T.BtxState
+initBtxState b =  T.BtxState { T.inBib   = b
+                             , T.toBib   = Nothing
+                             , T.fromBib = Nothing
+                             }
 
 -- =============================================================== --
 -- Parsing and compiling
@@ -48,17 +47,20 @@ initBib b =  T.BtxState { T.inBib   = b
 
 -- Exported
 
-compile :: [ T.Command [T.Ref] ] -> [T.Ref] -> T.BtxStateMonad ()
-compile []                          rs = finalize rs
-compile ((T.Command _ m xs _) : cs) rs = m xs rs >>= compile cs
+compile :: [ T.CommandArgsMonad [T.Ref] ] -> [T.Ref] -> T.BtxStateMonad ()
+compile []        rs = finalize rs
+compile ( c : cs) rs = c rs >>= compile cs
 
 ---------------------------------------------------------------------
 -- Parsing
 
 -- Exported
 
-parseCmds :: String -> [ T.Command [T.Ref] ]
-parseCmds = parseAnd . words . splitAnd
+parseCmds :: String -> ( [ T.CommandArgsMonad [T.Ref] ], FilePath )
+parseCmds xs = case words . splitAnd $ xs of
+                    []           -> ( [],          ""                   )
+                    ("in":fp:cs) -> ( parseAnd cs, fp                   )
+                    cs           -> ( parseAnd cs, "test/files/new.bib" )
 
 -- Unexported
 
@@ -68,34 +70,43 @@ splitAnd (',':xs)  = " and " ++ splitAnd xs
 splitAnd ('\n':xs) = " and " ++ splitAnd xs
 splitAnd (x:xs)    = x : splitAnd xs
 
-parseAnd :: [String] -> [ T.Command [T.Ref] ]
+parseAnd :: [String] -> [ T.CommandArgsMonad [T.Ref] ]
 parseAnd []          = []
 parseAnd ("and":xs)  = parseAnd xs
-parseAnd (x:xs)      = route x ys : parseAnd zs
-    where (ys,zs) = break ( == "and" ) xs
+parseAnd (x:xs)      = applyCmd x ys : parseAnd zs
+    where (ys,zs)  = break ( == "and" ) xs
+          applyCmd = T.cmdCmd . route
 
 -- =============================================================== --
 -- Command router
 
 -- Exported
 
-route :: String -> [String] -> T.Command [T.Ref]
--- Bibliography managers
-route "in"   xs = T.Command "in"   inCmd   xs "in help"
-route "to"   xs = T.Command "to"   toCmd   xs "to help"
-route "from" xs = T.Command "from" fromCmd xs "from help"
--- Queries
-route "help" xs = T.Command "help" helpCmd xs "help help"
-route "info" xs = T.Command "info" infoCmd xs "info help"
--- Context constructors
-route "get"  xs = T.Command "get"  getCmd  xs "get help"
-route "take" xs = T.Command "take" takeCmd xs "take help"
--- Context operators
-route "name" xs = T.Command "name" nameCmd xs "name help"
-route "send" xs = T.Command "send" sendCmd xs "send help"
-route "view" xs = T.Command "view" viewCmd xs "view help"
--- Unrecognized commands
-route c      _  = T.Command "err"  ( errCmd c ) [] ( "no commad " ++ c )
+hub :: [ T.Command [T.Ref] ]
+hub = [ -- Bibliography managers
+        T.Command "in"   inCmd   "short help" "in help"
+      , T.Command "to"   toCmd   "short help" "to help"
+      , T.Command "from" fromCmd "short help" "from help"
+        -- Queries
+      , T.Command "help" helpCmd "short help" "help help"
+      , T.Command "info" infoCmd "short help" "info help"
+      , T.Command "list" listCmd "short help" "list help"
+        -- Context constructors
+      , T.Command "get"  getCmd  "short help" "get help"
+      , T.Command "pull" pullCmd "short help" "pull help"
+      , T.Command "take" takeCmd "short help" "take help"
+        -- Context operators
+      , T.Command "name" nameCmd "short help" "name help"
+      , T.Command "send" sendCmd "short help" "send help"
+      , T.Command "toss" tossCmd "short help" "toss help"
+      , T.Command "view" viewCmd "short help" "view help"
+      ]
+
+route :: String -> T.Command [T.Ref]
+route c = go hub
+    where go []     = T.Command "err" (errCmd c) "" ("no command " <> Tx.pack c)
+          go (x:xs) | T.cmdName x == c = x
+                    | otherwise        = go xs
 
 -- =============================================================== --
 -- Commands
@@ -116,7 +127,7 @@ inCmd xs rs
                          btxState <- get
                          let fp = head xs
                          content <- lift . safeReadFile $ fp
-                         case parseBibtex fp content of
+                         case parseBibliography fp content of
                               Left e  -> throwError e
                               Right b -> do put btxState { T.inBib = b }
                                             return []
@@ -131,7 +142,7 @@ toCmd xs rs
                          maybe ( return () ) save $ T.toBib btxState
                          let fp = head xs
                          content <- lift . safeReadFile $ fp
-                         case parseBibtex fp content of
+                         case parseBibliography fp content of
                               Left e  -> throwError e
                               Right b -> put btxState { T.toBib = Just b }
                          return rs
@@ -145,7 +156,7 @@ fromCmd xs rs
     | otherwise     = do btxState <- get
                          let fp = head xs
                          content <- lift . safeReadFile $ fp
-                         case parseBibtex fp content of
+                         case parseBibliography fp content of
                               Left e  -> throwError e
                               Right b -> put btxState { T.fromBib = Just b }
                          return rs
@@ -175,6 +186,9 @@ insert :: T.References -> [T.Ref] -> T.References
 -- ^Update a reference map with a list of references.
 insert = foldl' ( flip $ uncurry Map.insert )
 
+delete :: T.References -> [T.Ref] -> T.References
+delete refs = foldl' ( flip Map.delete ) refs . fst . unzip
+
 save :: T.Bibliography -> T.BtxStateMonad ()
 -- ^Convert a bibliography to BibTeX and write to memory.
 save b = do
@@ -190,10 +204,24 @@ errCmd c _ _ = throwError . R.unrecognized $ c
 -- Exposed to user
 
 getCmd :: T.CommandMonad [T.Ref]
--- ^Extract a reference from the in-bibliography.
-getCmd xs _ = do
+-- ^Update the in-bibliography with the current context then bring
+-- new references into the context without changing the bibliography.
+getCmd xs rs = do
+    updateIn rs
     bib <- T.inBib <$> get
     return . mapMaybe ( getRef bib ) $ xs
+
+pullCmd :: T.CommandMonad [T.Ref]
+-- ^Update the in-bibliography with the current context then bring
+-- new references into the context deleting them from the
+-- in-bibliography.
+pullCmd xs rs = do
+    updateIn rs
+    btxState <- get
+    let bib = T.inBib btxState
+        rs' = mapMaybe ( getRef bib ) xs
+    put btxState { T.inBib = bib { T.refs = delete ( T.refs bib ) rs' } }
+    return rs'
 
 takeCmd :: T.CommandMonad [T.Ref]
 -- ^Extract a reference from the from-bibliography. If the
@@ -201,8 +229,8 @@ takeCmd :: T.CommandMonad [T.Ref]
 takeCmd xs _ = do
     btxState <- get
     case T.toBib btxState of
-         Nothing -> getCmd xs []
-         Just b  -> return . mapMaybe ( getRef b ) $ xs
+         Nothing  -> getCmd xs []
+         Just bib -> return . mapMaybe ( getRef bib ) $ xs
 
 -- Hidden
 
@@ -216,18 +244,20 @@ getRef bib x = (,) key <$> Map.lookup key ( T.refs bib )
 -- Exposed user
 
 sendCmd :: T.CommandMonad [T.Ref]
--- ^Save references in context to the to-bibliography and depopulate
--- the context. Treat the in-bibliography as the to-bibliography if
--- the to-bibliography is Nothing.
+-- ^Update the to-bibliography with the context and depopulate it.
+-- If there is no to-bibliography, then just depopulate the context.
 sendCmd ("to":xs) rs = toCmd xs rs >>= sendCmd []
 sendCmd _ rs = do
     btxState <- get
     case T.toBib btxState of
-         Nothing     -> updateIn rs >> return []
+         Nothing     -> return []
          Just oldBib -> do let newRefs = insert ( T.refs oldBib ) rs
                                newBib  = oldBib { T.refs = newRefs }
                            put btxState { T.toBib = Just newBib }
                            return []
+
+tossCmd :: T.CommandMonad [T.Ref]
+tossCmd _ rs = return []
 
 viewCmd :: T.CommandMonad [T.Ref]
 viewCmd _ [] = do
@@ -240,21 +270,10 @@ viewCmd _ rs = do
 
 nameCmd :: T.CommandMonad [T.Ref]
 nameCmd ns rs
-    | nn == nr = zipWithM rename ns rs
+    | nn == nr  = return . zipWith ( \ n (k,v) -> (Tx.pack n, v) ) ns $ rs
     | otherwise = ( liftIO . putStrLn $ R.cannotRename nn nr ) >> return rs
     where nn = length ns
           nr = length rs
-
--- Hidden
-
-rename :: String -> T.Ref -> T.BtxStateMonad T.Ref
-rename n (k,v) = do
-    bst <- get
-    let newKey  = Tx.pack n
-        oldBib  = T.inBib bst
-        newRefs = Map.insert newKey v . Map.delete k . T.refs $ oldBib
-    put bst { T.inBib = oldBib { T.refs = newRefs } }
-    return (newKey, v)
 
 ---------------------------------------------------------------------
 -- Queries
@@ -263,11 +282,17 @@ helpCmd :: T.CommandMonad [T.Ref]
 -- ^Display help leaving the context unchanged.
 helpCmd [] rs = helpCmd ["help"] rs
 helpCmd xs rs = do
-    liftIO . mapM_ ( putStrLn . T.cmdHelp . flip route [] ) $ xs
+    liftIO . mapM_ ( Tx.putStrLn . T.cmdLHelp . route ) $ xs
     return rs
 
 infoCmd :: T.CommandMonad [T.Ref]
-infoCmd _ _ = do
+infoCmd _ rs = do
     bib <- T.inBib <$> get
     liftIO . Tx.putStrLn . summarize $ bib
-    return []
+    return rs
+
+listCmd :: T.CommandMonad [T.Ref]
+listCmd _ rs = do
+    bib <- T.inBib <$> get
+    liftIO . mapM_ Tx.putStrLn . fst . unzip . Map.toList . T.refs $ bib
+    return rs

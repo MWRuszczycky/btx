@@ -3,41 +3,37 @@
 module Main where
 
 import qualified Types          as T
-import System.Environment               ( getArgs      )
-import Control.Monad.State.Lazy         ( execStateT   )
+import System.Environment               ( getArgs           )
+import Control.Monad.State.Lazy         ( execStateT        )
 import Control.Monad.Except             ( liftEither
                                         , throwError
-                                        , runExceptT   )
-import BibTeXParser                     ( parseBibtex  )
+                                        , runExceptT        )
+import BibTeXParser                     ( parseBibliography )
 import Commands                         ( compile
-                                        , initBib
-                                        , parseCmds    )
-import CoreIO                           ( safeReadFile )
+                                        , initBtxState
+                                        , parseCmds         )
+import CoreIO                           ( safeReadFile      )
 
 ---------------------------------------------------------------------
 -- Main
 
 main :: IO ()
+-- ^Entry point.
 main = do
-    cmds   <- parseCmds . unwords <$> getArgs
-    result <- runExceptT $ finalize =<< runBtx =<< initBtx cmds
+    script <- parseCmds . unwords <$> getArgs
+    result <- runExceptT $ runBtx =<< initBtx script
     case result of
          Left msg  -> putStrLn msg
          otherwise -> putStrLn "\nDone."
 
-initBtx :: [T.Command [T.Ref]] -> T.ErrMonad ([T.Command [T.Ref]], T.BtxState)
-initBtx ( (T.Command "in" _ (x:[]) _ ) : cs ) = do
-    bib <- liftEither . parseBibtex x =<< safeReadFile x
-    return ( cs, initBib bib )
-initBtx ( (T.Command "in" _ (x:xs) _ ) : cs ) =
-    throwError "Only one argument allowed to <in>."
-initBtx cs = do
-    let fp = "test/files/new.bib"
-    bib <- liftEither . parseBibtex fp =<< safeReadFile fp
-    return ( cs, initBib bib )
+initBtx :: ( a, FilePath ) -> T.ErrMonad ( a, T.BtxState )
+-- ^Generate the initial state.
+initBtx ( _, [] ) = throwError "No .bib file specified."
+initBtx ( x, fp ) = do
+    content <- safeReadFile fp
+    bib <- liftEither . parseBibliography fp $ content
+    return ( x, initBtxState bib )
 
-runBtx :: ([ T.Command [T.Ref] ], T.BtxState) -> T.ErrMonad T.BtxState
-runBtx (cmds, bst) = execStateT ( compile cmds [] ) bst
-
-finalize :: T.BtxState -> T.ErrMonad ()
-finalize _ = return ()
+runBtx :: ([T.CommandArgsMonad [T.Ref]], T.BtxState) -> T.ErrMonad T.BtxState
+-- ^Compile and run the commands an the initial state.
+runBtx (cmds, st) = execStateT ( compile cmds [] ) st
