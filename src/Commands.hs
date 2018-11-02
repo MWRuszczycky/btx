@@ -134,9 +134,10 @@ infoCmd _ _ = do
 
 nameCmd :: T.CommandMonad [T.Ref]
 nameCmd ns rs
-    | length ns == length rs = zipWithM rename ns rs
-    | otherwise              = do liftIO . putStrLn $ "Cannot rename"
-                                  return rs
+    | nn == nr = zipWithM rename ns rs
+    | otherwise = ( liftIO . putStrLn $ R.cannotRename nn nr ) >> return rs
+    where nn = length ns
+          nr = length rs
 
 rename :: String -> T.Ref -> T.BtxStateMonad T.Ref
 rename n (k,v) = do
