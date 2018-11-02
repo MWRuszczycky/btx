@@ -219,6 +219,7 @@ sendCmd :: T.CommandMonad [T.Ref]
 -- ^Save references in context to the to-bibliography and depopulate
 -- the context. Treat the in-bibliography as the to-bibliography if
 -- the to-bibliography is Nothing.
+sendCmd ("to":xs) rs = toCmd xs rs >>= sendCmd []
 sendCmd _ rs = do
     btxState <- get
     case T.toBib btxState of
