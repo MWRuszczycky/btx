@@ -47,19 +47,24 @@ fieldToBibtex (k, v) = Tx.concat [ "    ", k, " = ", "{", v, "}" ]
 
 formatRef :: T.Ref -> Tx.Text
 -- ^Represent a Ref value as pretty-printed text.
-formatRef (k, r) = Tx.intercalate "\n" [ k, fields, comments ]
+formatRef (k, r) = Tx.concat [ k, "\n",  fields, comments ]
     where fields   = formatFields . T.fields $ r
-          comments = formatComments . T.comments $ r
+          comments = if length (T.comments r) > 0
+                        then formatComments . T.comments $ r
+                        else Tx.empty
 
 formatFields :: [T.Field] -> Tx.Text
 -- ^Format the field key-value pairs for pretty-printing.
 formatFields xs = Tx.intercalate "\n" . map ( formatPair n ) $ xs
-    where n        = max 7 . maximum . map Tx.length . fst . unzip $ xs
+    where n = max 7 . maximum . map Tx.length . fst . unzip $ xs
 
 formatComments :: [Tx.Text] -> Tx.Text
 -- ^Format the comments for pretty-printing.
-formatComments xs = Tx.intercalate "\n" . map ( formatPair 7 ) $ ys
-    where ys = zip (repeat "comment") xs
+formatComments xs = let ys = zip (repeat "comment") xs
+                    in  Tx.append "\n"
+                        . Tx.intercalate "\n"
+                        . map ( formatPair 7 )
+                        $ ys
 
 formatPair :: Int -> (Tx.Text, Tx.Text) -> Tx.Text
 -- ^Take a key value pair, and pretty print with an overhand and a
