@@ -1,17 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Commands
-    ( compile
-    , parseCmds
-    , initBtxState
-    , route
+    ( route
+    , updateIn
+    , save
     ) where
 
 import qualified Data.Text.IO           as Tx
 import qualified Data.Text              as Tx
 import qualified Data.Map.Strict        as Map
 import qualified Types                  as T
-import qualified Resources.Resources    as R
 import Data.Text                                ( Text              )
 import Data.List                                ( foldl'            )
 import Data.Maybe                               ( mapMaybe          )
@@ -22,65 +20,22 @@ import Control.Monad.State.Lazy                 ( get
                                                 , liftIO            )
 import CoreIO                                   ( safeReadFile
                                                 , safeWriteFile     )
-import BibTeXParser                             ( parseBibliography )
+import BibTeX.Parser                            ( parseBibliography )
 import Formatting                               ( refToBibtex
                                                 , formatRef
                                                 , bibToBibtex
-                                                , summarize         )
+                                                , summarize
+                                                , unrecognized
+                                                , cannotRename      )
 
 -- =============================================================== --
--- Initialization
+-- Hub and router
 
--- Exported
-
-initBtxState :: T.Bibliography -> T.BtxState
-initBtxState b =  T.BtxState { T.inBib   = b
-                             , T.toBib   = Nothing
-                             , T.fromBib = Nothing
-                             }
-
--- =============================================================== --
--- Parsing and compiling
-
----------------------------------------------------------------------
--- Compiling
-
--- Exported
-
-compile :: [ T.CommandArgsMonad [T.Ref] ] -> [T.Ref] -> T.BtxStateMonad ()
-compile []        rs = finalize rs
-compile ( c : cs) rs = c rs >>= compile cs
-
----------------------------------------------------------------------
--- Parsing
-
--- Exported
-
-parseCmds :: String -> ( [ T.CommandArgsMonad [T.Ref] ], FilePath )
-parseCmds xs = case words . splitAnd $ xs of
-                    []           -> ( [],          ""                   )
-                    ("in":fp:cs) -> ( parseAnd cs, fp                   )
-                    cs           -> ( parseAnd cs, "test/files/new.bib" )
-
--- Unexported
-
-splitAnd :: String -> String
-splitAnd []        = []
-splitAnd (',':xs)  = " and " ++ splitAnd xs
-splitAnd ('\n':xs) = " and " ++ splitAnd xs
-splitAnd (x:xs)    = x : splitAnd xs
-
-parseAnd :: [String] -> [ T.CommandArgsMonad [T.Ref] ]
-parseAnd []          = []
-parseAnd ("and":xs)  = parseAnd xs
-parseAnd (x:xs)      = applyCmd x ys : parseAnd zs
-    where (ys,zs)  = break ( == "and" ) xs
-          applyCmd = T.cmdCmd . route
-
--- =============================================================== --
--- Command router
-
--- Exported
+route :: String -> T.Command [T.Ref]
+route c = go hub
+    where go []     = T.Command "err" (errCmd c) "" ("no command " <> Tx.pack c)
+          go (x:xs) | T.cmdName x == c = x
+                    | otherwise        = go xs
 
 hub :: [ T.Command [T.Ref] ]
 hub = [ -- Bibliography managers
@@ -102,11 +57,32 @@ hub = [ -- Bibliography managers
       , T.Command "view" viewCmd "short help" "view help"
       ]
 
-route :: String -> T.Command [T.Ref]
-route c = go hub
-    where go []     = T.Command "err" (errCmd c) "" ("no command " <> Tx.pack c)
-          go (x:xs) | T.cmdName x == c = x
-                    | otherwise        = go xs
+-- =============================================================== --
+-- Utilities
+
+updateIn :: [T.Ref] -> T.BtxStateMonad T.Bibliography
+-- ^Save references in context to the in-bibliography and return the
+-- updated bibliography.
+updateIn rs = do
+    btxState <- get
+    let oldBib  = T.inBib btxState
+        newRefs = insert ( T.refs oldBib ) rs
+        newBib  = oldBib { T.refs = newRefs }
+    put btxState { T.inBib = newBib }
+    return newBib
+
+insert :: T.References -> [T.Ref] -> T.References
+-- ^Update a reference map with a list of references.
+insert = foldl' ( flip $ uncurry Map.insert )
+
+delete :: T.References -> [T.Ref] -> T.References
+delete refs = foldl' ( flip Map.delete ) refs . fst . unzip
+
+save :: T.Bibliography -> T.BtxStateMonad ()
+-- ^Convert a bibliography to BibTeX and write to memory.
+save b = do
+    liftIO . putStrLn $ "writing to " ++ T.path b
+    lift . safeWriteFile (T.path b) . bibToBibtex $ b
 
 -- =============================================================== --
 -- Commands
@@ -160,43 +136,6 @@ fromCmd xs rs
                               Left e  -> throwError e
                               Right b -> put btxState { T.fromBib = Just b }
                          return rs
-
--- Hidden
-
-updateIn :: [T.Ref] -> T.BtxStateMonad T.Bibliography
--- ^Save references in context to the in-bibliography and return the
--- updated bibliography.
-updateIn rs = do
-    btxState <- get
-    let oldBib  = T.inBib btxState
-        newRefs = insert ( T.refs oldBib ) rs
-        newBib  = oldBib { T.refs = newRefs }
-    put btxState { T.inBib = newBib }
-    return newBib
-
-finalize :: [T.Ref] -> T.BtxStateMonad ()
--- ^Save the current context references to the in-bibliography and
--- write both the in- and to-bibliographies.
-finalize rs = do
-    updateIn rs >>= save
-    btxState <- get
-    maybe ( return () ) save . T.toBib $ btxState
-
-insert :: T.References -> [T.Ref] -> T.References
--- ^Update a reference map with a list of references.
-insert = foldl' ( flip $ uncurry Map.insert )
-
-delete :: T.References -> [T.Ref] -> T.References
-delete refs = foldl' ( flip Map.delete ) refs . fst . unzip
-
-save :: T.Bibliography -> T.BtxStateMonad ()
--- ^Convert a bibliography to BibTeX and write to memory.
-save b = do
-    liftIO . putStrLn $ "writing to " ++ T.path b
-    lift . safeWriteFile (T.path b) . bibToBibtex $ b
-
-errCmd :: String -> T.CommandMonad [T.Ref]
-errCmd c _ _ = throwError . R.unrecognized $ c
 
 ---------------------------------------------------------------------
 -- Context constructors
@@ -271,7 +210,7 @@ viewCmd _ rs = do
 nameCmd :: T.CommandMonad [T.Ref]
 nameCmd ns rs
     | nn == nr  = return . zipWith ( \ n (k,v) -> (Tx.pack n, v) ) ns $ rs
-    | otherwise = ( liftIO . putStrLn $ R.cannotRename nn nr ) >> return rs
+    | otherwise = ( liftIO . putStrLn $ cannotRename nn nr ) >> return rs
     where nn = length ns
           nr = length rs
 
@@ -296,3 +235,9 @@ listCmd _ rs = do
     bib <- T.inBib <$> get
     liftIO . mapM_ Tx.putStrLn . fst . unzip . Map.toList . T.refs $ bib
     return rs
+
+---------------------------------------------------------------------
+-- Errors
+
+errCmd :: String -> T.CommandMonad [T.Ref]
+errCmd c _ _ = throwError . unrecognized $ c

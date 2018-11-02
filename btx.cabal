@@ -23,10 +23,10 @@ executable btx
                       , mtl
                       , parsec
                       , text
-  other-modules:        BibTeXParser
+  other-modules:        BibTeX.Parser
                       , Formatting
                       , Commands
+                      , Core
                       , CoreIO
                       , Paths_btx
-                      , Resources.Resources
                       , Types

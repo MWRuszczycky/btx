@@ -5,11 +5,14 @@ module Formatting
     , bibToBibtex
     , formatRef
     , summarize
+    , unrecognized
+    , cannotRename
     ) where
 
 import qualified Data.Text          as Tx
 import qualified Data.Map.Strict    as Map
 import qualified Types              as T
+import Data.List                            ( intercalate )
 
 ---------------------------------------------------------------------
 -- Summarizing bibilographies
@@ -85,3 +88,16 @@ overHang n k x
           ind   = "\n" <> Tx.replicate k " "
           go xs | Tx.null xs = []
                 | otherwise  = ( \ (x,y) -> x : go y ) . Tx.splitAt (n-k) $ xs
+
+---------------------------------------------------------------------
+-- Error messages
+
+unrecognized :: String -> T.ErrString
+unrecognized = (++) "Unrecognized command: "
+
+cannotRename :: Int -> Int -> T.ErrString
+cannotRename n r = intercalate "\n" es
+    where es = [ "The entries cannot be renamed, because the number of"
+               , "entries currently in the context (" ++ show r
+                  ++ ") does not match"
+               , "the number of new names supplied (" ++ show n ++ ")." ]

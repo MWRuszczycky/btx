@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module BibTeXParser
+module BibTeX.Parser
     ( parseBibliography
      --, parseRef
     ) where
