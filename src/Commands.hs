@@ -62,10 +62,10 @@ hub = [ -- Bibliography managers
       , T.Command "pull" pullCmd pullCmdSHelp pullCmdLHelp
       , T.Command "take" takeCmd takeCmdSHelp takeCmdLHelp
         -- Context operators
-      , T.Command "name" nameCmd "short help" "name help"
-      , T.Command "send" sendCmd "short help" "send help"
-      , T.Command "toss" tossCmd "short help" "toss help"
-      , T.Command "view" viewCmd "short help" "view help"
+      , T.Command "name" nameCmd nameCmdSHelp nameCmdLHelp
+      , T.Command "send" sendCmd sendCmdSHelp sendCmdLHelp
+      , T.Command "toss" tossCmd tossCmdSHelp tossCmdLHelp
+      , T.Command "view" viewCmd viewCmdSHelp viewCmdLHelp
       ]
 
 -- =============================================================== --
@@ -102,6 +102,40 @@ done rs = do
 
 -- =============================================================== --
 -- Bibliography constructors, operators and utilities
+
+-- fromCmd ----------------------------------------------------------
+
+fromCmdSHelp :: String
+fromCmdSHelp = "from FILE-PATH : reset the import bibliography."
+
+fromCmdLHelp :: String
+fromCmdLHelp = intercalate "\n" hs
+    where hs = [ fromCmdSHelp ++ "\n"
+               , "The import bibliography is a bibliography separate from the"
+               , "working bibliography (set with <in>) that you can use to"
+               , "populate the context with references using the <take>"
+               , "command. This is useful for building new bibliographies from"
+               , "previously existing ones. The import bibliography is never"
+               , "modified. The <from> command has the following effects:\n"
+               , "  1. If FILE-PATH does not exist, then an error is generated."
+               , "  2. If FILE-PATH is the same as the working bibliography,"
+               , "     then the import bibliography becomes unset."
+               , "  3. The context is left unchanged.\n"
+               , "See also help for the <take> command."
+               ]
+
+fromCmd :: T.CommandMonad T.Context
+fromCmd xs rs
+    | null xs       = throwError "Commad <from> requires a file path."
+    | length xs > 1 = throwError "Command <from> allows only one argument."
+    | otherwise     = do btxState <- get
+                         let fp = head xs
+                         if fp == ( T.path . T.inBib ) btxState
+                            then put btxState { T.fromBib = Nothing }
+                            else do content <- lift . readFileExcept $ fp
+                                    bib <- liftEither . parseBib fp $ content
+                                    put btxState { T.fromBib = Just bib }
+                         return rs
 
 -- inCmd ------------------------------------------------------------
 
@@ -166,40 +200,6 @@ toCmd xs rs
                             else do content <- lift . readOrMakeFile $ fp
                                     bib <- liftEither . parseBib fp $ content
                                     put btxState { T.toBib = Just bib }
-                         return rs
-
--- fromCmd ----------------------------------------------------------
-
-fromCmdSHelp :: String
-fromCmdSHelp = "from FILE-PATH : reset the import bibliography."
-
-fromCmdLHelp :: String
-fromCmdLHelp = intercalate "\n" hs
-    where hs = [ fromCmdSHelp ++ "\n"
-               , "The import bibliography is a bibliography separate from the"
-               , "working bibliography (set with <in>) that you can use to"
-               , "populate the context with references using the <take>"
-               , "command. This is useful for building new bibliographies from"
-               , "previously existing ones. The import bibliography is never"
-               , "modified. The <from> command has the following effects:\n"
-               , "  1. If FILE-PATH does not exist, then an error is generated."
-               , "  2. If FILE-PATH is the same as the working bibliography,"
-               , "     then the import bibliography becomes unset."
-               , "  3. The context is left unchanged.\n"
-               , "See also help for the <take> command."
-               ]
-
-fromCmd :: T.CommandMonad T.Context
-fromCmd xs rs
-    | null xs       = throwError "Commad <from> requires a file path."
-    | length xs > 1 = throwError "Command <from> allows only one argument."
-    | otherwise     = do btxState <- get
-                         let fp = head xs
-                         if fp == ( T.path . T.inBib ) btxState
-                            then put btxState { T.fromBib = Nothing }
-                            else do content <- lift . readFileExcept $ fp
-                                    bib <- liftEither . parseBib fp $ content
-                                    put btxState { T.fromBib = Just bib }
                          return rs
 
 -- =============================================================== --
@@ -323,11 +323,68 @@ takeCmd xs rs = do
 -- =============================================================== --
 -- Context operators
 
----------------------------------------------------------------------
+-- nameCmd ----------------------------------------------------------
 
-sendCmd :: T.CommandMonad [T.Ref]
--- ^Update the to-bibliography with the context and depopulate it.
--- If there is no to-bibliography, then just depopulate the context.
+nameCmdSHelp :: String
+nameCmdSHelp = "name [NAME ..] : change key names for entries in the context."
+
+nameCmdLHelp :: String
+nameCmdLHelp = intercalate "\n" hs
+    where hs = [ nameCmdSHelp ++ "\n"
+               , "For example, if you have the following bibliography entries"
+               , "in context:"
+               , "    Dogs1964"
+               , "    Cats1981\n"
+               , "then you can rename them as,"
+               , "    Dogs1964 --> Squirrels1964"
+               , "    Cats1981 --> Monkeys1981\n"
+               , "using the command:"
+               , "    name Squirrels1964 Monkeys1981\n"
+               , "There must be a one-to-one matching between the number of"
+               , "names and entries in the context and none of the entries can"
+               , "can be missing. If there is not a one-to-one matching, then"
+               , "the context remains unchanged.\n"
+               , "NOTE: This command only applies in-context, so it should be"
+               , "used with <pull>, <send> or <take> commands to change the"
+               , "name of the entry in a bibliography. If you use it with"
+               , "<get>, then you will end up having a duplicate entry in the"
+               , "working bibliography with two different keys."
+               ]
+
+nameCmd :: T.CommandMonad T.Context
+nameCmd ns rs
+    | nn == nr  = return . catMaybes . zipWith go ns $ rs
+    | otherwise = ( liftIO . putStrLn $ renameErr nn nr ) >> return rs
+    where go n (T.Ref fp k v ) = Just $ T.Ref (newFp fp k) (Tx.pack n) v
+          go _ (T.Missing _ _) = Nothing
+          newFp fp k           = fp ++ " (originally " ++ Tx.unpack k ++ ")"
+          nn                   = length ns
+          nr                   = length . filter isPresent $ rs
+
+-- sendCmd ----------------------------------------------------------
+
+sendCmdSHelp :: String
+sendCmdSHelp = "send : update export bibliography with the current context."
+
+sendCmdLHelp :: String
+sendCmdLHelp = intercalate "\n" hs
+    where hs = [ sendCmdSHelp ++ "\n"
+               , "This command has the following effects:\n"
+               , "  1. Update the export bibliography with the current context"
+               , "     overwritting any references that have the same keys."
+               , "  2. Depopulate the context."
+               , "  3. If no export bibliography is set, then nothing happens"
+               , "     besides depopulation of the context.\n"
+               , "This command is used with the <to> command, which sets the"
+               , "export bibliography (see help for <to>). However, there is"
+               , "syntactic sugar that combines the two into the command"
+               , "<send to>, which takes a file path. For example, the"
+               , "following are equivalent:\n"
+               , "    get myRef, to myExport.bib, send"
+               , "    get myRef and send to myExport.bib"
+               ]
+
+sendCmd :: T.CommandMonad T.Context
 sendCmd ("to":xs) rs = toCmd xs rs >>= sendCmd []
 sendCmd _ rs = do
     btxState <- get
@@ -338,12 +395,36 @@ sendCmd _ rs = do
                            put btxState { T.toBib = Just newBib }
                            return []
 
----------------------------------------------------------------------
+-- tossCmd ----------------------------------------------------------
+
+tossCmdSHelp :: String
+tossCmdSHelp = "toss : depopulate the context."
+
+tossCmdLHelp :: String
+tossCmdLHelp = intercalate "\n" hs
+    where hs = [ tossCmdSHelp ++ "\n"
+               , "That's all this command does. It is particularly useful for"
+               , "deleting entries from the working bibilography using <pull>."
+               , "For example, to delete the reference 'myRef' from the"
+               , "working bibliography you could use:\n"
+               , "    pull myRef and toss"
+               ]
 
 tossCmd :: T.CommandMonad [T.Ref]
 tossCmd _ rs = return []
 
----------------------------------------------------------------------
+-- viewCmd ----------------------------------------------------------
+
+viewCmdSHelp :: String
+viewCmdSHelp = "view : view the details of all entries in the context."
+
+viewCmdLHelp :: String
+viewCmdLHelp = intercalate "\n" hs
+    where hs = [ viewCmdSHelp ++ "\n"
+               , "This command has no other effect besides displaying the"
+               , "entires in the context in a nicely formatted way. See also"
+               , "the <list> and <info> commands."
+               ]
 
 viewCmd :: T.CommandMonad [T.Ref]
 viewCmd _ [] = do
@@ -353,17 +434,6 @@ viewCmd _ rs = do
     liftIO . Tx.putStrLn $ Tx.empty
     liftIO . Tx.putStrLn . Tx.intercalate "\n\n" . map formatRef $ rs
     return rs
-
----------------------------------------------------------------------
-
-nameCmd :: T.CommandMonad T.Context
-nameCmd ns rs
-    | nn == nr  = return . catMaybes . zipWith go ns $ rs
-    | otherwise = ( liftIO . putStrLn $ renameErr nn nr ) >> return rs
-    where go n (T.Ref fp k v ) = Just $ T.Ref (fp ++ ", renamed") (Tx.pack n) v
-          go _ (T.Missing _ _) = Nothing
-          nn                   = length ns
-          nr                   = length . filter isPresent $ rs
 
 -- =============================================================== --
 -- Errors and help
