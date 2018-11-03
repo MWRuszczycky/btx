@@ -39,7 +39,9 @@ import Formatting                               ( argInvalidErr
                                                 , refToBibtex
                                                 , renameErr
                                                 , summarize
-                                                , summarizeContext  )
+                                                , summarizeAllEntries
+                                                , summarizeContext
+                                                , summarizeEntries  )
 
 -- =============================================================== --
 -- Hub and router
@@ -229,19 +231,33 @@ infoCmd _ rs = get >>= liftIO . Tx.putStrLn . flip summarize rs >> return rs
 ---------------------------------------------------------------------
 
 listCmdSHelp :: String
-listCmdSHelp = "list : display a summary of the current context "
+listCmdSHelp = "list : display a summary of the entries "
+               ++ "in the working bibliography"
 
 listCmdLHelp :: String
 listCmdLHelp = intercalate "\n" hs
     where hs = [ listCmdSHelp ++ "\n"
-               , "This command has the following effects:\n"
-               , "  1. Leave the current context unchanged."
-               , "  2. Summarize what is currently in context.\n"
-               , "See also <view> and <info>."
+               , "This command leaves the current context unchanged. It can be"
+               , "used to query whether the working bibliography contains a"
+               , "specific entry. If no arguments are supplied, then a summary"
+               , "of all entries in the bibliography are shown. If arguments"
+               , "are supplied, then summary information is provided for those"
+               , "entries whose keys initially match the argument."
+               , "For example, the command,\n"
+               , "    list Cats Dogs\n"
+               , "will return summary information for entries with keys such as"
+               , "Cats, Cats1964, CatsAndSquirrels, Dogs, Dogs2016, etc., but"
+               , "not ChipmunksAndDogs. See also <view> and <info>."
                ]
 
 listCmd :: T.CommandMonad T.Context
-listCmd _ rs = ( liftIO . Tx.putStrLn . summarizeContext $ rs ) >> return rs
+listCmd [] rs = do bib <- T.inBib <$> get
+                   liftIO . Tx.putStrLn . summarizeAllEntries $ bib
+                   return rs
+listCmd xs rs = do bib <- T.inBib <$> get
+                   let go = Tx.putStrLn . summarizeEntries bib . Tx.pack
+                   liftIO . mapM_ go $ xs
+                   return rs
 
 -- =============================================================== --
 -- Context constructors

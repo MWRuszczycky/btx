@@ -5,7 +5,9 @@ module Formatting
     , bibToBibtex
     , formatRef
     , summarize
+    , summarizeAllEntries
     , summarizeContext
+    , summarizeEntries
     -- Error messaging
     , argInvalidErr
     , cmdInvalidErr
@@ -50,6 +52,30 @@ summarizeRef :: T.Ref -> Text
 summarizeRef (T.Ref fp k v  ) = k <> " from " <> Tx.pack fp
 summarizeRef (T.Missing fp k) = "There is no entry " <> k
                                 <> " in " <> Tx.pack fp
+
+summarizeAllEntries :: T.Bibliography -> Text
+summarizeAllEntries bib
+    | null xs   = "No entries to list."
+    | otherwise = Tx.intercalate "\n" xs
+    where xs = map summarizeEntry . Map.toList . T.refs $ bib
+
+summarizeEntries :: T.Bibliography -> Text -> Text
+summarizeEntries bib x
+    | null xs   = "No entries matching " <> x <> "..."
+    | otherwise = Tx.intercalate "\n" xs
+    where rs     = T.refs bib
+          xs     = map summarizeEntry . Map.toList . Map.filterWithKey go $ rs
+          go k v = Tx.take (Tx.length x) k == x
+
+summarizeEntry :: (Text, T.Entry) -> Text
+summarizeEntry (k, v) = ktyr <> title
+    where pars x = " (" <> x <> ") "
+          yr     = maybe " (no year) " pars . lookup "year" . T.fields $ v
+          ktyr   = k <> ": " <> T.theType v <> yr
+          room   = 79 - Tx.length ktyr
+          go x   | room < Tx.length x = Tx.take (room - 2) x <> ".."
+                 | otherwise          = x
+          title  = maybe " no title" go . lookup "title" . T.fields $ v
 
 ---------------------------------------------------------------------
 -- Conversion to BibTeX format
