@@ -2,6 +2,7 @@
 
 module Commands
     ( route
+    , runHelp
     , updateIn
     , save
     ) where
@@ -11,7 +12,8 @@ import qualified Data.Text              as Tx
 import qualified Data.Map.Strict        as Map
 import qualified Types                  as T
 import Data.Text                                ( Text              )
-import Data.List                                ( foldl'            )
+import Data.List                                ( foldl'
+                                                , intercalate       )
 import Data.Maybe                               ( mapMaybe          )
 import Control.Monad                            ( unless            )
 import Control.Monad.Except                     ( throwError        )
@@ -35,7 +37,7 @@ import Formatting                               ( refToBibtex
 
 route :: String -> T.Command [T.Ref]
 route c = go hub
-    where go []     = T.Command "err" (errCmd c) "" ("no command " <> Tx.pack c)
+    where go []     = T.Command "err" (errCmd c) [] []
           go (x:xs) | T.cmdName x == c = x
                     | otherwise        = go xs
 
@@ -45,7 +47,6 @@ hub = [ -- Bibliography managers
       , T.Command "to"   toCmd   "short help" "to help"
       , T.Command "from" fromCmd "short help" "from help"
         -- Queries
-      , T.Command "help" helpCmd "short help" "help help"
       , T.Command "info" infoCmd "short help" "info help"
       , T.Command "list" listCmd "short help" "list help"
         -- Context constructors
@@ -118,11 +119,11 @@ inCmd xs rs
                               Right b -> do put btxState { T.inBib = b }
                                             return []
 
-inCmdSHelp :: Text
+inCmdSHelp :: String
 inCmdSHelp = "in FILE-PATH : reset or create new working bibliography"
 
-inCmdLHelp :: Text
-inCmdLHelp = Tx.intercalate "\n" hs
+inCmdLHelp :: String
+inCmdLHelp = intercalate "\n" hs
     where hs = [ inCmdSHelp <> "\n"
                , "This command has the following effects:"
                , "  1. Update working bibliography with the current context."
@@ -151,11 +152,11 @@ toCmd xs rs
                                   Right b -> put btxState { T.toBib = Just b }
                          return rs
 
-toCmdSHelp :: Text
+toCmdSHelp :: String
 toCmdSHelp = "to FILE-PATH : reset or create new export bibliography"
 
-toCmdLHelp :: Text
-toCmdLHelp = Tx.intercalate "\n" hs
+toCmdLHelp :: String
+toCmdLHelp = intercalate "\n" hs
     where hs = [ inCmdSHelp <> "\n"
                , "The export bibliography is separate from the working"
                , "bibliography and represents a target where references can"
@@ -273,15 +274,6 @@ nameCmd ns rs
 
 ---------------------------------------------------------------------
 
-helpCmd :: T.CommandMonad [T.Ref]
--- ^Display help leaving the context unchanged.
-helpCmd [] rs = helpCmd ["help"] rs
-helpCmd xs rs = do
-    liftIO . mapM_ ( Tx.putStrLn . T.cmdLHelp . route ) $ xs
-    return rs
-
----------------------------------------------------------------------
-
 infoCmd :: T.CommandMonad [T.Ref]
 infoCmd _ rs = do
     bib <- T.inBib <$> get
@@ -297,7 +289,14 @@ listCmd _ rs = do
     return rs
 
 -- =============================================================== --
--- Errors
+-- Errors and help
+
+---------------------------------------------------------------------
+
+runHelp :: [String] -> String
+-- ^Generate a help message
+runHelp [] = intercalate "\n" . map T.cmdSHelp $ hub
+runHelp xs = intercalate "\n" . map ( T.cmdLHelp . route ) $ xs
 
 errCmd :: String -> T.CommandMonad [T.Ref]
 errCmd c _ _ = throwError . unrecognized $ c

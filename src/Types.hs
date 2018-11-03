@@ -6,6 +6,7 @@ module Types
     , BtxStateMonad     (..)
     , ErrMonad          (..)
     , ErrString         (..)
+    , Start             (..)
     -- Bibliographies
     , Bibliography      (..)
     , Entry             (..)
@@ -43,6 +44,11 @@ data BtxState = BtxState {
     , toBib   :: Maybe Bibliography -- Target bibliography
     , fromBib :: Maybe Bibliography -- Source bibliography
     }
+
+-- |Starting state
+data Start a = Help [String]
+             | Usage String
+             | Normal FilePath [a]
 
 ---------------------------------------------------------------------
 -- Bibliographies
@@ -84,8 +90,8 @@ type CommandArgsMonad a = a -> BtxStateMonad a
 data Command a = Command {
       cmdName  :: String         -- User interface to the command
     , cmdCmd   :: CommandMonad a -- Monadic Btx command
-    , cmdSHelp :: Text           -- Short help information
-    , cmdLHelp :: Text           -- Long help information
+    , cmdSHelp :: String         -- Short help information
+    , cmdLHelp :: String         -- Long help information
     }
 
 instance Show ( Command a ) where

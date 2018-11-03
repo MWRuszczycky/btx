@@ -22,10 +22,10 @@ import Commands                         ( route, save
 
 -- Exported
 
-initBtx :: ( a, FilePath ) -> T.ErrMonad ( a, T.BtxState )
+initBtx :: a -> FilePath -> T.ErrMonad ( a, T.BtxState )
 -- ^Generate the initial state.
-initBtx ( _, [] ) = throwError "No .bib file specified."
-initBtx ( x, fp ) = do
+initBtx _ [] = throwError "No .bib file specified."
+initBtx x fp = do
     content <- readOrMakeFile fp
     bib <- liftEither . parseBibliography fp $ content
     return ( x, initBtxState bib )
@@ -62,11 +62,16 @@ finalize rs = do
 ---------------------------------------------------------------------
 -- Parsing
 
-parseCmds :: String -> ( [ T.CommandArgsMonad [T.Ref] ], FilePath )
-parseCmds xs = case words . splitAnd $ xs of
-                    []           -> ( [],          ""                   )
-                    ("in":fp:cs) -> ( parseAnd cs, fp                   )
-                    cs           -> ( parseAnd cs, "test/files/new.bib" )
+parseCmds :: String -> T.Start ( T.CommandArgsMonad [T.Ref] )
+parseCmds xs =
+    case words . splitAnd $ xs of
+         []            -> T.Usage "This won't do anything (try: btx help)."
+         ("in":[])     -> T.Usage "This won't do anything (try: btx help)."
+         ("help":cs)   -> T.Help cs
+         ("--help":cs) -> T.Help cs
+         ("-h":cs)     -> T.Help cs
+         ("in":fp:cs)  -> T.Normal fp . parseAnd $ cs
+         cs            -> T.Normal "test/files/new.bib" . parseAnd $ cs
 
 splitAnd :: String -> String
 splitAnd []        = []
