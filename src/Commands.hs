@@ -44,8 +44,8 @@ route c = go hub
 hub :: [ T.Command [T.Ref] ]
 hub = [ -- Bibliography managers
         T.Command "in"   inCmd   inCmdSHelp   inCmdLHelp
-      , T.Command "to"   toCmd   "short help" "to help"
-      , T.Command "from" fromCmd "short help" "from help"
+      , T.Command "to"   toCmd   toCmdSHelp   toCmdLHelp
+      , T.Command "from" fromCmd fromCmdSHelp fromCmdLHelp
         -- Queries
       , T.Command "info" infoCmd "short help" "info help"
       , T.Command "list" listCmd "short help" "list help"
@@ -101,12 +101,24 @@ getRef bib x = (,) key <$> Map.lookup key ( T.refs bib )
 -- =============================================================== --
 -- Bibliography constructors, operators and utilities
 
----------------------------------------------------------------------
+-- inCmd ------------------------------------------------------------
+
+inCmdSHelp :: String
+inCmdSHelp = "in FILE-PATH : reset or create new working bibliography"
+
+inCmdLHelp :: String
+inCmdLHelp = intercalate "\n" hs
+    where hs = [ inCmdSHelp ++ "\n"
+               , "This command has the following effects:\n"
+               , "  1. Update working bibliography with the current context."
+               , "  2. Save the updated working bibliography to disk."
+               , "  3. Clear the current context."
+               , "  4. Load the .bib file at FILE-PATH as the new working"
+               , "     bibliography. If the file does not already exist, then"
+               , "     it is created."
+               ]
 
 inCmd :: T.CommandMonad [T.Ref]
--- ^Set the in-bibliography. Add the current context to the previous
--- in-bibliography, save and clear the context before loading the new
--- in-bibliography.
 inCmd xs rs
     | null xs       = throwError "Command <in> requires a file path."
     | length xs > 1 = throwError "Command <in> allows only one argument."
@@ -119,60 +131,64 @@ inCmd xs rs
                               Right b -> do put btxState { T.inBib = b }
                                             return []
 
-inCmdSHelp :: String
-inCmdSHelp = "in FILE-PATH : reset or create new working bibliography"
-
-inCmdLHelp :: String
-inCmdLHelp = intercalate "\n" hs
-    where hs = [ inCmdSHelp <> "\n"
-               , "This command has the following effects:"
-               , "  1. Update working bibliography with the current context."
-               , "  2. Save the updated working bibliography to disk."
-               , "  3. Clear the current context."
-               , "  4. Load the .bib file at FILE-PATH as the new working"
-               , "     bibliography. If the file does not already exist, then"
-               , "     it is created."
-               ]
-
----------------------------------------------------------------------
-
-toCmd :: T.CommandMonad [T.Ref]
--- ^Set the to-bibliography leaving the context unchanged. Write the
--- current to-bibliograpy without updating with the current context.
-toCmd xs rs
-    | null xs       = throwError "Command <to> requires a file path."
-    | length xs > 1 = throwError "Command <to> allows only one argument."
-    | otherwise     = do btxState <- get
-                         let fp = head xs
-                         unless ( fp == ( T.path . T.inBib $ btxState ) ) $ do
-                             maybe ( return () ) save $ T.toBib btxState
-                             content <- lift . readOrMakeFile $ fp
-                             case parseBibliography fp content of
-                                  Left e  -> throwError e
-                                  Right b -> put btxState { T.toBib = Just b }
-                         return rs
+-- toCmd ------------------------------------------------------------
 
 toCmdSHelp :: String
 toCmdSHelp = "to FILE-PATH : reset or create new export bibliography"
 
 toCmdLHelp :: String
 toCmdLHelp = intercalate "\n" hs
-    where hs = [ inCmdSHelp <> "\n"
+    where hs = [ inCmdSHelp ++ "\n"
                , "The export bibliography is separate from the working"
-               , "bibliography and represents a target where references can"
-               , "be exported using the <send> command. This command has the"
-               , "following effects:"
-               , "  1. Leave the current context unchanged. This command does"
-               , "     nothing with the current context."
+               , "bibliography (set with <in> )and represents a target where"
+               , "references can be exported using the <send> command. This"
+               , "command has the following effects:\n"
+               , "  1. Leave the current context unchanged."
                , "  2. Save the current export bibliography if it exists."
                , "  3. Load the .bib file at FILE-PATH as the new export"
                , "     bibliography. If the file does not exist, then it is"
                , "     created. If the file path is the same as that for the"
-               , "     working bibliography, then nothing is done."
+               , "     working bibliography, then the export bibliography"
+               , "     is unset and nothing else happens.\n"
                , "See also help for the <send> command."
                ]
 
----------------------------------------------------------------------
+toCmd :: T.CommandMonad [T.Ref]
+toCmd xs rs
+    | null xs       = throwError "Command <to> requires a file path."
+    | length xs > 1 = throwError "Command <to> allows only one argument."
+    | otherwise     = do
+        btxState <- get
+        maybe ( return () ) save $ T.toBib btxState
+        let fp = head xs
+        if fp == ( T.path . T.inBib ) btxState
+           then put btxState { T.toBib = Nothing }
+           else do content <- lift . readOrMakeFile $ fp
+                   case parseBibliography fp content of
+                        Left e  -> throwError e
+                        Right b -> put btxState { T.toBib = Just b }
+        return rs
+
+-- fromCmd ----------------------------------------------------------
+
+fromCmdSHelp :: String
+fromCmdSHelp = "from FILE-PATH : reset the import bibliography."
+
+fromCmdLHelp :: String
+fromCmdLHelp = intercalate "\n" hs
+    where hs = [ fromCmdSHelp ++ "\n"
+               , "The import bibliography is a bibliography separate from the"
+               , "working bibliography (set with <in>) that you can use to"
+               , "populate the context with references using the <take>"
+               , "command. This is useful for building new bibliographies from"
+               , "previously existing ones. The import bibliography is never"
+               , "modified. The <from> command has the following effects:\n"
+               , "  1. If FILE-PATH does not exist, then an error is generated."
+               , "  2. If FILE-PATH is the same as the working bibliography,"
+               , "     then the import bibliography becomes unset."
+               , "  3. No matter what, the context is left unchanged.\n"
+               , "See also help for the <take> command."
+               ]
 
 fromCmd :: T.CommandMonad [T.Ref]
 -- ^Set the from-bibliography leaving the context unchanged. From-
@@ -180,13 +196,16 @@ fromCmd :: T.CommandMonad [T.Ref]
 fromCmd xs rs
     | null xs       = throwError "Commad <from> requires a file path."
     | length xs > 1 = throwError "Command <from> allows only one argument."
-    | otherwise     = do btxState <- get
-                         let fp = head xs
-                         content <- lift . readFileExcept $ fp
-                         case parseBibliography fp content of
-                              Left e  -> throwError e
-                              Right b -> put btxState { T.fromBib = Just b }
-                         return rs
+    | otherwise     =
+        do btxState <- get
+           let fp = head xs
+           if fp == ( T.path . T.inBib ) btxState
+              then put btxState { T.fromBib = Nothing }
+              else do content <- lift . readFileExcept $ fp
+                      case parseBibliography fp content of
+                           Left e  -> throwError e
+                           Right b -> put btxState { T.fromBib = Just b }
+           return rs
 
 -- =============================================================== --
 -- Context constructors

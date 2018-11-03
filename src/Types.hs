@@ -57,7 +57,7 @@ data Start a = Help [String]
 data Bibliography = Bibliography {
       path :: FilePath      -- Path to the .bib BibTeX file
     , refs :: References    -- Encoded references from the .bib file
-    } deriving ( Show, Eq )
+    } deriving ( Eq, Show )
 
 -- |Programmatic representation of an individual BibTeX entry
 -- Comments are only recognized if they immediately follow the entry.
