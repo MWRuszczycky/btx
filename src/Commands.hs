@@ -15,7 +15,7 @@ import qualified Types                  as T
 import Data.Text                                ( Text              )
 import Data.List                                ( foldl'
                                                 , intercalate       )
-import Data.Maybe                               ( mapMaybe          )
+import Data.Maybe                               ( catMaybes         )
 import Control.Monad                            ( unless            )
 import Control.Monad.Except                     ( throwError
                                                 , liftEither        )
@@ -23,6 +23,10 @@ import Control.Monad.State.Lazy                 ( get
                                                 , put
                                                 , lift
                                                 , liftIO            )
+import Core                                     ( deleteRefs
+                                                , getRef
+                                                , insertRefs
+                                                , isPresent         )
 import CoreIO                                   ( readOrMakeFile
                                                 , readFileExcept
                                                 , writeFileExcept   )
@@ -65,7 +69,7 @@ hub = [ -- Bibliography managers
       ]
 
 -- =============================================================== --
--- Utilities
+-- State managers
 
 updateIn :: T.Context -> T.BtxStateMonad T.Bibliography
 -- ^Save references in context to the in-bibliography and return the
@@ -73,22 +77,10 @@ updateIn :: T.Context -> T.BtxStateMonad T.Bibliography
 updateIn rs = do
     btxState <- get
     let oldBib  = T.inBib btxState
-        newRefs = insert ( T.refs oldBib ) rs
+        newRefs = insertRefs ( T.refs oldBib ) rs
         newBib  = oldBib { T.refs = newRefs }
     put btxState { T.inBib = newBib }
     return newBib
-
-insert :: T.References -> T.Context -> T.References
--- ^Update a reference map with a list of references.
-insert = foldl' ( flip $ uncurry Map.insert )
-
-delete :: T.References -> T.Context -> T.References
-delete refs = foldl' ( flip Map.delete ) refs . fst . unzip
-
-getRef :: T.Bibliography -> String -> Maybe T.Ref
--- ^Lookup a reference from a bibliography and package as a Ref.
-getRef bib x = (,) key <$> Map.lookup key ( T.refs bib )
-    where key = Tx.pack x
 
 save :: T.Bibliography -> T.BtxStateMonad ()
 -- ^Convert a bibliography to BibTeX and write to memory.
@@ -278,7 +270,7 @@ getCmd :: T.CommandMonad T.Context
 getCmd xs rs = do
     updateIn rs
     bib <- T.inBib <$> get
-    return . mapMaybe ( getRef bib ) $ xs
+    return . map (getRef bib) $ xs
 
 -- pullCmd ----------------------------------------------------------
 
@@ -302,7 +294,7 @@ pullCmd xs rs = do
     rs' <- getCmd xs rs
     btxState <- get
     let bib = T.inBib btxState
-    put btxState { T.inBib = bib { T.refs = delete ( T.refs bib ) rs' } }
+    put btxState { T.inBib = bib { T.refs = deleteRefs ( T.refs bib ) rs' } }
     return rs'
 
 -- takeCmd ----------------------------------------------------------
@@ -326,7 +318,7 @@ takeCmd xs rs = do
     btxState <- get
     case T.fromBib btxState of
          Nothing  -> return []
-         Just bib -> return . mapMaybe ( getRef bib ) $ xs
+         Just bib -> return . map ( getRef bib ) $ xs
 
 -- =============================================================== --
 -- Context operators
@@ -341,7 +333,7 @@ sendCmd _ rs = do
     btxState <- get
     case T.toBib btxState of
          Nothing     -> return []
-         Just oldBib -> do let newRefs = insert ( T.refs oldBib ) rs
+         Just oldBib -> do let newRefs = insertRefs ( T.refs oldBib ) rs
                                newBib  = oldBib { T.refs = newRefs }
                            put btxState { T.toBib = Just newBib }
                            return []
@@ -364,12 +356,14 @@ viewCmd _ rs = do
 
 ---------------------------------------------------------------------
 
-nameCmd :: T.CommandMonad [T.Ref]
+nameCmd :: T.CommandMonad T.Context
 nameCmd ns rs
-    | nn == nr  = return . zipWith ( \ n (k,v) -> (Tx.pack n, v) ) ns $ rs
+    | nn == nr  = return . catMaybes . zipWith go ns $ rs
     | otherwise = ( liftIO . putStrLn $ renameErr nn nr ) >> return rs
-    where nn = length ns
-          nr = length rs
+    where go n (T.Ref fp k v ) = Just $ T.Ref (fp ++ ", renamed") (Tx.pack n) v
+          go _ (T.Missing _ _) = Nothing
+          nn                   = length ns
+          nr                   = length . filter isPresent $ rs
 
 -- =============================================================== --
 -- Errors and help

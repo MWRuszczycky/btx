@@ -55,13 +55,13 @@ data Start a = Help [String]
 ---------------------------------------------------------------------
 -- Bibliographies
 
--- |Programmatic representation of a BibTeX bibliography
+-- |Representation of a BibTeX bibliography
 data Bibliography = Bibliography {
       path :: FilePath      -- Path to the .bib BibTeX file
     , refs :: References    -- Encoded references from the .bib file
     } deriving ( Eq, Show )
 
--- |Programmatic representation of an individual BibTeX entry
+-- |Representation of an individual BibTeX entry
 -- Comments are only recognized if they immediately follow the entry.
 data Entry = Entry {
       theType  :: Text        -- Entry type (e.g., article, book, ..)
@@ -69,12 +69,13 @@ data Entry = Entry {
     , comments :: [ Text  ]   -- Entry comments
     } deriving ( Show, Eq )
 
--- |Programmatic representation of a parsed BibTeX .bib file.
+-- |Representation of a bibliography entry in the context.
+data Ref = Ref FilePath Text Entry | Missing FilePath Text
+
+-- |Representation of a parsed BibTeX .bib file.
 type References = Map.Map Text Entry
 
 type Field = ( Text, Text )
-
-type Ref = ( Text, Entry )
 
 type Context = [Ref]
 

@@ -1,80 +1,44 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Core
-    ( initBtx
-    , runBtx
-    , parseCmds
+    ( refToPair
+    , pairToRef
+    , isPresent
+    , insertRefs
+    , deleteRefs
+    , getRef
     ) where
 
-import qualified Data.Text      as Tx
-import qualified Types          as T
-import Control.Monad.State.Lazy         ( execStateT, get
-                                        , liftIO            )
-import Control.Monad.Except             ( throwError
-                                        , liftEither        )
-import CoreIO                           ( readOrMakeFile    )
-import BibTeX.Parser                    ( parseBib          )
-import Commands                         ( route, done
-                                        , updateIn          )
+import qualified Data.Map.Strict as Map
+import qualified Types           as T
+import qualified Data.Text       as Tx
+import Data.Text                        ( Text              )
+import Data.List                        ( foldl'            )
+import Data.Maybe                       ( mapMaybe          )
 
+refToPair :: T.Ref -> Maybe (Text, T.Entry)
+refToPair (T.Ref _ k v  ) = Just (k, v)
+refToPair (T.Missing _ _) = Nothing
 
--- =============================================================== --
--- Initialization
+pairToRef :: FilePath -> (Text, T.Entry) -> T.Ref
+pairToRef fp (k, v) = T.Ref fp k v
 
--- Exported
+isPresent :: T.Ref -> Bool
+isPresent (T.Ref _ _ _   ) = True
+isPresent (T.Missing _ _ ) = False
 
-initBtx :: a -> FilePath -> T.ErrMonad ( a, T.BtxState )
--- ^Generate the initial state.
-initBtx _ [] = throwError "No .bib file specified."
-initBtx x fp = do
-    content <- readOrMakeFile fp
-    bib <- liftEither . parseBib fp $ content
-    return ( x, initBtxState bib )
+insertRefs :: T.References -> T.Context -> T.References
+-- ^Update a reference map with a list of references.
+insertRefs refs = foldl' go refs . mapMaybe refToPair
+    where go = flip $ uncurry Map.insert
 
-initBtxState :: T.Bibliography -> T.BtxState
-initBtxState b =  T.BtxState { T.inBib   = b
-                             , T.toBib   = Nothing
-                             , T.fromBib = Nothing
-                             , T.logger  = Tx.empty
-                             }
+deleteRefs :: T.References -> T.Context -> T.References
+deleteRefs refs = foldl' go refs . fst . unzip . mapMaybe refToPair
+    where go = flip Map.delete
 
--- =============================================================== --
--- Compiling and running
-
-runBtx :: ([T.CommandArgsMonad [T.Ref]], T.BtxState) -> T.ErrMonad T.BtxState
--- ^Compile and run the commands an the initial state.
-runBtx (cmds, st) = execStateT ( compile cmds [] ) st
-
----------------------------------------------------------------------
--- Compiling
-
-compile :: [ T.CommandArgsMonad [T.Ref] ] -> [T.Ref] -> T.BtxStateMonad ()
-compile []        rs = done rs
-compile ( c : cs) rs = c rs >>= compile cs
-
----------------------------------------------------------------------
--- Parsing
-
-parseCmds :: String -> T.Start ( T.CommandArgsMonad [T.Ref] )
-parseCmds xs =
-    case words . splitAnd $ xs of
-         []            -> T.Usage "This won't do anything (try: btx help)."
-         ("in":[])     -> T.Usage "This won't do anything (try: btx help)."
-         ("help":cs)   -> T.Help cs
-         ("--help":cs) -> T.Help cs
-         ("-h":cs)     -> T.Help cs
-         ("in":fp:cs)  -> T.Normal fp . parseAnd $ cs
-         cs            -> T.Normal "test/files/new.bib" . parseAnd $ cs
-
-splitAnd :: String -> String
-splitAnd []        = []
-splitAnd (',':xs)  = " and " ++ splitAnd xs
-splitAnd ('\n':xs) = " and " ++ splitAnd xs
-splitAnd (x:xs)    = x : splitAnd xs
-
-parseAnd :: [String] -> [ T.CommandArgsMonad [T.Ref] ]
-parseAnd []          = []
-parseAnd ("and":xs)  = parseAnd xs
-parseAnd (x:xs)      = applyCmd x ys : parseAnd zs
-    where (ys,zs)  = break ( == "and" ) xs
-          applyCmd = T.cmdCmd . route
+getRef :: T.Bibliography -> String -> T.Ref
+-- ^Lookup a reference from a bibliography and package as a Ref.
+getRef bib x = let key = Tx.pack x
+               in  case Map.lookup key ( T.refs bib ) of
+                        Nothing -> T.Missing ( T.path bib ) key
+                        Just v  -> T.Ref ( T.path bib ) key v
