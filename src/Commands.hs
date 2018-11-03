@@ -13,6 +13,7 @@ import qualified Types                  as T
 import Data.Text                                ( Text              )
 import Data.List                                ( foldl'            )
 import Data.Maybe                               ( mapMaybe          )
+import Control.Monad                            ( unless            )
 import Control.Monad.Except                     ( throwError        )
 import Control.Monad.State.Lazy                 ( get
                                                 , put
@@ -128,8 +129,8 @@ inCmdLHelp = Tx.intercalate "\n" hs
                , "  2. Save the updated working bibliography to disk."
                , "  3. Clear the current context."
                , "  4. Load the .bib file at FILE-PATH as the new working"
-               , "     bibliography."
-               , "  5. If the file does not exist, then it is created."
+               , "     bibliography. If the file does not already exist, then"
+               , "     it is created."
                ]
 
 ---------------------------------------------------------------------
@@ -141,12 +142,13 @@ toCmd xs rs
     | null xs       = throwError "Command <to> requires a file path."
     | length xs > 1 = throwError "Command <to> allows only one argument."
     | otherwise     = do btxState <- get
-                         maybe ( return () ) save $ T.toBib btxState
                          let fp = head xs
-                         content <- lift . readOrMakeFile $ fp
-                         case parseBibliography fp content of
-                              Left e  -> throwError e
-                              Right b -> put btxState { T.toBib = Just b }
+                         unless ( fp == ( T.path . T.inBib $ btxState ) ) $ do
+                             maybe ( return () ) save $ T.toBib btxState
+                             content <- lift . readOrMakeFile $ fp
+                             case parseBibliography fp content of
+                                  Left e  -> throwError e
+                                  Right b -> put btxState { T.toBib = Just b }
                          return rs
 
 toCmdSHelp :: Text
@@ -155,15 +157,17 @@ toCmdSHelp = "to FILE-PATH : reset or create new export bibliography"
 toCmdLHelp :: Text
 toCmdLHelp = Tx.intercalate "\n" hs
     where hs = [ inCmdSHelp <> "\n"
-               , "The export bibliography is a target bibliography separate"
-               , "from the working bibliography where references can be sent."
-               , "This command has the following effects."
-               , "  1. Save the current export bibliography."
-               , "  2. Load the .bib file at FILE-PATH as the new export"
-               , "     bibliography."
-               , "  3. Leave the current context unchanged."
-               , "  4. If the file does not exist, then it is created."
-               , "Note that this command does nothing with the current context."
+               , "The export bibliography is separate from the working"
+               , "bibliography and represents a target where references can"
+               , "be exported using the <send> command. This command has the"
+               , "following effects:"
+               , "  1. Leave the current context unchanged. This command does"
+               , "     nothing with the current context."
+               , "  2. Save the current export bibliography if it exists."
+               , "  3. Load the .bib file at FILE-PATH as the new export"
+               , "     bibliography. If the file does not exist, then it is"
+               , "     created. If the file path is the same as that for the"
+               , "     working bibliography, then nothing is done."
                , "See also help for the <send> command."
                ]
 
