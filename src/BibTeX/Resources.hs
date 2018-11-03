@@ -1,21 +1,21 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module BibTeX.Resources
-    ( getTemplate
+    ( genericKey
+    , genKeyNumber
     , supported
+    , templates
     ) where
 
-import qualified Types as T
-import Data.Text            ( Text )
+import qualified Data.Text       as Tx
+import qualified Data.Map.Strict as Map
+import qualified Types           as T
+import Data.Text                        ( Text )
 
 -- =============================================================== --
 -- Standard references
 
-getTemplate :: Text -> Maybe T.Entry
--- ^Return an empty refernce of the specified type with empty fields.
-getTemplate x = lookup x supported
-
-supported :: [ (Text, T.Entry) ]
+supported :: [ (String, T.Entry) ]
 -- ^Associative list of all supported reference types.
 supported = [ ( "article",      article      )
             , ( "book",         book         )
@@ -25,6 +25,29 @@ supported = [ ( "article",      article      )
             , ( "manual",       manual       )
             , ( "blank",        blank        )
             ]
+
+genKeyNumber :: T.Bibliography -> Int
+genKeyNumber (T.Bibliography _ rs) = go 0
+    where go n | Map.member (numGenKey n) rs = go $ n + 1
+               | otherwise                   = n
+
+genericKey :: Text
+genericKey = "new_key_"
+
+templates :: Int -> [String] -> T.Context
+templates n = foldr go [] . zip [n .. ]
+    where go (n,x) = (:) ( T.Ref "new-entry" (numGenKey n) (getTemplate x) )
+
+-- Helpers
+
+getTemplate :: String -> T.Entry
+getTemplate x = maybe blank id . lookup x $ supported
+
+numGenKey :: Int -> Text
+numGenKey n = genericKey <>  ( Tx.pack . show ) n
+
+---------------------------------------------------------------------
+-- Entry templates
 
 blank :: T.Entry
 blank = T.Entry {

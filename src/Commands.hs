@@ -31,6 +31,10 @@ import CoreIO                                   ( readOrMakeFile
                                                 , readFileExcept
                                                 , writeFileExcept   )
 import BibTeX.Parser                            ( parseBib          )
+import BibTeX.Resources                         ( genericKey
+                                                , genKeyNumber
+                                                , supported
+                                                , templates         )
 import Formatting                               ( argInvalidErr
                                                 , bibToBibtex
                                                 , cmdInvalidErr
@@ -62,6 +66,7 @@ hub = [ -- Bibliography managers
       , T.Command "list" listCmd listCmdSHelp listCmdLHelp
         -- Context constructors
       , T.Command "get"  getCmd  getCmdSHelp  getCmdLHelp
+      , T.Command "new"  newCmd  newCmdSHelp  newCmdLHelp
       , T.Command "pull" pullCmd pullCmdSHelp pullCmdLHelp
       , T.Command "take" takeCmd takeCmdSHelp takeCmdLHelp
         -- Context operators
@@ -288,6 +293,38 @@ getCmd xs rs = do
     updateIn rs
     bib <- T.inBib <$> get
     return . map (getRef bib) $ xs
+
+-- newCmd -----------------------------------------------------------
+
+newCmdSHelp :: String
+newCmdSHelp = "new [type .. ] : populate context with template entries "
+              ++ "of specified types."
+
+newCmdLHelp :: String
+newCmdLHelp = intercalate "\n" hs
+    where sp = map ( \ x -> replicate 9 ' ' <> fst x ) supported
+          hs = [ newCmdSHelp ++ "\n"
+               , "The command has the following effects:\n"
+               , "  1. Update the working bibliography with the current context"
+               , "     and then clear the context."
+               , "  2. Add new entry templates to the context with the"
+               , "     specified types."
+               , "  3. Each entry will be given the key '"
+                 ++ Tx.unpack genericKey ++ "', where n is"
+               , "     a number, so as to not conflict with any other key in"
+               , "     the working bibliography."
+               , "  4. The currently supported entry templates are:\n"
+               , intercalate "\n" sp ++ "\n"
+               , "  5. If an entry is not supported, then a 'blank' type entry"
+               , "     is generated with a minimum number of fields."
+               ]
+
+newCmd :: T.CommandMonad T.Context
+newCmd xs rs = do
+    updateIn rs
+    bib <- T.inBib <$> get
+    let n = genKeyNumber bib
+    return . templates n $ xs
 
 -- pullCmd ----------------------------------------------------------
 
