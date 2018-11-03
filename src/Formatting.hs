@@ -68,11 +68,10 @@ summarizeEntries bib x
           go k v = Tx.take (Tx.length x) k == x
 
 summarizeEntry :: (Text, T.Entry) -> Text
-summarizeEntry (k, v) = ktyr <> title
+summarizeEntry (k, v) = kt <> title
     where pars x = " (" <> x <> ") "
-          yr     = maybe " (no year) " pars . lookup "year" . T.fields $ v
-          ktyr   = k <> ": " <> T.theType v <> yr
-          room   = 79 - Tx.length ktyr
+          kt     = k <> ": " <> T.theType v <> ", "
+          room   = 80 - Tx.length kt
           go x   | room < Tx.length x = Tx.take (room - 2) x <> ".."
                  | otherwise          = x
           title  = maybe " no title" go . lookup "title" . T.fields $ v
