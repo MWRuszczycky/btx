@@ -24,6 +24,7 @@ executable btx
                       , parsec
                       , text
   other-modules:        BibTeX.Parser
+                      , BibTeX.Resources
                       , Formatting
                       , Commands
                       , Core
