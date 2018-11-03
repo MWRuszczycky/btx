@@ -25,18 +25,21 @@ parseBib fp x = do
 -- Hidden helper functions
 ---------------------------------------------------------------------
 
+type KeyEntry = (Text, T.Entry)
+
 ---------------------------------------------------------------------
 -- Main parser
 
 bibParser :: At.Parser T.References
 -- ^Main file parser for reading each BibTeX reference.
 bibParser = do
-    deadSpace
+    At.skipWhile ( /= '@' )
+-- At.skipMany $ emptyLine <|> ignoredComment
     rs <- At.many' reference
     At.endOfInput
     return . M.fromList $ rs
 
-oneRef :: At.Parser T.Ref
+oneRef :: At.Parser KeyEntry
 -- ^Parses a single isolated reference from a string. This is used for
 -- parsing doi dowloads.
 oneRef = spaces >> reference
@@ -44,7 +47,7 @@ oneRef = spaces >> reference
 ---------------------------------------------------------------------
 -- Parsing references
 
-reference :: At.Parser T.Ref
+reference :: At.Parser KeyEntry
 -- ^Parses an individual BibTeX reference and consumes all following
 -- space until either another reference is encountered or the file
 -- ends.
@@ -54,7 +57,7 @@ reference = do
     sep <|> At.skipSpace
     At.char '}'
     cs <- commentLines
-    deadSpace
+    At.skipWhile ( /= '@' )
     return $ ( rk, T.Entry rt fields cs )
 
 ---------------------------------------------------------------------
@@ -205,10 +208,6 @@ whiteSpace = At.skipMany $ At.satisfy ( At.inClass " \t" )
 emptyLine :: At.Parser ()
 -- ^For parsing empty lines that are to be ignored.
 emptyLine = whiteSpace >> eol >> return ()
-
-deadSpace :: At.Parser ()
--- ^Content between references that will be ignored.
-deadSpace = At.skipMany $ At.try emptyLine <|> At.try ignoredComment
 
 spaces :: At.Parser ()
 spaces = At.skipMany At.space
