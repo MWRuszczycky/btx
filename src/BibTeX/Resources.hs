@@ -26,24 +26,30 @@ supported = [ ( "article",      article      )
             , ( "blank",        blank        )
             ]
 
+genericKey :: Text
+-- ^Generic key for new templates.
+genericKey = "new_key_"
+
 genKeyNumber :: T.Bibliography -> Int
+-- ^Generate a number n so that n appended to genericKey is not a key
+-- already used in the bibliography.
 genKeyNumber (T.Bibliography _ rs) = go 0
     where go n | Map.member (numGenKey n) rs = go $ n + 1
                | otherwise                   = n
 
-genericKey :: Text
-genericKey = "new_key_"
-
 templates :: Int -> [String] -> T.Context
+-- ^Create blank templates based on a list of BibTeX entry types.
 templates n = foldr go [] . zip [n .. ]
     where go (n,x) = (:) ( T.Ref "new-entry" (numGenKey n) (getTemplate x) )
 
 -- Helpers
 
 getTemplate :: String -> T.Entry
+-- ^Create an unkeyed BibTeX entry template with the specified type.
 getTemplate x = maybe blank id . lookup x $ supported
 
 numGenKey :: Int -> Text
+-- ^Helper function for numbering generic keys.
 numGenKey n = genericKey <>  ( Tx.pack . show ) n
 
 ---------------------------------------------------------------------
