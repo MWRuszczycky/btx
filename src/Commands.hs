@@ -241,7 +241,7 @@ takeCmd :: T.CommandMonad [T.Ref]
 -- from-bibliography is not set, then default to the in-bibliography.
 takeCmd xs _ = do
     btxState <- get
-    case T.toBib btxState of
+    case T.fromBib btxState of
          Nothing  -> getCmd xs []
          Just bib -> return . mapMaybe ( getRef bib ) $ xs
 
