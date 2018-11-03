@@ -10,13 +10,16 @@ module Formatting
     , argInvalidErr
     , cmdInvalidErr
     , renameErr
+    -- General help formatting
+    , formatHelp
     ) where
 
 import qualified Data.Text          as Tx
 import qualified Data.Map.Strict    as Map
 import qualified Types              as T
 import Data.Text                            ( Text          )
-import Data.List                            ( intercalate   )
+import Data.List                            ( intercalate
+                                            , sort          )
 
 ---------------------------------------------------------------------
 -- Summarizing bibilographies
@@ -88,7 +91,6 @@ formatRef (T.Ref fp k v  ) = Tx.concat x
                    else Tx.empty
               ]
 
-
 formatFields :: [T.Field] -> Text
 -- ^Format the field key-value pairs for pretty-printing.
 formatFields xs = Tx.intercalate "\n" . map ( formatPair n ) $ xs
@@ -137,3 +139,15 @@ renameErr n r = intercalate "\n" es
                , "entries currently in the context (" ++ show r
                   ++ ") does not match"
                , "the number of new names supplied (" ++ show n ++ ")." ]
+
+---------------------------------------------------------------------
+-- General help formatting
+
+padRightStr :: Int -> String -> String
+padRightStr n x = x ++ replicate (n - length x) ' '
+
+formatHelp :: [String] -> String
+formatHelp xs = intercalate "\n" . map go $ xs'
+    where xs'      = map ( break (== ':') ) . sort $ xs
+          n        = maximum . map ( length . fst ) $ xs'
+          go (c,s) = padRightStr n c ++ s

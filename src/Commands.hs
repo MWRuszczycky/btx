@@ -31,14 +31,15 @@ import CoreIO                                   ( readOrMakeFile
                                                 , readFileExcept
                                                 , writeFileExcept   )
 import BibTeX.Parser                            ( parseBib          )
-import Formatting                               ( refToBibtex
-                                                , formatRef
+import Formatting                               ( argInvalidErr
                                                 , bibToBibtex
-                                                , summarize
-                                                , summarizeContext
-                                                , argInvalidErr
                                                 , cmdInvalidErr
-                                                , renameErr         )
+                                                , formatHelp
+                                                , formatRef
+                                                , refToBibtex
+                                                , renameErr
+                                                , summarize
+                                                , summarizeContext  )
 
 -- =============================================================== --
 -- Hub and router
@@ -248,7 +249,7 @@ listCmd _ rs = ( liftIO . Tx.putStrLn . summarizeContext $ rs ) >> return rs
 -- getCmd -----------------------------------------------------------
 
 getCmdSHelp :: String
-getCmdSHelp = "get [KEY ..] : copy entries from "
+getCmdSHelp = "get [KEY .. ] : copy entries from "
               ++ "working bibliography to context."
 
 getCmdLHelp :: String
@@ -275,7 +276,7 @@ getCmd xs rs = do
 -- pullCmd ----------------------------------------------------------
 
 pullCmdSHelp :: String
-pullCmdSHelp = "pull [KEY ..] : move entries from "
+pullCmdSHelp = "pull [KEY .. ] : move entries from "
               ++ "working bibliography to context."
 
 pullCmdLHelp :: String
@@ -300,7 +301,7 @@ pullCmd xs rs = do
 -- takeCmd ----------------------------------------------------------
 
 takeCmdSHelp :: String
-takeCmdSHelp = "take [KEY ..] : copy entries from "
+takeCmdSHelp = "take [KEY .. ] : copy entries from "
                ++ "import bibliography to context"
 
 takeCmdLHelp :: String
@@ -326,7 +327,7 @@ takeCmd xs rs = do
 -- nameCmd ----------------------------------------------------------
 
 nameCmdSHelp :: String
-nameCmdSHelp = "name [NAME ..] : change key names for entries in the context."
+nameCmdSHelp = "name [KEY .. ] : change key names for entries in the context."
 
 nameCmdLHelp :: String
 nameCmdLHelp = intercalate "\n" hs
@@ -438,11 +439,10 @@ viewCmd _ rs = do
 -- =============================================================== --
 -- Errors and help
 
----------------------------------------------------------------------
-
 runHelp :: [String] -> String
 -- ^Generate a help message
-runHelp [] = intercalate "\n" . map T.cmdSHelp $ hub
+runHelp [] = formatHelp . map T.cmdSHelp $ hub
+-- intercalate "\n" . map T.cmdSHelp $ hub
 runHelp xs = intercalate "\n" . map ( T.cmdLHelp . route ) $ xs
 
 errCmd :: String -> T.CommandMonad [T.Ref]
