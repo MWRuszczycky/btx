@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module BibTeX.Parser
-    ( parseBibliography
+    ( parseBib
      --, parseRef
     ) where
 
@@ -13,10 +13,10 @@ import Data.Char ( isAlphaNum )
 import qualified Types as T
 import Data.Map.Strict as M
 
-parseBibliography :: FilePath -> Text -> Either String T.Bibliography
+parseBib :: FilePath -> Text -> Either String T.Bibliography
 -- ^Exposed parser takes the file path to the .bib file and the input
 -- text to parse.
-parseBibliography fp x = do
+parseBib fp x = do
     refs <- At.parseOnly bibParser x
     return T.Bibliography { T.path = fp
                           , T.refs = refs }

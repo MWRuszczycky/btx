@@ -13,6 +13,7 @@ module Types
     , Field             (..)
     , Ref               (..)
     , References        (..)
+    , Context           (..)
     -- Commands
     , Command           (..)
     , CommandArgsMonad  (..)
@@ -43,6 +44,7 @@ data BtxState = BtxState {
       inBib   :: Bibliography       -- Current bibliography
     , toBib   :: Maybe Bibliography -- Target bibliography
     , fromBib :: Maybe Bibliography -- Source bibliography
+    , logger  :: Text               -- Log of action performed
     }
 
 -- |Starting state
@@ -73,6 +75,8 @@ type References = Map.Map Text Entry
 type Field = ( Text, Text )
 
 type Ref = ( Text, Entry )
+
+type Context = [Ref]
 
 ---------------------------------------------------------------------
 -- Commands

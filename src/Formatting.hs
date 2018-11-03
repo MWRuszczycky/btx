@@ -5,8 +5,11 @@ module Formatting
     , bibToBibtex
     , formatRef
     , summarize
-    , unrecognized
-    , cannotRename
+    , summarizeContext
+    -- Error messaging
+    , argInvalidErr
+    , cmdInvalidErr
+    , renameErr
     ) where
 
 import qualified Data.Text          as Tx
@@ -17,9 +20,30 @@ import Data.List                            ( intercalate )
 ---------------------------------------------------------------------
 -- Summarizing bibilographies
 
-summarize :: T.Bibliography -> Tx.Text
-summarize b = Tx.pack (T.path b) <> "\nTotal entries: " <> Tx.pack (show n)
-    where n = Map.size . T.refs $ b
+summarize :: T.BtxState -> T.Context -> Tx.Text
+summarize s rs = Tx.intercalate "\n" x
+    where x = [ "Bibliographies:"
+              , "  working: " <> summarizeBib ( Just . T.inBib $ s )
+              , "  import:  " <> summarizeBib ( T.fromBib s)
+              , "  export:  " <> summarizeBib ( T.toBib s )
+              , if null rs then "The current context is empty."
+                   else Tx.intercalate "\n" . map summarizeRef $ rs
+              ]
+
+summarizeBib :: Maybe T.Bibliography -> Tx.Text
+summarizeBib Nothing  = "unset"
+summarizeBib (Just b) = let n = Map.size . T.refs $ b
+                        in  Tx.pack (T.path b)
+                            <> " has " <> Tx.pack (show n)
+                            <> " total entries"
+
+summarizeContext :: T.Context -> Tx.Text
+summarizeContext [] = "The current context is empty."
+summarizeContext rs = "Context:\n" <> Tx.intercalate "\n" x
+    where x = map ( Tx.append "  " . summarizeRef ) $ rs
+
+summarizeRef :: T.Ref -> Tx.Text
+summarizeRef (k,v) = k
 
 ---------------------------------------------------------------------
 -- Conversion to BibTeX format
@@ -92,11 +116,14 @@ overHang n k x
 ---------------------------------------------------------------------
 -- Error messages
 
-unrecognized :: String -> T.ErrString
-unrecognized = (++) "Unrecognized command: "
+argInvalidErr :: String -> String -> T.ErrString
+argInvalidErr c a = "Invalid argument for " ++ c ++ ": " ++ a
 
-cannotRename :: Int -> Int -> T.ErrString
-cannotRename n r = intercalate "\n" es
+cmdInvalidErr :: String -> T.ErrString
+cmdInvalidErr = (++) "Invalid command: "
+
+renameErr :: Int -> Int -> T.ErrString
+renameErr n r = intercalate "\n" es
     where es = [ "The entries cannot be renamed, because the number of"
                , "entries currently in the context (" ++ show r
                   ++ ") does not match"

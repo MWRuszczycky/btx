@@ -6,14 +6,15 @@ module Core
     , parseCmds
     ) where
 
+import qualified Data.Text      as Tx
 import qualified Types          as T
 import Control.Monad.State.Lazy         ( execStateT, get
                                         , liftIO            )
 import Control.Monad.Except             ( throwError
                                         , liftEither        )
 import CoreIO                           ( readOrMakeFile    )
-import BibTeX.Parser                    ( parseBibliography )
-import Commands                         ( route, save
+import BibTeX.Parser                    ( parseBib          )
+import Commands                         ( route, done
                                         , updateIn          )
 
 
@@ -27,13 +28,14 @@ initBtx :: a -> FilePath -> T.ErrMonad ( a, T.BtxState )
 initBtx _ [] = throwError "No .bib file specified."
 initBtx x fp = do
     content <- readOrMakeFile fp
-    bib <- liftEither . parseBibliography fp $ content
+    bib <- liftEither . parseBib fp $ content
     return ( x, initBtxState bib )
 
 initBtxState :: T.Bibliography -> T.BtxState
 initBtxState b =  T.BtxState { T.inBib   = b
                              , T.toBib   = Nothing
                              , T.fromBib = Nothing
+                             , T.logger  = Tx.empty
                              }
 
 -- =============================================================== --
@@ -47,17 +49,8 @@ runBtx (cmds, st) = execStateT ( compile cmds [] ) st
 -- Compiling
 
 compile :: [ T.CommandArgsMonad [T.Ref] ] -> [T.Ref] -> T.BtxStateMonad ()
-compile []        rs = finalize rs
+compile []        rs = done rs
 compile ( c : cs) rs = c rs >>= compile cs
-
-finalize :: [T.Ref] -> T.BtxStateMonad ()
--- ^Save the current context references to the in-bibliography and
--- write both the in- and to-bibliographies.
-finalize rs = do
-    liftIO . putStrLn $ ""
-    updateIn rs >>= save
-    btxState <- get
-    maybe ( return () ) save . T.toBib $ btxState
 
 ---------------------------------------------------------------------
 -- Parsing
