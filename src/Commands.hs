@@ -66,6 +66,7 @@ hub = [ -- Bibliography managers
       , T.Command "info" infoCmd infoCmdSHelp infoCmdLHelp
       , T.Command "list" listCmd listCmdSHelp listCmdLHelp
         -- Context constructors
+      , T.Command "doi"  doiCmd  doiCmdSHelp  doiCmdLHelp
       , T.Command "get"  getCmd  getCmdSHelp  getCmdLHelp
       , T.Command "new"  newCmd  newCmdSHelp  newCmdLHelp
       , T.Command "pull" pullCmd pullCmdSHelp pullCmdLHelp
@@ -279,6 +280,25 @@ listCmd xs rs = do bib <- T.inBib <$> get
 
 -- =============================================================== --
 -- Context constructors
+
+-- doiCmd -----------------------------------------------------------
+
+doiCmdSHelp :: String
+doiCmdSHelp = "doi   DOI : download an entry using the doi of its publication."
+
+doiCmdLHelp :: String
+doiCmdLHelp = intercalate "\n" hs
+    where sp = map ( \ x -> replicate 9 ' ' <> fst x ) supported
+          hs = [ doiCmdSHelp ++ "\n"
+               , "This command will be implemented soon. Right now it just"
+               , "updates the working bibliography and clears the context."
+               ]
+
+doiCmd :: T.CommandMonad T.Context
+doiCmd _ rs = do
+    updateIn rs
+    liftIO . putStrLn $ "The doi command is not implemented yet."
+    return []
 
 -- getCmd -----------------------------------------------------------
 
