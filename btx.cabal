@@ -20,8 +20,11 @@ executable btx
   build-depends:        base >=4.7 && <5
                       , attoparsec
                       , containers
+                      , directory
                       , mtl
                       , parsec
+                      , process
+                      , temporary
                       , text
   other-modules:        BibTeX.Parser
                       , BibTeX.Resources

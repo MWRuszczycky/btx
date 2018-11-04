@@ -29,6 +29,7 @@ import Core                                     ( deleteRefs
                                                 , isPresent         )
 import CoreIO                                   ( readOrMakeFile
                                                 , readFileExcept
+                                                , runExternal
                                                 , writeFileExcept   )
 import BibTeX.Parser                            ( parseBib          )
 import BibTeX.Resources                         ( genericKey
@@ -70,6 +71,7 @@ hub = [ -- Bibliography managers
       , T.Command "pull" pullCmd pullCmdSHelp pullCmdLHelp
       , T.Command "take" takeCmd takeCmdSHelp takeCmdLHelp
         -- Context operators
+      , T.Command "edit" editCmd editCmdSHelp editCmdLHelp
       , T.Command "name" nameCmd nameCmdSHelp nameCmdLHelp
       , T.Command "send" sendCmd sendCmdSHelp sendCmdLHelp
       , T.Command "toss" tossCmd tossCmdSHelp tossCmdLHelp
@@ -376,6 +378,36 @@ takeCmd xs rs = do
 
 -- =============================================================== --
 -- Context operators
+
+-- editCmd ----------------------------------------------------------
+
+editCmdSHelp :: String
+editCmdSHelp = "edit EDITOR : edit entries in the context "
+               ++ "using an external process"
+
+editCmdLHelp :: String
+editCmdLHelp = intercalate "\n" hs
+    where hs = [ editCmdSHelp ++ "\n"
+               , "This command allows you to run an editor program on all the"
+               , "bibliography entries currently in the context. The edited"
+               , "entries remain in the context. You can use this to edit"
+               , "fields, delete fields, add fields, change the key (as an"
+               , "alternative to <name>), etc. Some things to keep in mind:\n"
+               , "  1. If you edit the key following a <get> command and save"
+               , "     back to the working bibliography, then the entry will"
+               , "     be saved alongside its unedited previous version. This"
+               , "     can be avoided by using <pull> instead of <get>."
+               , "  2. If you edit an entry obtained using <get>, but do not"
+               , "     edit the key, saving back will overwrite the previous"
+               , "     unedited version with the same key."
+               , "  3. Any leading comments will be ignored."
+               ]
+
+editCmd :: T.CommandMonad T.Context
+editCmd []     _  = throwError "An editor program must be specified."
+editCmd _      [] = return []
+editCmd (x:[]) rs = lift ( mapM (runExternal x) rs ) >>= return
+editCmd (x:xs) _  = throwError "Only one editor may be specified with <edit>."
 
 -- nameCmd ----------------------------------------------------------
 

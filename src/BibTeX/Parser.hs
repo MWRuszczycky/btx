@@ -2,7 +2,7 @@
 
 module BibTeX.Parser
     ( parseBib
-     --, parseRef
+    , parseRef
     ) where
 
 import qualified Data.Attoparsec.Text as At
@@ -20,6 +20,11 @@ parseBib fp x = do
     refs <- At.parseOnly bibParser x
     return T.Bibliography { T.path = fp
                           , T.refs = refs }
+
+parseRef :: FilePath -> Text -> Either String T.Ref
+parseRef fp x = do
+    (k, v) <- At.parseOnly oneRef x
+    return $ T.Ref fp k v
 
 ---------------------------------------------------------------------
 -- Hidden helper functions
@@ -41,8 +46,10 @@ bibParser = do
 
 oneRef :: At.Parser KeyEntry
 -- ^Parses a single isolated reference from a string. This is used for
--- parsing doi dowloads.
-oneRef = spaces >> reference
+-- parsing doi dowloads and externally edited references.
+oneRef = do
+    At.skipWhile ( /= '@' )
+    reference
 
 ---------------------------------------------------------------------
 -- Parsing references
