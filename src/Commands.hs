@@ -483,7 +483,7 @@ sendCmdLHelp = intercalate "\n" hs
 
 sendCmd :: T.CommandMonad T.Context
 sendCmd ("to":xs) rs = toCmd xs rs >>= sendCmd []
-sendCmd _ rs = do
+sendCmd _         rs = do
     btxState <- get
     case T.toBib btxState of
          Nothing     -> return []
