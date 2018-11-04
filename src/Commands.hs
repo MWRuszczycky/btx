@@ -181,11 +181,11 @@ inCmd xs rs
 -- toCmd ------------------------------------------------------------
 
 toCmdSHelp :: String
-toCmdSHelp = "to FILE-PATH : reset or create new export bibliography"
+toCmdSHelp = "to [FILE-PATH] : reset or create new export bibliography"
 
 toCmdLHelp :: String
 toCmdLHelp = intercalate "\n" hs
-    where hs = [ inCmdSHelp ++ "\n"
+    where hs = [ toCmdSHelp ++ "\n"
                , "The export bibliography is separate from the working"
                , "bibliography (set with <in>) and represents a target where"
                , "references can be exported using the <send> command. This"
@@ -194,20 +194,22 @@ toCmdLHelp = intercalate "\n" hs
                , "  2. Save the current export bibliography if it exists."
                , "  3. Load the .bib file at FILE-PATH as the new export"
                , "     bibliography. If the file does not exist, then it is"
-               , "     created. If the file path is the same as that for the"
-               , "     working bibliography, then the export bibliography"
-               , "     is unset and nothing else happens.\n"
+               , "     created."
+               , "  4. If FILE-PATH is the same as that for the working"
+               , "     bibliography, then the export bibliography is unset and"
+               , "     nothing else happens."
+               , "  5. If no file path argument is supplied, then the current"
+               , "     export bibliography is saved and unset.\n"
                , "See also help for the <send> command."
                ]
 
 toCmd :: T.CommandMonad T.Context
 toCmd xs rs
-    | null xs       = throwError "Command <to> requires a file path."
     | length xs > 1 = throwError "Command <to> allows only one argument."
-    | otherwise     = do let fp = head xs
-                         btxState <- get
+    | otherwise     = do btxState <- get
                          maybe ( return () ) save $ T.toBib btxState
-                         if fp == ( T.path . T.inBib ) btxState
+                         let fp = head xs
+                         if null xs || fp == (T.path . T.inBib) btxState
                             then put btxState { T.toBib = Nothing }
                             else do content <- lift . readOrMakeFile $ fp
                                     bib <- liftEither . parseBib fp $ content
