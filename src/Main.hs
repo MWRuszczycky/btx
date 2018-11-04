@@ -4,17 +4,19 @@ module Main where
 
 import qualified Data.Text      as Tx
 import qualified Types          as T
-import System.Environment               ( getArgs           )
+import System.Environment               ( getArgs             )
+import System.Directory                 ( listDirectory
+                                        , getCurrentDirectory )
 import Control.Monad.State.Lazy         ( execStateT, get
-                                        , liftIO            )
+                                        , liftIO              )
 import Control.Monad.Except             ( runExceptT
                                         , throwError
-                                        , liftEither        )
-import Commands                         ( runHelp           )
-import CoreIO                           ( readOrMakeFile    )
-import BibTeX.Parser                    ( parseBib          )
+                                        , liftEither          )
+import Commands                         ( runHelp             )
+import CoreIO                           ( readOrMakeFile      )
+import BibTeX.Parser                    ( parseBib            )
 import Commands                         ( route, done
-                                        , updateIn          )
+                                        , updateIn            )
 
 -- =============================================================== --
 -- Entry point and clean up
@@ -37,11 +39,21 @@ finish (Right _ ) = putStrLn "\nDone."
 
 initBtx :: a -> FilePath -> T.ErrMonad ( a, T.BtxState )
 -- ^Generate the initial state.
-initBtx _ [] = throwError "No .bib file specified."
+initBtx x [] = initDefaultBtxState x
 initBtx x fp = do
     content <- readOrMakeFile fp
     bib <- liftEither . parseBib fp $ content
     return ( x, initBtxState bib )
+
+initDefaultBtxState :: a -> T.ErrMonad (a, T.BtxState)
+initDefaultBtxState x = do
+    cwd <- liftIO getCurrentDirectory
+    fps <- liftIO . listDirectory $ cwd
+    case findSingleBibFile fps of
+         Just fp -> initBtx x fp
+         Nothing -> throwError $ "Cannot find a unique default .bib file in "
+                                 ++ "the current directory.\n"
+                                 ++ "  (Try: btx help in)"
 
 initBtxState :: T.Bibliography -> T.BtxState
 initBtxState b =  T.BtxState { T.inBib   = b
@@ -49,6 +61,13 @@ initBtxState b =  T.BtxState { T.inBib   = b
                              , T.fromBib = Nothing
                              , T.logger  = Tx.empty
                              }
+
+findSingleBibFile :: [FilePath] -> Maybe FilePath
+findSingleBibFile xs
+    | null ys       = Nothing
+    | length ys > 1 = Nothing
+    | otherwise     = Just . head $ ys
+    where ys = filter ( ( == "bib." ) . take 4 . reverse ) xs
 
 -- =============================================================== --
 -- Compiling and running
@@ -76,7 +95,7 @@ parseCmds xs =
          ("--help":cs) -> T.Help cs
          ("-h":cs)     -> T.Help cs
          ("in":fp:cs)  -> T.Normal fp . parseAnd $ cs
-         cs            -> T.Normal "test/files/new.bib" . parseAnd $ cs
+         cs            -> T.Normal [] . parseAnd $ cs
 
 splitAnd :: String -> String
 splitAnd []        = []

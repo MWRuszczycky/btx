@@ -152,7 +152,8 @@ fromCmd xs rs
 -- inCmd ------------------------------------------------------------
 
 inCmdSHelp :: String
-inCmdSHelp = "in FILE-PATH : reset or create new working bibliography"
+inCmdSHelp = "in FILE-PATH : initialize, reset or create the working"
+             ++ " bibliography"
 
 inCmdLHelp :: String
 inCmdLHelp = intercalate "\n" hs
@@ -163,7 +164,13 @@ inCmdLHelp = intercalate "\n" hs
                , "  3. Clear the current context."
                , "  4. Load the .bib file at FILE-PATH as the new working"
                , "     bibliography. If the file does not already exist, then"
-               , "     it is created."
+               , "     it is created.\n"
+               , "When <in> is used as the first command, then it loads"
+               , "FILE-PATH as the initial working bibliography or creates it"
+               , "if the file does not already exist. When <in> is not the"
+               , "first command, then btx will search the current working"
+               , "directory for a unique .bib file, which will be loaded as"
+               , "the current working bibliography."
                ]
 
 inCmd :: T.CommandMonad T.Context
