@@ -39,7 +39,6 @@ bibParser :: At.Parser T.References
 -- ^Main file parser for reading each BibTeX reference.
 bibParser = do
     At.skipWhile ( /= '@' )
--- At.skipMany $ emptyLine <|> ignoredComment
     rs <- At.many' reference
     At.endOfInput
     return . M.fromList $ rs
@@ -148,14 +147,6 @@ value = do
 
 ---------------------------------------------------------------------
 -- Parsing comments
-
-ignoredComment :: At.Parser ()
--- ^For parsing comment lines that are to be ignored.
-ignoredComment = do
-    whiteSpace
-    At.char '%'
-    At.manyTill At.anyChar eol
-    return ()
 
 commentLines :: At.Parser [ Text ]
 -- ^For parsing all comments associated with a reference that will be
