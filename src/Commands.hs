@@ -116,7 +116,7 @@ done rs = do
 -- fromCmd ----------------------------------------------------------
 
 fromCmdSHelp :: String
-fromCmdSHelp = "from FILE-PATH : reset the import bibliography."
+fromCmdSHelp = "from [FILE-PATH] : reset the import bibliography"
 
 fromCmdLHelp :: String
 fromCmdLHelp = intercalate "\n" hs
@@ -127,25 +127,27 @@ fromCmdLHelp = intercalate "\n" hs
                , "command. This is useful for building new bibliographies from"
                , "previously existing ones. The import bibliography is never"
                , "modified. The <from> command has the following effects:\n"
-               , "  1. If FILE-PATH does not exist, then an error is generated."
-               , "  2. If FILE-PATH is the same as the working bibliography,"
+               , "  1. The context is left unchanged."
+               , "  2. If FILE-PATH does not exist, then an error is generated."
+               , "  3. If FILE-PATH is the same as the working bibliography,"
                , "     then the import bibliography becomes unset."
-               , "  3. The context is left unchanged.\n"
+               , "  4. If no FILE-PATH is provided, then the import"
+               , "     bibliography becomes unset.\n"
                , "See also help for the <take> command."
                ]
 
 fromCmd :: T.CommandMonad T.Context
 fromCmd xs rs
-    | null xs       = throwError "Commad <from> requires a file path."
-    | length xs > 1 = throwError "Command <from> allows only one argument."
+    | null xs       = get >>= \ b -> put b { T.fromBib = Nothing } >> return rs
+    | length xs > 1 = throwError "Command <from> allows one or no argument."
     | otherwise     = do btxState <- get
                          let fp = head xs
                          if fp == ( T.path . T.inBib ) btxState
-                            then put btxState { T.fromBib = Nothing }
+                            then fromCmd [] rs
                             else do content <- lift . readFileExcept $ fp
                                     bib <- liftEither . parseBib fp $ content
                                     put btxState { T.fromBib = Just bib }
-                         return rs
+                                    return rs
 
 -- inCmd ------------------------------------------------------------
 
