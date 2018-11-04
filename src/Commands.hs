@@ -152,7 +152,7 @@ fromCmd xs rs
 -- inCmd ------------------------------------------------------------
 
 inCmdSHelp :: String
-inCmdSHelp = "in FILE-PATH : initialize, reset or create the working"
+inCmdSHelp = "in    FILE-PATH : initialize, reset or create the working"
              ++ " bibliography"
 
 inCmdLHelp :: String
@@ -188,7 +188,7 @@ inCmd xs rs
 -- toCmd ------------------------------------------------------------
 
 toCmdSHelp :: String
-toCmdSHelp = "to [FILE-PATH] : reset or create new export bibliography"
+toCmdSHelp = "to   [FILE-PATH] : reset or create new export bibliography"
 
 toCmdLHelp :: String
 toCmdLHelp = intercalate "\n" hs
@@ -283,7 +283,7 @@ listCmd xs rs = do bib <- T.inBib <$> get
 -- getCmd -----------------------------------------------------------
 
 getCmdSHelp :: String
-getCmdSHelp = "get [KEY .. ] : copy entries from "
+getCmdSHelp = "get  [KEY .. ] : copy entries from "
               ++ "working bibliography to context."
 
 getCmdLHelp :: String
@@ -310,7 +310,7 @@ getCmd xs rs = do
 -- newCmd -----------------------------------------------------------
 
 newCmdSHelp :: String
-newCmdSHelp = "new [type .. ] : populate context with template entries "
+newCmdSHelp = "new  [type .. ] : populate context with template entries "
               ++ "of specified types."
 
 newCmdLHelp :: String
@@ -393,8 +393,8 @@ takeCmd xs rs = do
 -- editCmd ----------------------------------------------------------
 
 editCmdSHelp :: String
-editCmdSHelp = "edit EDITOR : edit entries in the context "
-               ++ "using an external process"
+editCmdSHelp = "edit  EDITOR : edit entries in the context "
+               ++ "using the external EDITOR"
 
 editCmdLHelp :: String
 editCmdLHelp = intercalate "\n" hs
