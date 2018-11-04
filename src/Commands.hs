@@ -45,7 +45,6 @@ import Formatting                               ( argInvalidErr
                                                 , renameErr
                                                 , summarize
                                                 , summarizeAllEntries
-                                                , summarizeContext
                                                 , summarizeEntries  )
 
 -- =============================================================== --

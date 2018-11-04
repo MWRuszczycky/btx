@@ -6,7 +6,6 @@ module Formatting
     , formatRef
     , summarize
     , summarizeAllEntries
-    , summarizeContext
     , summarizeEntries
     -- Error messaging
     , argInvalidErr
@@ -32,8 +31,7 @@ summarize s rs = Tx.intercalate "\n" x
               , "  working: " <> summarizeBib ( Just . T.inBib $ s )
               , "  import:  " <> summarizeBib ( T.fromBib s)
               , "  export:  " <> summarizeBib ( T.toBib s )
-              , if null rs then "The current context is empty."
-                   else Tx.intercalate "\n" . map summarizeRef $ rs
+              , summarizeContext rs
               ]
 
 summarizeBib :: Maybe T.Bibliography -> Text
@@ -44,14 +42,14 @@ summarizeBib (Just b) = let n = Map.size . T.refs $ b
                             <> " total entries"
 
 summarizeContext :: T.Context -> Text
-summarizeContext [] = "The current context is empty."
+summarizeContext [] = "The context is currently empty."
 summarizeContext rs = "Context:\n" <> Tx.intercalate "\n" x
     where x = map ( Tx.append "  " . summarizeRef ) $ rs
 
 summarizeRef :: T.Ref -> Text
 summarizeRef (T.Ref fp k v  ) = k <> " from " <> Tx.pack fp
-summarizeRef (T.Missing fp k) = "There is no entry " <> k
-                                <> " in " <> Tx.pack fp
+summarizeRef (T.Missing fp k) = "The entry " <> k <> " from "
+                                <> Tx.pack fp <> " is missing."
 
 summarizeAllEntries :: T.Bibliography -> Text
 summarizeAllEntries bib
