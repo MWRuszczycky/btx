@@ -27,7 +27,8 @@ import Core                                     ( deleteRefs
                                                 , getRef
                                                 , insertRefs
                                                 , isPresent         )
-import CoreIO                                   ( readOrMakeFile
+import CoreIO                                   ( getDoi
+                                                , readOrMakeFile
                                                 , readFileExcept
                                                 , runExternal
                                                 , writeFileExcept   )
@@ -283,21 +284,28 @@ listCmd xs rs = do bib <- T.inBib <$> get
 -- doiCmd -----------------------------------------------------------
 
 doiCmdSHelp :: String
-doiCmdSHelp = "doi   DOI : download an entry using the doi of its publication."
+doiCmdSHelp = "doi  [DOI] : download an entry using the doi of its publication."
 
 doiCmdLHelp :: String
 doiCmdLHelp = intercalate "\n" hs
     where sp = map ( \ x -> replicate 9 ' ' <> fst x ) supported
           hs = [ doiCmdSHelp ++ "\n"
-               , "This command will be implemented soon. Right now it just"
-               , "updates the working bibliography and clears the context."
+               , "This command populates the context with entries downloaded"
+               , "using the digital-object-identifiers of the corresponding"
+               , "publications. It has the following effects:\n"
+               , "  1. Update working bibliography with the current context."
+               , "  2. Download BibTeX entries from each doi provided, e.g.,"
+               , "         doi 10.1016/bs.mie.2017.07.022"
+               , "  3. Populate the context with the downloaded references.\n"
+               , "This command is still a work in progress and the error"
+               , "handling needs to be fixed. Currently any problem with the"
+               , "download will cause an error to be thrown."
                ]
 
 doiCmd :: T.CommandMonad T.Context
-doiCmd _ rs = do
+doiCmd xs rs = do
     updateIn rs
-    liftIO . putStrLn $ "The doi command is not implemented yet."
-    return []
+    lift . mapM getDoi $ xs
 
 -- getCmd -----------------------------------------------------------
 

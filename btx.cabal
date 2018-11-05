@@ -19,13 +19,16 @@ executable btx
   ghc-options:          -O2
   build-depends:        base >=4.7 && <5
                       , attoparsec
+                      , bytestring
                       , containers
                       , directory
+                      , microlens
                       , mtl
                       , parsec
                       , process
                       , temporary
                       , text
+                      , wreq
   other-modules:        BibTeX.Parser
                       , BibTeX.Resources
                       , Formatting
