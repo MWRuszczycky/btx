@@ -45,7 +45,7 @@ This is a light-weight, declarative, command-line interface for working with Bib
 
 The *btx* program lets you write declarative scripts to manipulate both BibTeX bibliographies and the entries they contain. For example, suppose you want to create a new `.bib` file called `animals.bib`, add two new `article` entries, rename them `Cat2016` and `Dog2018` and then edit the fields in each using your favorite editor, such as Vim. This could then all be accomplished using the following *btx* script entered at the command-line:
 ```
-btx in animals.bib and new article article and name Cat2016 Dog2018 and edit vim
+btx **in** animals.bib and new article article and name Cat2016 Dog2018 and edit vim
 ```
 This breaks down as follows:
 1. The `btx` command invokes *btx* at the command line as usual.
