@@ -79,14 +79,14 @@ summarizeEntry (k, v) = kt <> title
 
 bibToBibtex :: T.Bibliography -> Text
 -- ^Generates a text representation of the bibliography.
-bibToBibtex = Tx.intercalate "\n\n"
+bibToBibtex = Tx.intercalate "\n"
               . Map.elems
               . Map.mapWithKey refToBibtex
               . T.refs
 
 refToBibtex :: Text -> T.Entry -> Text
 -- ^Generates a text representation of a bibliography reference.
-refToBibtex k v  = Tx.concat [ key, fields, close, coms ]
+refToBibtex k v  = Tx.concat [ key, fields, close, coms <> "\n" ]
     where key    = Tx.concat [ "@", T.theType v, "{", k, ",\n" ]
           fields = Tx.intercalate ",\n" . map fieldToBibtex $ T.fields v
           coms   = Tx.intercalate "\n" . map commentToBibtex $ T.comments v
