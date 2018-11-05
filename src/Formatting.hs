@@ -39,7 +39,7 @@ summarizeBib Nothing  = "unset"
 summarizeBib (Just b) = let n = Map.size . T.refs $ b
                         in  Tx.pack (T.path b)
                             <> " has " <> Tx.pack (show n)
-                            <> " total entries"
+                            <> if n == 1 then " entry" else " entries"
 
 summarizeContext :: T.Context -> Text
 summarizeContext [] = "The context is currently empty."
