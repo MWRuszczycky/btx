@@ -44,7 +44,7 @@ This is a light-weight, declarative, command-line interface for working with Bib
 ## Introduction
 
 The *btx* program lets you write declarative scripts to manipulate both BibTeX bibliographies and the entries they contain. For example, suppose you want to create a new `.bib` file called `animals.bib`, add two new `article` entries, rename them `Cat2016` and `Dog2018` and then edit the fields in each using your favorite editor, such as Vim. This could then all be accomplished using the following *btx* script entered at the command-line:
-```sh
+```
 btx in animals.bib and new article article and name Cat2016 Dog2018 and edit vim
 ```
 This breaks down as follows:
@@ -57,22 +57,22 @@ This breaks down as follows:
 7. Finally, the `animals.bib` file is updated with the two new entries.
 
 The `and` key-word can also be written more concisely using a comma. Therefore, the script in the above example could just as well be written as:
-```sh
+```
 btx in animals.bib, new article article, name Cat2016 Dog2018, edit vim
 ```
 The use of `and` and `,` are completely interchangeable and can be used together. You can use this to get more natural-language like scripts such as,
-```sh
+```
 btx in animals.bib, new article article, name Cat2016 Dog2018 and edit vim
 ```
 
 ### Getting help
 
 This program is written with an emphasis on help documentation. You can get a complete list of all commands using:
-```sh
+```
 btx help
 ```
 You can get detailed information about any one command using:
-```sh
+```
 btx help <command>
 ```
 for example, to get the details about the `get` command use `btx help get`.
@@ -108,13 +108,13 @@ There are three types of bibliography that *btx* works with:
 #### The *working bibliography* and the `in` command
 
 The *working bibliography* must always be set and is the default bibliography to which most of the *btx* commands apply. This bibliography is set using the `in` command. For example,
-```sh
+```
 btx in animals.bib and ...
 ```
 has the effect of parsing the BibTeX file `animals.bib` to generate a *btx* working bibliography for manipulation. If the file `animals.bib` does not exist, then it will be created. This is how you can use `in` to create new BibTeX bibliography files.
 
 You can also use the `in` command to *change* the working bibliography. For example, the script:
-```sh
+```
 btx in animals.bib, new article, name Fish1989 and in plants.bib, new book, name Orchids2006
 ```
 has the following effects (see below for specifically how the individual commands are composed together):
@@ -130,7 +130,7 @@ As a convenience, you can also run *btx* without an initial `in` command. In ths
 #### The *import bibliography* and the `from` command
 
 In addition to the *working bibliography*, you can also designate an *import bibliography* using the `from` command. The *import bibliography* serves as a source of entries that you can use to build a new, smaller bibliography. For example, suppose you have a large centralized BibTeX repository called `everything.bib` with hundreds of entries, but you are writing a paper specifically about cats that will be submitted to a journal. You don't want to send the entire `everything.bib` file in your submission and instead want to create a smaller `cats.bib` file containing only the entries `Tabbies2016` and `Calicos2014` extracted from `everything.bib`. You would do this with the following script:
-```sh
+```
 btx in cats.bib, from everything.bib, take Tabbies2016 Calicos2014
 ```
 Here `from` sets the import bibliography, and the `take` command designates the references to import to `cats.bib`, which is set using `in`. The `take` command is discussed further below in the section on working with *contexts*. Unlike the *working bibliography*, an *import bibliography* need not always be set. Furthermore, the *import bibliography* is never updated or changed in any way unless you also set it as the *export bibliography* (see below).
@@ -144,11 +144,11 @@ Each time the `from` command is envoked, it has no effect other than to simply r
 Finally, you can also designate an *export bibliography* using the `to` command. The `to` command works similar to `in` such that if the designated *export bibliography* file does not exist, then it will be created. The *export bibliography* serves as a target to which you can *send* references from the current *working bibliography*. Therefore, *btx* will write to the *export bibliography* (in contrast to its behavior with the *import bibliography*). This allows you to treat the *working bibilography* as your central repository from which you can create or update other BibTeX files.
 
 For example, we could also accomplish the same goal discussed in the above example for the *import bibliography* with the script:
-```sh
+```
 btx in everything.bib, get Tabbies2016 Calicos2014 and to cats.bib, send
 ```
 The `get` command is discussed below but essentially designates which entries from the *working bibliography* will be exported to `cats.bib` using the `send` command. The `send` and `to` commands can also be combined into a single "sugared command" `send to` such that the following script will have the same effect:
-```sh
+```
 btx in everything.bib, get Tabbies2016 Calicos2014 and send to cats.bib
 ```
 The `get` and `send` commands are discussed further below.
@@ -188,11 +188,11 @@ The *working bibliography* is automatically updated at the end of each script wi
 ##### Viewing entries: `view`
 
 You can pretty-print the details of all references in the current *context* using the `view` command. Any "missing entries" will also be displayed as such. This command otherwise leaves the context unchanged. For example, if `animals.bib` contains the references `Cats2016` and `Dogs2018`, you can view their details using:
-```sh
+```
 btx in animals.bib, get Cats2016 Dogs2018 and view
 ```
 When the script finishes, the *working bibliography* is updated with the current context containing `Cats2016` and `Dogs2018`, which have not changed so there is no net effect. The same would happen with
-```sh
+```
 btx in animals.bib, pull Cats2016 Dogs2018 and view:
 ```
 Only now `Cats2016` and `Dogs2018` are first deleted from the *working bibliography* and then just written back to it. So again, the net effect is no change.
@@ -200,14 +200,14 @@ Only now `Cats2016` and `Dogs2018` are first deleted from the *working bibliogra
 ##### Deleting entries: `pull` and `toss`
 
 The current *context* is cleared using the `toss` command. Composing this command with `pull` allows you to delete references from the working bibliography. For example, if `animals.bib` has the entry `Cats2016` that you want to get rid of, you can use:
-```sh
+```
 btx in animals.bib, pull Cats2016 and toss
 ```
 
 ##### Renaming entries: `pull` and `name`
 
 The BibTeX entry key for all entries currently in the context can be change using the `name` command. For example, if we want to rename the entries `Cats2016` and `Dogs1984` in `animals.bib` to `BigCats` and `LittleDogs`, we could use the script:
-```sh
+```
 btx in animals.bib, pull Cats2016 Dog1984 and name BigCats LittleDogs
 ```
 Note that we need to use the `pull` command to populate the context. If we used the `get` command, then the final `animals.bib` file would contain the two entries `Cats2016` and `BigCats` with the same fields just different names, and the same would be true for `Dogs1984` and `LittleDogs`. Note that `name` requires that there be a one-to-one correspondence between the new names supplied and the entries in the *context*. Otherwise, the *context* remains unchanged.
@@ -215,21 +215,21 @@ Note that we need to use the `pull` command to populate the context. If we used 
 ##### Exporting and moving entries: `send`
 
 Entries in the current context can be used to update the *export bibliography* using `send`. The *export bibliography* is set with `to` (see above). This command also has the effect of clearing the current *context*. Therefore, the following script:
-```sh
+```
 btx in animals.bib, get Cats2016, to some_other.bib, send
 ```
 has the effect of *copying* `Cats2016` (if it is not missing) to `some_other.bib` so that it is now in both `animals.bib` and `some_other.bib`. However, the script:
-```sh
+```
 btx in animals.bib, pull Cats2016, to some_other.bib, send
 ```
 has the effect of *moving* the `Cats2016` entry from `animals.bib` to `some_other.bib`, so that `Cats2016` is now only in `some_other.bib` and no longer in `animals.bib`.
 
 There is also syntatic sugar which allows the `send` and `to` commands to be combined so that the above script could also be written as:
-```sh
+```
 btx in animals.bib, pull Cats 2016 and send to some_other.bib
 ```
 As with all *btx* commands, we can use composition to export the entries and change their names. For example,
-```sh
+```
 btx in animals.bib, get Cats2016, name BigCats and send to some_other.bib
 ```
 After running this script, `animals.bib` and `some_other.bib` will have the same entry named with key `Cats2016` in `animals.bib` and key `BigCats` in `some_other.bib`.
@@ -237,7 +237,7 @@ After running this script, `animals.bib` and `some_other.bib` will have the same
 ##### Importing entries: `take`
 
 You can populate the context with entries from the *import bibliography* using the `take` command after setting the *import bibliography* using `from`. For example, if you want to import `Chickens1964` and `Chipmunks1996` from `everything.bib` to `animals.bib`, you could use the script
-```sh
+```
 btx in animals.bib, from everything.bib, take Chickens1964 Chipmunks1996
 ```
 
@@ -246,7 +246,7 @@ btx in animals.bib, from everything.bib, take Chickens1964 Chipmunks1996
 **Note: the behaviour of `edit` is still unstable in that if you make an error when editing the reference so that it fails to parse, the script will quit with an error. This will be fixed soon.**
 
 *btx* is intended to do one and only one thing, which is the management of BibTeX bibliographies and not edit the individual entries. Therefore, this task is handed off to your favorite text editor using the `edit` command. For example, suppose you have a bibliography `animals.bib` containing the reference `Cats2016` and you want to add another author, delete the `publisher` field and fix a typo in the title. If your editor of choice is Vim, then you could run the script
-```sh
+```
 btx in animals.bib, get Cats2016 and edit vim
 ```
 This will populate the context with `Cats2016` and then run Vim sequentially on each reference in the *context*, which is just `Cats2016`. You can then change the `author` and `title` fields and delete the `publisher` field of the entry using Vim. When you write and quit Vim, the edited entry will be reparsed and loaded into the *contex* replacing the previous version. Therefore, when the script finishes, the *working bibliography* will be updated with the edited version of `Cats2016`.
@@ -264,7 +264,7 @@ A summary of all the bibliographies including the total number of entries and fi
 ##### Listing entries in the *working bibliography*: `list`
 
 You can display one-line (i.e., 80-character-max) summaries of all the entries in the *working bibliography* using the `list` command with no argument. You can also restrict the entries displayed by providing prefixes to match entry keys on. For example,
-```sh
+```
 btx in animals.bib, list Cat Dog
 ```
 will display a summary line for any entry in `animals.bib` whose key begins with `Cat` or `Dog`.
@@ -272,7 +272,7 @@ will display a summary line for any entry in `animals.bib` whose key begins with
 ## Scripting with *btx*
 
 You can also run longer *btx* scripts from a file using `run`. In this case, new line characters become synonymous with the `and` key-word and the `,` token, so that each command can just be placed on a separate line. Any extra white space is ignored. For example, suppose we have three bibliographies `animals.bib`, `everything.bib` and `some_other.bib`. We can then write the following script and save it in a file named `my_btx_script`:
-```sh
+```
 in animals.bib
     from everything.bib
     take Cats2016 Dogs1984
@@ -287,7 +287,7 @@ in animals.bib
     info
 ```
 Next we can run the script from file using the `run` command in *btx*,
-```sh
+```
 btx run my_btx_script
 ```
 This will have the following effects:
