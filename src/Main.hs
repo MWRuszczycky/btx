@@ -23,12 +23,12 @@ import Commands                         ( route, done
 
 main :: IO ()
 main = do
-    start <- parseCmds . unwords <$> getArgs
+    -- start <- parseCmds . unwords <$> getArgs
+    start <- parseArgs =<< getArgs
     case start of
          T.Usage msg   -> finish . Left $ msg
          T.Help xs     -> finish . Left . runHelp $ xs
-         T.Normal fp s -> runExceptT ( initBtx s fp >>= runBtx )
-                        >>= finish
+         T.Normal fp s -> runExceptT ( initBtx s fp >>= runBtx ) >>= finish
 
 finish :: Either String T.BtxState -> IO ()
 finish (Left msg) = putStrLn msg
@@ -85,6 +85,11 @@ compile ( c : cs) rs = c rs >>= compile cs
 
 ---------------------------------------------------------------------
 -- Parsing
+
+parseArgs :: [String] -> IO ( T.Start ( T.CommandArgsMonad [T.Ref] ) )
+parseArgs ("run":fp:_) = readFile fp >>= return . parseCmds
+parseArgs ("run":[])   = getContents >>= return . parseCmds
+parseArgs args         = return . parseCmds . unwords $ args
 
 parseCmds :: String -> T.Start ( T.CommandArgsMonad [T.Ref] )
 parseCmds xs =

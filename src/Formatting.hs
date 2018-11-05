@@ -27,7 +27,7 @@ import Data.List                            ( intercalate
 
 summarize :: T.BtxState -> T.Context -> Text
 summarize s rs = Tx.intercalate "\n" x
-    where x = [ "Bibliographies:"
+    where x = [ "\nBibliographies:"
               , "  working: " <> summarizeBib ( Just . T.inBib $ s )
               , "  import:  " <> summarizeBib ( T.fromBib s)
               , "  export:  " <> summarizeBib ( T.toBib s )
