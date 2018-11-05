@@ -36,9 +36,9 @@ This is a light-weight, declarative, command-line interface for working with Bib
             * [Editing entries: `edit`](
               #editing-entries-edit)
         * [Queries](#queries)
-            - [Summarizing the bibliographies and *context*: `info`](
+            * [Summarizing the bibliographies and *context*: `info`](
               #summarizing-the-bibliographies-and-context-info)
-            - [Listing entries in the *working bibliography*: `list`](
+            * [Listing entries in the *working bibliography*: `list`](
               #listing-entries-in-the-working-bibliography-list)
 * [Scripting with *btx*](#scripting-with-btx)
 * [To Do](#to-do)
