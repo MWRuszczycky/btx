@@ -263,8 +263,6 @@ btx in animals.bib, from everything.bib, take Chickens1964 Chipmunks1996
 
 ##### Editing entries: `edit`
 
-**Note: the behaviour of `edit` is still unstable in that if you make an error when editing the reference so that it fails to parse, the script will quit with an error. This will be fixed soon.**
-
 *btx* is intended to do one and only one thing, which is the management of BibTeX bibliographies and not edit the individual entries. Therefore, this task is handed off to your favorite text editor using the `edit` command. For example, suppose you have a bibliography `animals.bib` containing the reference `Cats2016` and you want to add another author, delete the `publisher` field and fix a typo in the title. If your editor of choice is *Vim*, then you could run the script
 ```
 btx in animals.bib, get Cats2016 and edit vim
@@ -326,9 +324,10 @@ This will have the following effects:
 
 ## To do and known issues
 
-1. "at" symbols (i.e., '@') in BibTeX comment lines cause parsing problems.
-2. The `edit` command needs to handle parsing errors better.
-3. Implement a REPL for interactive manipulation of bibliographies.
-4. The general help string needs to be written.
-5. Errors should be `Text` and not `String`.
-6. Several functions still need commenting.
+1. "At" symbols (i.e., `@`) in comments that are separated from the references by line breaks will cause the parser to fail. This isn't a big deal, because you can still have ,`@` symbols in the BibTeX fields and the comments that immediately follow the references and are not separated by line breaks; however, it still needs to be fixed.
+2. Implement a REPL for interactive manipulation of bibliographies.
+3. The general help string needs to be written.
+4. Errors should be `Text` and not `String`.
+5. Several functions still need commenting.
+6. More testing to try and find more problems.
+7. Commands for the masked loading of all entries to the *context*.

@@ -13,6 +13,7 @@ import qualified Data.Text.IO        as Tx
 import qualified Data.Text           as Tx
 import qualified Data.Text.Encoding  as Tx
 import qualified Network.Wreq        as Wreq
+import Data.Char                             ( isSpace             )
 import Data.ByteString.Lazy.Internal         ( ByteString          )
 import Data.ByteString.Lazy                  ( toStrict            )
 import Data.Bifunctor                        ( bimap               )
@@ -96,7 +97,6 @@ editIntro = Tx.intercalate "\n" hs
                , "% Leading comments will be stripped."
                , "% Following comments will be stripped if they are separated"
                , "% from the reference by line breaks."
-               , "% Don't add or remove 'at' symbols unless aborting."
                , "\n% TO ABORT THE EDIT, delete the full entry, save and quit."
                , "\n\n"
                ]
@@ -106,7 +106,8 @@ addErrMsg = Tx.append (hs <> editIntro) . Tx.dropWhile ( /= '@' )
     where hs = "\n% PARSE ERROR: Check the BibTeX syntax and try again.\n"
 
 quit :: Text -> Bool
-quit = Tx.null . Tx.dropWhile ( /= '@' )
+quit = null . filter isRef . map (Tx.dropWhile isSpace) . Tx.lines
+    where isRef x = not $ Tx.null x || Tx.head x == '%'
 
 ---------------------------------------------------------------------
 -- Interfacing with the internet

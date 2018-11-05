@@ -436,7 +436,6 @@ editCmdLHelp = intercalate "\n" hs
                , "  2. If you edit an entry obtained using <get>, but do not"
                , "     edit the key, saving back will overwrite the previous"
                , "     unedited version with the same key."
-               , "  3. Any leading comments will be ignored."
                ]
 
 editCmd :: T.CommandMonad T.Context
