@@ -17,15 +17,15 @@ import Data.List                        ( foldl'            )
 import Data.Maybe                       ( mapMaybe          )
 
 refToPair :: T.Ref -> Maybe (Text, T.Entry)
-refToPair (T.Ref _ k v  ) = Just (k, v)
-refToPair (T.Missing _ _) = Nothing
+refToPair (T.Ref _ k v     ) = Just (k, v)
+refToPair (T.Missing _ _ _ ) = Nothing
 
 pairToRef :: FilePath -> (Text, T.Entry) -> T.Ref
 pairToRef fp (k, v) = T.Ref fp k v
 
 isPresent :: T.Ref -> Bool
-isPresent (T.Ref _ _ _   ) = True
-isPresent (T.Missing _ _ ) = False
+isPresent (T.Ref _ _ _     ) = True
+isPresent (T.Missing _ _ _ ) = False
 
 insertRefs :: T.References -> T.Context -> T.References
 -- ^Update a reference map with a list of references.
@@ -40,5 +40,5 @@ getRef :: T.Bibliography -> String -> T.Ref
 -- ^Lookup a reference from a bibliography and package as a Ref.
 getRef bib x = let key = Tx.pack x
                in  case Map.lookup key ( T.refs bib ) of
-                        Nothing -> T.Missing ( T.path bib ) key
+                        Nothing -> T.Missing ( T.path bib ) key "no such entry"
                         Just v  -> T.Ref ( T.path bib ) key v

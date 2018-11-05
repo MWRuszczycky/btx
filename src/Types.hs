@@ -70,10 +70,13 @@ data Entry = Entry {
     } deriving ( Show, Eq )
 
 -- |Representation of a bibliography entry in the context.
-data Ref = Ref FilePath Text Entry | Missing FilePath Text
+data Ref = Ref FilePath Key Entry
+         | Missing FilePath Key ErrString
+
+type Key = Text
 
 -- |Representation of a parsed BibTeX .bib file.
-type References = Map.Map Text Entry
+type References = Map.Map Key Entry
 
 type Field = ( Text, Text )
 

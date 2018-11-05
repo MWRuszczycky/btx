@@ -193,7 +193,7 @@ The operation of *btx* is thus modeled as function composition with the *context
 2. `pull` is the same as `get`, but deletes the entries from the *working bibliography*.
 3. `take` is the same as `get` but draws the entries from the *import bibliography*.
 4. `new` populates the context with blank entries of the specified types having generic names.
-5. `doi` populates the context with entries downloaded from the internet using their doi-identifiers (**this command works, but the error handling needs to be fixed so that it generates "missing entries" rather than throwing errors.**).
+5. `doi` populates the context with entries downloaded from the internet using their doi-identifiers.
 
 All five of these commands first update the *working bibliography* with the current context before repopulating it. If no arguments are supplied to these commands, then the effect is to simply update the *working bibliography* and clear the context. If an entry is requested and not found in the given bibliography, then a "missing entry" is added to the context that is tracked but otherwise ignored (i.e., "missing entries" have no effect on bibliographies when they are updated). See below for examples using these commands.
 
@@ -326,7 +326,6 @@ This will have the following effects:
 
 ## To do
 
-1. Improve error handling for the `doi` command.
-2. Improve error handling for the `edit` command.
-3. Implement a REPL for interactive manipulation of bibliographies.
-4. Fix up comments.
+1. Improve error handling for the `edit` command.
+2. Implement a REPL for interactive manipulation of bibliographies.
+3. Fix up comments.

@@ -47,9 +47,9 @@ summarizeContext rs = "Context:\n" <> Tx.intercalate "\n" x
     where x = map ( Tx.append "  " . summarizeRef ) $ rs
 
 summarizeRef :: T.Ref -> Text
-summarizeRef (T.Ref fp k v  ) = k <> " from " <> Tx.pack fp
-summarizeRef (T.Missing fp k) = "The entry " <> k <> " from "
-                                <> Tx.pack fp <> " is missing."
+summarizeRef (T.Ref fp k v     ) = k <> " from " <> Tx.pack fp
+summarizeRef (T.Missing fp k e ) = "Missing: " <> k <> " from " <> Tx.pack fp
+                                   <> " (" <> Tx.pack e <> ")"
 
 summarizeAllEntries :: T.Bibliography -> Text
 summarizeAllEntries bib
@@ -105,8 +105,9 @@ fieldToBibtex (k, v) = Tx.concat [ "    ", k, " = ", "{", v, "}" ]
 
 formatRef :: T.Ref -> Text
 -- ^Represent a Ref value as pretty-printed text.
-formatRef (T.Missing fp k) = "There is no entry " <> k <> " in " <> Tx.pack fp
-formatRef (T.Ref fp k v  ) = Tx.concat x
+formatRef (T.Missing fp k e ) = "Missing: " <> k <> " from " <> Tx.pack fp
+                                <> " (" <> Tx.pack e <> ")"
+formatRef (T.Ref fp k v  )    = Tx.concat x
     where x = [ k <> " in " <> Tx.pack fp <> "\n"
               , formatFields . T.fields $ v
               , if length (T.comments v) > 0

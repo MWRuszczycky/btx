@@ -295,10 +295,9 @@ doiCmdLHelp = intercalate "\n" hs
                , "  1. Update working bibliography with the current context."
                , "  2. Download BibTeX entries from each doi provided, e.g.,"
                , "         doi 10.1016/bs.mie.2017.07.022"
-               , "  3. Populate the context with the downloaded references.\n"
-               , "This command is still a work in progress and the error"
-               , "handling needs to be fixed. Currently any problem with the"
-               , "download will cause an error to be thrown."
+               , "  3. Populate the context with the downloaded entries.\n"
+               , "If there is an error in downloading or parsing an entry"
+               , "then a missing entry is added to the context in its place."
                ]
 
 doiCmd :: T.CommandMonad T.Context
@@ -477,13 +476,12 @@ nameCmd :: T.CommandMonad T.Context
 nameCmd ns rs
     | nn == nr  = return . zipWith go ns $ rs
     | otherwise = ( liftIO . putStrLn $ renameErr nn nr ) >> return rs
-    where nn                    = length ns
-          nr                    = length rs
-          go n (T.Ref fp k v )  = T.Ref (newFp fp k) (Tx.pack n) v
-          go n (T.Missing fp k) = T.Missing (newMFp n fp) k
-          newFp fp k            = fp ++ " (originally " ++ Tx.unpack k ++ ")"
-          newMFp n fp           = fp ++ " (you tried to rename this "
-                                     ++ n ++ ")"
+    where nn                      = length ns
+          nr                      = length rs
+          go n (T.Ref fp k v)     = T.Ref (newFp fp k) (Tx.pack n) v
+          go n (T.Missing fp k e) = T.Missing fp k (e ++ newName n)
+          newFp fp k              = fp ++ " (originally " ++ Tx.unpack k ++ ")"
+          newName n               = ", tried to rename " ++ n
 
 -- sendCmd ----------------------------------------------------------
 

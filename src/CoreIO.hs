@@ -24,6 +24,7 @@ import System.IO.Error                       ( isDoesNotExistError )
 import Formatting                            ( refToBibtex         )
 import BibTeX.Parser                         ( parseRef            )
 import Control.Monad.Except                  ( ExceptT (..)
+                                             , catchError
                                              , liftEither          )
 import Control.Monad.Trans                   ( liftIO              )
 import Control.Exception                     ( try, IOException
@@ -67,8 +68,8 @@ callProcExcept p args = ExceptT $ do
           hndlErr = return . Left . displayException
 
 runExternal :: String -> T.Ref -> T.ErrMonad T.Ref
-runExternal p (T.Missing fp k ) = return $ T.Missing fp k
-runExternal p (T.Ref fp k v   ) = do
+runExternal p (T.Missing fp k e) = return $ T.Missing fp k e
+runExternal p (T.Ref fp k v   )  = do
     temp <- liftIO . emptyTempFile "." . Tx.unpack $ k
     writeFileExcept temp ( refToBibtex k v )
     callProcExcept p $ [temp]
@@ -89,8 +90,8 @@ getDoi doi = do
     let ps = [ "text/bibliography; style=bibtex" ]
         os = Wreq.defaults & Wreq.header "Accept" .~ ps
         ad = "http://dx.doi.org/" ++ doi
-    response <- tryToConnectWithGet os ad
-    readResponse ad response
+    catchError ( tryToConnectWithGet os ad >>= readResponse ad )
+               ( return . T.Missing doi "no-key"               )
 
 tryToConnectWithGet :: Wreq.Options -> String -> T.ErrMonad WreqResponse
 tryToConnectWithGet ops address = ExceptT $ do
