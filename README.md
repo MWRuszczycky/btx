@@ -36,10 +36,10 @@ This is a light-weight, declarative, command-line interface for working with Bib
             * [Editing entries: `edit`](
               #editing-entries-edit)
         * [Queries](#queries)
-        * [Summarizing the bibliographies and *context*: `info`](
-          #summarizing-the-bibliographies-and-context-info)
-        * [Listing entries in the *working bibliography*: `list`](
-          #listing-entries-in-the-working-bibliography-list)
+            - [Summarizing the bibliographies and *context*: `info`](
+              #summarizing-the-bibliographies-and-context-info)
+            - [Listing entries in the *working bibliography*: `list`](
+              #listing-entries-in-the-working-bibliography-list)
 * [Scripting with *btx*](#scripting-with-btx)
 * [To Do](#to-do)
 
@@ -141,7 +141,7 @@ has the following effects (see below for specifically how the individual command
 1. Set or create `animals.bib` as the working bibliography.
 2. Create a new `article` type entry and name it `Fishes1989`.
 3. Update and save the `animals.bib` BibTeX bibliography with the new `Fishes1989` entry.
-4. Set or create the `plants.bib` BibTeX bibliogrphy as the new working bibliography.
+4. Set or create the `plants.bib` BibTeX bibliography as the new working bibliography.
 5. Create a new `book` type entry and name it `Orchids2006`.
 6. Update and save the `plants.bib` bibliography with the new `Orchids2006` entry.
 
