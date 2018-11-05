@@ -25,6 +25,7 @@ import System.IO.Error                       ( isDoesNotExistError )
 import Formatting                            ( refToBibtex         )
 import BibTeX.Parser                         ( parseRef            )
 import Control.Monad.Except                  ( ExceptT (..)
+                                             , throwError
                                              , catchError
                                              , liftEither          )
 import Control.Monad.Trans                   ( liftIO              )
@@ -69,14 +70,43 @@ callProcExcept p args = ExceptT $ do
           hndlErr = return . Left . displayException
 
 runExternal :: String -> T.Ref -> T.ErrMonad T.Ref
-runExternal p (T.Missing fp k e) = return $ T.Missing fp k e
-runExternal p (T.Ref fp k v   )  = do
-    temp <- liftIO . emptyTempFile "." . Tx.unpack $ k
-    writeFileExcept temp ( refToBibtex k v )
-    callProcExcept p $ [temp]
-    content <- readFileExcept temp
+runExternal p (T.Missing fp k e)  = return $ T.Missing fp k e
+runExternal p r@(T.Ref fp k v   ) = do
+    let toEdit = Tx.append editIntro . refToBibtex k $ v
+    temp   <- liftIO . emptyTempFile "." . Tx.unpack $ k <> ".bib"
+    result <- catchError ( parseLoop p fp temp toEdit )
+                         ( \ e -> liftIO (removeFile temp) >> throwError e )
     liftIO . removeFile $ temp
-    liftEither . bimap ("Cannot parse: " ++) id . parseRef fp $ content
+    return . maybe r id $ result
+
+parseLoop :: String -> FilePath -> FilePath -> Text -> T.ErrMonad (Maybe T.Ref)
+parseLoop p fp temp xs = do
+    writeFileExcept temp $ xs
+    callProcExcept p [temp]
+    content <- readFileExcept temp
+    if quit content
+       then return Nothing
+       else case parseRef fp content of
+                 Left err -> parseLoop p fp temp ( addErrMsg content )
+                 Right r  -> return . Just $ r
+
+editIntro :: Text
+editIntro = Tx.intercalate "\n" hs
+    where hs = [ "\n% Please edit the BibTeX entry below."
+               , "% Leading comments will be stripped."
+               , "% Following comments will be stripped if they are separated"
+               , "% from the reference by line breaks."
+               , "% Don't add or remove 'at' symbols unless aborting."
+               , "\n% TO ABORT THE EDIT, delete the full entry, save and quit."
+               , "\n\n"
+               ]
+
+addErrMsg :: Text -> Text
+addErrMsg = Tx.append (hs <> editIntro) . Tx.dropWhile ( /= '@' )
+    where hs = "\n% PARSE ERROR: Check the BibTeX syntax and try again.\n"
+
+quit :: Text -> Bool
+quit = Tx.null . Tx.dropWhile ( /= '@' )
 
 ---------------------------------------------------------------------
 -- Interfacing with the internet
