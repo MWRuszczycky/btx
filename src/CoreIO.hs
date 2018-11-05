@@ -15,6 +15,7 @@ import qualified Data.Text.Encoding  as Tx
 import qualified Network.Wreq        as Wreq
 import Data.ByteString.Lazy.Internal         ( ByteString          )
 import Data.ByteString.Lazy                  ( toStrict            )
+import Data.Bifunctor                        ( bimap               )
 import Lens.Micro                            ( (^.), (.~), (&)     )
 import Data.Text                             ( Text                )
 import System.Process                        ( callProcess         )
@@ -75,7 +76,7 @@ runExternal p (T.Ref fp k v   )  = do
     callProcExcept p $ [temp]
     content <- readFileExcept temp
     liftIO . removeFile $ temp
-    liftEither . parseRef fp $ content
+    liftEither . bimap ("Cannot parse: " ++) id . parseRef fp $ content
 
 ---------------------------------------------------------------------
 -- Interfacing with the internet
@@ -102,11 +103,12 @@ tryToConnectWithGet ops address = ExceptT $ do
 readResponse :: String -> WreqResponse -> T.ErrMonad T.Ref
 -- ^Helper function for reading the response to a get request.
 readResponse ad resp
-    | code == 200 = liftEither . parseRef ad . fmt $ body
+    | code == 200 = liftEither . perr . parseRef ad . fmt $ body
     | otherwise   = liftEither . Left $ errs
     where code = resp ^. Wreq.responseStatus . Wreq.statusCode
           body = resp ^. Wreq.responseBody
           errs = "Cannot access " ++ ad ++ ", error code: " ++ show code
+          perr = bimap ("Cannot parse: " ++) id
 
 fmt :: ByteString -> Text
 -- ^Converts a bytestring to text changing all non-ascii characters

@@ -6,7 +6,7 @@ This is a light-weight, declarative, command-line interface for working with Bib
     * [Getting help](#getting-help)
     * [BibTeX reference format](#bibtex-reference-format)
     * [Installation](#installation)
-* [The *btx* model-and-tutorial](#the-btx-model-and-tutorial)
+* [The *btx* model and tutorial](#the-btx-model-and-tutorial)
     * [The bibliographies](#the-bibliographies)
         * [The *working bibliography* and the `in` command](
           #the-working-bibliography-and-the-in-command)
@@ -41,7 +41,7 @@ This is a light-weight, declarative, command-line interface for working with Bib
             * [Listing entries in the *working bibliography*: `list`](
               #listing-entries-in-the-working-bibliography-list)
 * [Scripting with *btx*](#scripting-with-btx)
-* [To Do](#to-do)
+* [To do and known issues](#to-do-and-known-issues)
 
 ## Introduction
 
@@ -179,7 +179,7 @@ Each time the `to` command is envoked, the current *export bibliography* gets sa
 
 ### The *context*
 
-The *btx context* is where you work on bibliography entries. It consists of a list entries that is populated by extracting entry information from the *working* or *import bibliography* and depopulated by updating the *working* or *export bibliographies*. You can also query the contents of the *working bibliography*. This divides the commands:
+The *btx context* is where you work on bibliography entries. It consists of a list entries that is populated by extracting entry information from the *working* or *import bibliography* and depopulated by updating the *working* or *export bibliographies*. You can also query the contents of the *working bibliography*. This divides the commands into three basic groups:
 1. *Context constructors* populate the *context* with bibliography entries.
 2. *Context operators* change, depopulate or otherwise manipulate those entries already in the *context*.
 3. *Queries* allow you to query information about the *context* and bibliographies leaving the *context* otherwise unchanged.
@@ -324,8 +324,11 @@ This will have the following effects:
 11. Send `Fishes1999` to `some_other.bib` too.
 12. Summarize the final context, which is empty, and the three final bibliographies.
 
-## To do
+## To do and known issues
 
-1. Improve error handling for the `edit` command.
-2. Implement a REPL for interactive manipulation of bibliographies.
-3. Fix up comments.
+1. "at" symbols (i.e., '@') in BibTeX comment lines cause parsing problems.
+2. The `edit` command needs to handle parsing errors better.
+3. Implement a REPL for interactive manipulation of bibliographies.
+4. The general help string needs to be written.
+5. Errors should be `Text` and not `String`.
+6. Several functions still need commenting.
