@@ -5,6 +5,7 @@ This is a light-weight, declarative, command-line interface for working with Bib
 * [Introduction](#introduction)
     * [Getting help](#getting-help)
     * [BibTeX reference format](#bibtex-reference-format)
+    * [Installation](#installation)
 * [The *btx* model-and-tutorial](#the-btx-model-and-tutorial)
     * [The bibliographies](#the-bibliographies)
         * [The *working bibliography* and the `in` command](
@@ -40,12 +41,13 @@ This is a light-weight, declarative, command-line interface for working with Bib
         * [Listing entries in the *working bibliography*: `list`](
           #listing-entries-in-the-working-bibliography-list)
 * [Scripting with *btx*](#scripting-with-btx)
+* [To Do](#to-do)
 
 ## Introduction
 
-The *btx* program lets you write declarative scripts to manipulate both BibTeX bibliographies and the entries they contain. For example, suppose you want to create a new `.bib` file called `animals.bib`, add two new `article` entries, rename them `Cat2016` and `Dog2018` and then edit the fields in each using your favorite editor, such as Vim. This could then all be accomplished using the following *btx* script entered at the command-line:
+The *btx* program lets you write declarative scripts to manipulate both BibTeX bibliographies and the entries they contain. For example, suppose you want to create a new `.bib` file called `animals.bib`, add two new `article` entries, rename them `Cat2016` and `Dog2018` and then edit the fields in each using your favorite editor, such as *Vim*. This could then all be accomplished using the following *btx* script entered at the command-line:
 ```
-btx **in** animals.bib and new article article and name Cat2016 Dog2018 and edit vim
+btx in animals.bib and new article article and name Cat2016 Dog2018 and edit vim
 ```
 This breaks down as follows:
 1. The `btx` command invokes *btx* at the command line as usual.
@@ -93,6 +95,24 @@ Currently *btx* requires that BibTeX references use the "braced" format, namely,
 % file = Cats_2016_JImpRes.pdf
 ```
 Metadata can be associated with the reference as comments that immediately follow the closing brace with no new lines in between (see example above). White space as well as any comment blocks that do not represent metadata are ignored.
+
+### Installation
+
+*btx* uses the [Haskell Tool Stack](https://docs.haskellstack.org/en/stable/README/). To clone and build the repository, run the following in your terminal:
+```sh
+clone https://github.com/MWRuszczycky/btx.git
+cd btx
+stack build
+```
+This will build the executable isolated within the repository. To run it, create an alias for the *Stack* `exec` command:
+```sh
+alias btx='stack exec btx --'
+```
+You can then run the executable from within the repository as shown in the examples. Alternatively, you can perform a local installation using,
+```sh
+stack install
+```
+*Stack* will tell you where the binary is placed (e.g., `.local/bin` in your home directory) in case you want to later delete it, which is all you need to do to uninstall it. Now you can envoke *btx* any where with just `btx` and no need to create an alias.
 
 ## The *btx* model and tutorial
 
@@ -245,11 +265,11 @@ btx in animals.bib, from everything.bib, take Chickens1964 Chipmunks1996
 
 **Note: the behaviour of `edit` is still unstable in that if you make an error when editing the reference so that it fails to parse, the script will quit with an error. This will be fixed soon.**
 
-*btx* is intended to do one and only one thing, which is the management of BibTeX bibliographies and not edit the individual entries. Therefore, this task is handed off to your favorite text editor using the `edit` command. For example, suppose you have a bibliography `animals.bib` containing the reference `Cats2016` and you want to add another author, delete the `publisher` field and fix a typo in the title. If your editor of choice is Vim, then you could run the script
+*btx* is intended to do one and only one thing, which is the management of BibTeX bibliographies and not edit the individual entries. Therefore, this task is handed off to your favorite text editor using the `edit` command. For example, suppose you have a bibliography `animals.bib` containing the reference `Cats2016` and you want to add another author, delete the `publisher` field and fix a typo in the title. If your editor of choice is *Vim*, then you could run the script
 ```
 btx in animals.bib, get Cats2016 and edit vim
 ```
-This will populate the context with `Cats2016` and then run Vim sequentially on each reference in the *context*, which is just `Cats2016`. You can then change the `author` and `title` fields and delete the `publisher` field of the entry using Vim. When you write and quit Vim, the edited entry will be reparsed and loaded into the *contex* replacing the previous version. Therefore, when the script finishes, the *working bibliography* will be updated with the edited version of `Cats2016`.
+This will populate the context with `Cats2016` and then run *Vim* sequentially on each reference in the *context*, which is just `Cats2016`. You can then change the `author` and `title` fields and delete the `publisher` field of the entry using *Vim*. When you write and quit *Vim*, the edited entry will be reparsed and loaded into the *contex* replacing the previous version. Therefore, when the script finishes, the *working bibliography* will be updated with the edited version of `Cats2016`.
 
 The `get` command works here, because we did not change the key so that the previous entry in the *working bibliography* with the same key is silently overwritten. If we had changed the key, then the *working bibliography* would have been updated with the new edited reference and the previous version would have been kept. You can rekey the entry using `edit` with `pull` instead of `get` (or you can just use the `pull`/`name` pattern if don't need to make any other edits). Finally, `edit` will silently skip any "missing entries" you have tried to load into the *context*.
 
@@ -303,3 +323,10 @@ This will have the following effects:
 10. Repopulate the context with `Fishes1999`.
 11. Send `Fishes1999` to `some_other.bib` too.
 12. Summarize the final context, which is empty, and the three final bibliographies.
+
+## To do
+
+1. Improve error handling for the `doi` command.
+2. Improve error handling for the `edit` command.
+3. Implement a REPL for interactive manipulation of bibliographies.
+4. Fix up comments.
