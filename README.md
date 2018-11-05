@@ -168,14 +168,14 @@ The operation of *btx* is thus modeled as function composition with the *context
 
 #### *Context constructors*
 
-*Context constructors* populate the context with entries drawn from either the *working bibliography* or the *import bibliography*. There are four such commands (and an additional one will be added soon):
+*Context constructors* populate the context with entries drawn from either the *working bibliography* or the *import bibliography*. There are five such commands:
 1. `get` populates the *context* with entries from the *working bibliography* without changing it.
 2. `pull` is the same as `get`, but deletes the entries from the *working bibliography*.
 3. `take` is the same as `get` but draws the entries from the *import bibliography*.
 4. `new` populates the context with blank entries of the specified types having generic names.
-5. `doi` populates the context with entries downloaded from the internet using their doi-identifiers (**this command is not yet implemented but soon will be**).
+5. `doi` populates the context with entries downloaded from the internet using their doi-identifiers (**this command works, but the error handling needs to be fixed so that it generates "missing entries" rather than throwing errors.**).
 
-All four (and eventually five) of these commands first update the *working bibliography* with the current context before repopulating it. If no arguments are supplied to these commands, then the effect is to simply update the *working bibliography* and clear the context. If an entry is requested and not found in the given bibliography, then a "missing entry" is added to the context that is tracked but otherwise ignored (i.e., "missing entries" have no effect on bibliographies when they are updated). See below for examples using these commands.
+All five of these commands first update the *working bibliography* with the current context before repopulating it. If no arguments are supplied to these commands, then the effect is to simply update the *working bibliography* and clear the context. If an entry is requested and not found in the given bibliography, then a "missing entry" is added to the context that is tracked but otherwise ignored (i.e., "missing entries" have no effect on bibliographies when they are updated). See below for examples using these commands.
 
 #### *Context operators*
 
@@ -210,7 +210,7 @@ The BibTeX entry key for all entries currently in the context can be change usin
 ```sh
 btx in animals.bib, pull Cats2016 Dog1984 and name BigCats LittleDogs
 ```
-Note that we need to use the `pull` command to populate the context. If we used the `get` command, then the final `animals.bib` file would contain the two entries `Cats2016` and `BigCats` with the same fields just different names, and the same would be true for `Dogs1984` and `LittleDogs`. Note that `name` requires that none of the entries in the *context* be "missing" and that there is a one-to-one correspondence between the number of new names supplied and the number of entries in the *context*.
+Note that we need to use the `pull` command to populate the context. If we used the `get` command, then the final `animals.bib` file would contain the two entries `Cats2016` and `BigCats` with the same fields just different names, and the same would be true for `Dogs1984` and `LittleDogs`. Note that `name` requires that there be a one-to-one correspondence between the new names supplied and the entries in the *context*. Otherwise, the *context* remains unchanged.
 
 ##### Exporting and moving entries: `send`
 

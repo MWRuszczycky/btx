@@ -15,7 +15,6 @@ import qualified Types                  as T
 import Data.Text                                ( Text              )
 import Data.List                                ( foldl'
                                                 , intercalate       )
-import Data.Maybe                               ( catMaybes         )
 import Control.Monad                            ( unless            )
 import Control.Monad.Except                     ( throwError
                                                 , liftEither        )
@@ -464,10 +463,9 @@ nameCmdLHelp = intercalate "\n" hs
                , "    Cats1981 --> Monkeys1981\n"
                , "using the command:"
                , "    name Squirrels1964 Monkeys1981\n"
-               , "There must be a one-to-one matching between the number of"
-               , "names and entries in the context and none of the entries can"
-               , "can be missing. If there is not a one-to-one matching, then"
-               , "the context remains unchanged.\n"
+               , "There must be a one-to-one matching between the names and the"
+               , "entries in the context, which can be missing. If there is not"
+               , "a one-to-one matching, then the context remains unchanged.\n"
                , "NOTE: This command only applies in-context, so it should be"
                , "used with <pull>, <send> or <take> commands to change the"
                , "name of the entry in a bibliography. If you use it with"
@@ -477,13 +475,15 @@ nameCmdLHelp = intercalate "\n" hs
 
 nameCmd :: T.CommandMonad T.Context
 nameCmd ns rs
-    | nn == nr  = return . catMaybes . zipWith go ns $ rs
+    | nn == nr  = return . zipWith go ns $ rs
     | otherwise = ( liftIO . putStrLn $ renameErr nn nr ) >> return rs
-    where go n (T.Ref fp k v ) = Just $ T.Ref (newFp fp k) (Tx.pack n) v
-          go _ (T.Missing _ _) = Nothing
-          newFp fp k           = fp ++ " (originally " ++ Tx.unpack k ++ ")"
-          nn                   = length ns
-          nr                   = length . filter isPresent $ rs
+    where nn                    = length ns
+          nr                    = length rs
+          go n (T.Ref fp k v )  = T.Ref (newFp fp k) (Tx.pack n) v
+          go n (T.Missing fp k) = T.Missing (newMFp n fp) k
+          newFp fp k            = fp ++ " (originally " ++ Tx.unpack k ++ ")"
+          newMFp n fp           = fp ++ " (you tried to rename this "
+                                     ++ n ++ ")"
 
 -- sendCmd ----------------------------------------------------------
 
