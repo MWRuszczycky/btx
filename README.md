@@ -47,24 +47,24 @@ This is a light-weight, declarative, command-line interface for working with Bib
 
 The *btx* program lets you write declarative scripts to manipulate both BibTeX bibliographies and the entries they contain. For example, suppose you want to create a new `.bib` file called `animals.bib`, add two new `article` entries, rename them `Cat2016` and `Dog2018` and then edit the fields in each using your favorite editor, such as *Vim*. This could then all be accomplished using the following *btx* script entered at the command-line:
 ```
-btx in animals.bib and new article article and name Cat2016 Dog2018 and edit vim
+btx in animals.bib and doi 10.1016/bs.mie.2017.07.022 and name Cats2016 and edit vim
 ```
 This breaks down as follows:
 1. The `btx` command invokes *btx* at the command line as usual.
 2. The `in` command sets (or creates) the working bibliography as the file `animals.bib`.
 3. The `and` key-words separate the individual commands.
-4. The `new` command creates two new `article` type BibTeX entries that are blank and have generic keys.
-5. The `name` command changes the keys of the newly created references to `Cat2016` and `Dog2018`.
-6. The `edit` command runs the `vim` process sequentially on each of the two references.
-7. Finally, the `animals.bib` file is updated with the two new entries.
+4. The `doi` command downloads the BibTeX reference for the publication with digital-object-identifier `10.1016/bs.mie.2017.07.022`.
+5. The `name` command changes the key of the newly downloaded BibTex entry to `Cats2016`.
+6. The `edit` command runs the `vim` process on the downloaded and renamed entry so you make any necessary changes using *Vim* or whatever editor you prefer.
+7. Finally, the `animals.bib` file is updated with the new entry.
 
 The `and` key-word can also be written more concisely using a comma. Therefore, the script in the above example could just as well be written as:
 ```
-btx in animals.bib, new article article, name Cat2016 Dog2018, edit vim
+btx in animals.bib, doi 10.1016/bs.mie.2017.07.022, name Cats2016, edit vim
 ```
 The use of `and` and `,` are completely interchangeable and can be used together. You can use this to get more natural-language like scripts such as,
 ```
-btx in animals.bib, new article article, name Cat2016 Dog2018 and edit vim
+btx in animals.bib, doi 10.1016/bs.mie.2017.07.022, name Cats2016 and edit vim
 ```
 
 ### Getting help
@@ -325,9 +325,10 @@ This will have the following effects:
 ## To do and known issues
 
 1. "At" symbols (i.e., `@`) in comments that are separated from the references by line breaks will cause the parser to fail. This isn't a big deal, because you can still have ,`@` symbols in the BibTeX fields and the comments that immediately follow the references and are not separated by line breaks; however, it still needs to be fixed.
-2. Implement a REPL for interactive manipulation of bibliographies.
-3. The general help string needs to be written.
-4. Errors should be `Text` and not `String`.
-5. Several functions still need commenting.
-6. More testing to try and find more problems.
-7. Commands for the masked loading of all entries to the *context*.
+2. Add complete list of BibTeX entry types. Right now there are only about a half dozen.
+3. Implement a REPL for interactive manipulation of bibliographies.
+4. The general help string needs to be written.
+5. Errors should be `Text` and not `String`.
+6. Several functions still need commenting.
+7. More testing to try and find more problems.
+8. Commands for the masked loading of all entries to the *context*.
