@@ -3,7 +3,6 @@
 module Commands
     ( route
     , runHelp
-    , updateIn
     , done
     , save
     ) where
@@ -25,7 +24,9 @@ import Control.Monad.State.Lazy                 ( get
 import Core                                     ( deleteRefs
                                                 , getRef
                                                 , insertRefs
-                                                , isPresent         )
+                                                , isPresent
+                                                , updateIn
+                                                , updateTo          )
 import CoreIO                                   ( getDoi
                                                 , readOrMakeFile
                                                 , readFileExcept
@@ -80,17 +81,6 @@ hub = [ -- Bibliography managers
 
 -- =============================================================== --
 -- State managers
-
-updateIn :: T.Context -> T.BtxStateMonad T.Bibliography
--- ^Save references in context to the in-bibliography and return the
--- updated bibliography.
-updateIn rs = do
-    btxState <- get
-    let oldBib  = T.inBib btxState
-        newRefs = insertRefs ( T.refs oldBib ) rs
-        newBib  = oldBib { T.refs = newRefs }
-    put btxState { T.inBib = newBib }
-    return newBib
 
 save :: T.Bibliography -> T.BtxStateMonad ()
 -- ^Convert a bibliography to BibTeX and write to memory.
@@ -495,7 +485,8 @@ sendCmdLHelp = intercalate "\n" hs
                , "     overwritting any references that have the same keys."
                , "  2. Depopulate the context."
                , "  3. If no export bibliography is set, then nothing happens"
-               , "     besides depopulation of the context.\n"
+               , "     besides depopulation of the context."
+               , "  4. Ignore any arguments.\n"
                , "This command is used with the <to> command, which sets the"
                , "export bibliography (see help for <to>). However, there is"
                , "syntactic sugar that combines the two into the command"
@@ -507,14 +498,7 @@ sendCmdLHelp = intercalate "\n" hs
 
 sendCmd :: T.CommandMonad T.Context
 sendCmd ("to":xs) rs = toCmd xs rs >>= sendCmd []
-sendCmd _         rs = do
-    btxState <- get
-    case T.toBib btxState of
-         Nothing     -> return []
-         Just oldBib -> do let newRefs = insertRefs ( T.refs oldBib ) rs
-                               newBib  = oldBib { T.refs = newRefs }
-                           put btxState { T.toBib = Just newBib }
-                           return []
+sendCmd _         rs = updateTo rs >> return []
 
 -- tossCmd ----------------------------------------------------------
 

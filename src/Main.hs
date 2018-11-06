@@ -15,8 +15,7 @@ import Control.Monad.Except             ( runExceptT
 import Commands                         ( runHelp             )
 import CoreIO                           ( readOrMakeFile      )
 import BibTeX.Parser                    ( parseBib            )
-import Commands                         ( route, done
-                                        , updateIn            )
+import Commands                         ( route, done         )
 
 -- =============================================================== --
 -- Entry point and clean up

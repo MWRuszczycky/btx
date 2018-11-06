@@ -1,20 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Core
-    ( refToPair
-    , pairToRef
-    , isPresent
+    ( deleteRefs
     , insertRefs
-    , deleteRefs
+    , isPresent
     , getRef
+    , pairToRef
+    , refToPair
+    , updateIn
+    , updateTo
     ) where
 
 import qualified Data.Map.Strict as Map
-import qualified Types           as T
 import qualified Data.Text       as Tx
+import qualified Types           as T
 import Data.Text                        ( Text              )
 import Data.List                        ( foldl'            )
 import Data.Maybe                       ( mapMaybe          )
+import Control.Monad.State.Lazy         ( get, put          )
 
 refToPair :: T.Ref -> Maybe (Text, T.Entry)
 refToPair (T.Ref _ k v     ) = Just (k, v)
@@ -42,3 +45,24 @@ getRef bib x = let key = Tx.pack x
                in  case Map.lookup key ( T.refs bib ) of
                         Nothing -> T.Missing ( T.path bib ) key "no such entry"
                         Just v  -> T.Ref ( T.path bib ) key v
+
+updateIn :: T.Context -> T.BtxStateMonad T.Bibliography
+-- ^Save references in context to the in-bibliography and return the
+-- updated bibliography.
+updateIn rs = do
+    btxState <- get
+    let oldBib  = T.inBib btxState
+        newRefs = insertRefs ( T.refs oldBib ) rs
+        newBib  = oldBib { T.refs = newRefs }
+    put btxState { T.inBib = newBib }
+    return newBib
+
+updateTo :: T.Context -> T.BtxStateMonad ( Maybe T.Bibliography )
+-- ^Save references in context to the to-bibliography and return the
+-- updated bibligraphy.
+updateTo rs = do
+    btxState <- get
+    let newBib = do oldBib <- T.toBib btxState
+                    return oldBib { T.refs = insertRefs ( T.refs oldBib ) rs }
+    put btxState { T.toBib = newBib }
+    return newBib

@@ -8,11 +8,11 @@ module CoreIO
     , runExternal
     ) where
 
-import qualified Types               as T
 import qualified Data.Text.IO        as Tx
 import qualified Data.Text           as Tx
 import qualified Data.Text.Encoding  as Tx
 import qualified Network.Wreq        as Wreq
+import qualified Types               as T
 import Data.Char                             ( isSpace             )
 import Data.ByteString.Lazy.Internal         ( ByteString          )
 import Data.ByteString.Lazy                  ( toStrict            )
@@ -23,17 +23,17 @@ import System.Process                        ( callProcess         )
 import System.Directory                      ( removeFile          )
 import System.IO.Temp                        ( emptyTempFile       )
 import System.IO.Error                       ( isDoesNotExistError )
-import Formatting                            ( refToBibtex         )
-import BibTeX.Parser                         ( parseRef            )
+import Control.Monad.Trans                   ( liftIO              )
 import Control.Monad.Except                  ( ExceptT (..)
                                              , throwError
                                              , catchError
                                              , liftEither          )
-import Control.Monad.Trans                   ( liftIO              )
 import Control.Exception                     ( try, IOException
                                              , SomeException
                                              , displayException
                                              , catch               )
+import Formatting                            ( refToBibtex         )
+import BibTeX.Parser                         ( parseRef            )
 
 -- =============================================================== --
 -- IO with exception handling
