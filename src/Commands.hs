@@ -89,10 +89,7 @@ save b = lift . writeFileExcept (T.path b) . bibToBibtex $ b
 done :: T.Context -> T.BtxStateMonad ()
 -- ^Save the current context references to the in-bibliography and
 -- write both the in- and to-bibliographies.
-done rs = do
-    updateIn rs >>= save
-    btxState <- get
-    maybe ( return () ) save . T.toBib $ btxState
+done rs = updateIn rs >>= save >> get >>= maybe ( return () ) save . T.toBib
 
 ---------------------------------------------------------------------
 ---------------------------------------------------------------------
@@ -164,16 +161,14 @@ inCmdLHelp = intercalate "\n" hs
                ]
 
 inCmd :: T.CommandMonad T.Context
-inCmd xs rs
-    | null xs       = throwError "Command <in> requires a file path."
-    | length xs > 1 = throwError "Command <in> allows only one argument."
-    | otherwise     = do updateIn rs >>= save
-                         btxState <- get
-                         let fp = head xs
-                         content <- lift . readOrMakeFile $ fp
-                         bib <- liftEither . parseBib fp $ content
-                         put btxState { T.inBib = bib }
-                         return []
+inCmd []      rs = throwError "Command <in> requires a file path."
+inCmd (_:_:_) rs = throwError "Command <in> allows only one argument."
+inCmd (fp:_)  rs = do updateIn rs >>= save
+                      btxState <- get
+                      content  <- lift . readOrMakeFile $ fp
+                      bib      <- liftEither . parseBib fp $ content
+                      put btxState { T.inBib = bib }
+                      return []
 
 -- toCmd ------------------------------------------------------------
 

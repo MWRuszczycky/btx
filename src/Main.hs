@@ -22,7 +22,6 @@ import Commands                         ( route, done         )
 
 main :: IO ()
 main = do
-    -- start <- parseCmds . unwords <$> getArgs
     start <- parseArgs =<< getArgs
     case start of
          T.Usage msg   -> finish . Left $ msg
@@ -86,20 +85,22 @@ compile ( c : cs) rs = c rs >>= compile cs
 -- Parsing
 
 parseArgs :: [String] -> IO ( T.Start ( T.CommandArgsMonad [T.Ref] ) )
-parseArgs ("run":fp:_) = readFile fp >>= return . parseCmds
-parseArgs ("run":[])   = getContents >>= return . parseCmds
-parseArgs args         = return . parseCmds . unwords $ args
+parseArgs ("run":fp:_) = readFile fp >>= return . parseCmds . words . splitAnd
+parseArgs ("run":[])   = getContents >>= return . parseCmds . words . splitAnd
+parseArgs args         = return . parseCmds . words . splitAnd . unwords $ args
 
-parseCmds :: String -> T.Start ( T.CommandArgsMonad [T.Ref] )
-parseCmds xs =
-    case words . splitAnd $ xs of
-         []            -> T.Usage "This won't do anything (try: btx help)."
-         ("in":[])     -> T.Usage "This won't do anything (try: btx help)."
-         ("help":cs)   -> T.Help cs
-         ("--help":cs) -> T.Help cs
-         ("-h":cs)     -> T.Help cs
-         ("in":fp:cs)  -> T.Normal fp . parseAnd $ cs
-         cs            -> T.Normal [] . parseAnd $ cs
+parseCmds :: [String] -> T.Start ( T.CommandArgsMonad [T.Ref] )
+parseCmds []            = T.Usage "This won't do anything (try: btx help)."
+parseCmds ("in":xs)     = parseFirstIn . break ( == "and" ) $ xs
+parseCmds ("help":xs)   = T.Help xs
+parseCmds ("--help":xs) = T.Help xs
+parseCmds ("-h":xs)     = T.Help xs
+parseCmds xs            = T.Normal [] . parseAnd $ xs
+
+parseFirstIn :: ([String], [String]) -> T.Start ( T.CommandArgsMonad [T.Ref] )
+parseFirstIn ([],_)    = T.Usage "This won't do anything (try: btx help)."
+parseFirstIn (x:_:_,_) = T.Usage "Command <in> allows only one argument."
+parseFirstIn (x:_,cs)  = T.Normal x . parseAnd $ cs
 
 splitAnd :: String -> String
 splitAnd []        = []
