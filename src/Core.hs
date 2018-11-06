@@ -62,7 +62,7 @@ updateTo :: T.Context -> T.BtxStateMonad ( Maybe T.Bibliography )
 -- updated bibligraphy.
 updateTo rs = do
     btxState <- get
-    let newBib = do oldBib <- T.toBib btxState
+    let newBib = do oldBib <- T.toBib btxState    -- Maybe monad here
                     return oldBib { T.refs = insertRefs ( T.refs oldBib ) rs }
     put btxState { T.toBib = newBib }
     return newBib

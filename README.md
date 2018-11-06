@@ -332,3 +332,4 @@ This will have the following effects:
 6. Several functions still need commenting.
 7. More testing to try and find more problems.
 8. Commands for the masked loading of all entries to the *context*.
+9. Add an option to run a script without writing to the files so that you can test it out before using it.

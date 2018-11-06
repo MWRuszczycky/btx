@@ -4,49 +4,48 @@ module Commands
     ( route
     , runHelp
     , done
-    , save
     ) where
 
 import qualified Data.Text.IO           as Tx
 import qualified Data.Text              as Tx
 import qualified Data.Map.Strict        as Map
 import qualified Types                  as T
-import Data.Text                                ( Text              )
-import Data.List                                ( foldl'
-                                                , intercalate       )
-import Control.Monad                            ( unless            )
-import Control.Monad.Except                     ( throwError
-                                                , liftEither        )
-import Control.Monad.State.Lazy                 ( get
-                                                , put
-                                                , lift
-                                                , liftIO            )
-import Core                                     ( deleteRefs
-                                                , getRef
-                                                , insertRefs
-                                                , isPresent
-                                                , updateIn
-                                                , updateTo          )
-import CoreIO                                   ( getDoi
-                                                , readOrMakeFile
-                                                , readFileExcept
-                                                , runExternal
-                                                , writeFileExcept   )
-import BibTeX.Parser                            ( parseBib          )
-import BibTeX.Resources                         ( genericKey
-                                                , genKeyNumber
-                                                , supported
-                                                , templates         )
-import Formatting                               ( argInvalidErr
-                                                , bibToBibtex
-                                                , cmdInvalidErr
-                                                , formatHelp
-                                                , formatRef
-                                                , refToBibtex
-                                                , renameErr
-                                                , summarize
-                                                , summarizeAllEntries
-                                                , summarizeEntries  )
+import Data.Text                               ( Text                )
+import Data.List                               ( foldl'
+                                               , intercalate         )
+import Control.Monad                           ( unless              )
+import Control.Monad.Except                    ( throwError
+                                               , liftEither          )
+import Control.Monad.State.Lazy                ( get
+                                               , put
+                                               , lift
+                                               , liftIO              )
+import Core                                    ( deleteRefs
+                                               , getRef
+                                               , insertRefs
+                                               , isPresent
+                                               , updateIn
+                                               , updateTo            )
+import CoreIO                                  ( getDoi
+                                               , readOrMakeFile
+                                               , readFileExcept
+                                               , runExternal
+                                               , writeFileExcept     )
+import BibTeX.Parser                           ( parseBib            )
+import BibTeX.Resources                        ( genericKey
+                                               , genKeyNumber
+                                               , supported
+                                               , templates           )
+import Formatting                              ( argInvalidErr
+                                               , bibToBibtex
+                                               , cmdInvalidErr
+                                               , formatHelp
+                                               , formatRef
+                                               , refToBibtex
+                                               , renameErr
+                                               , summarize
+                                               , summarizeAllEntries
+                                               , summarizeEntries    )
 
 -- =============================================================== --
 -- Hub and router
