@@ -25,9 +25,12 @@ import Data.List                            ( intercalate
 ---------------------------------------------------------------------
 -- Summarizing bibilographies
 
-summarize :: T.BtxState -> T.Context -> Text
-summarize s rs = Tx.intercalate "\n" x
-    where x = [ "\nBibliographies:"
+summarize :: [String] -> T.Context -> T.BtxState -> Text
+summarize xs rs s
+    | null xs   = "\n" <> Tx.intercalate "\n" x
+    | otherwise = h <> "\n" <> Tx.intercalate "\n" x
+    where h = Tx.pack . unwords $ "\nInfo:" : xs
+          x = [ "Bibliographies:"
               , "  working: " <> summarizeBib ( Just . T.inBib $ s )
               , "  import:  " <> summarizeBib ( T.fromBib s)
               , "  export:  " <> summarizeBib ( T.toBib s )

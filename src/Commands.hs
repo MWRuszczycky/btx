@@ -213,7 +213,7 @@ toCmd xs      rs = do btxState <- get
 -- infoCmd ----------------------------------------------------------
 
 infoCmdSHelp :: String
-infoCmdSHelp = "info : display summary of all bibliographies "
+infoCmdSHelp = "info [Args] : display summary of all bibliographies "
                ++ "and the current context."
 
 infoCmdLHelp :: String
@@ -221,14 +221,16 @@ infoCmdLHelp = intercalate "\n" hs
     where hs = [ infoCmdSHelp ++ "\n"
                , "This command has the following effects:\n"
                , "  1. Leave the current context unchanged."
-               , "  2. Display what is currently in context."
-               , "  3. List the working, import and export bibliographies with"
+               , "  2. Display any arguments supplied. You can use this to more"
+               , "     easily track the context as the script runs."
+               , "  4. Display what is currently in context."
+               , "  5. List the working, import and export bibliographies with"
                , "     summary information.\n"
                , "See also <list> and <view>."
                ]
 
 infoCmd :: T.CommandMonad T.Context
-infoCmd _ rs = get >>= liftIO . Tx.putStrLn . flip summarize rs >> return rs
+infoCmd xs rs = get >>= liftIO . Tx.putStrLn . summarize xs rs >> return rs
 
 ---------------------------------------------------------------------
 
