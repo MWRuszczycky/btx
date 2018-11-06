@@ -196,17 +196,16 @@ toCmdLHelp = intercalate "\n" hs
                ]
 
 toCmd :: T.CommandMonad T.Context
-toCmd xs rs
-    | length xs > 1 = throwError "Command <to> allows only one argument."
-    | otherwise     = do btxState <- get
-                         maybe ( return () ) save $ T.toBib btxState
-                         let fp = head xs
-                         if null xs || fp == (T.path . T.inBib) btxState
-                            then put btxState { T.toBib = Nothing }
-                            else do content <- lift . readOrMakeFile $ fp
-                                    bib <- liftEither . parseBib fp $ content
-                                    put btxState { T.toBib = Just bib }
-                         return rs
+toCmd (_:_:_) _  = throwError "Command <to> allows only one or no argument."
+toCmd xs      rs = do btxState <- get
+                      maybe ( return () ) save $ T.toBib btxState
+                      let fp = head xs
+                      if null xs || fp == (T.path . T.inBib) btxState
+                         then put btxState { T.toBib = Nothing }
+                         else do content <- lift . readOrMakeFile $ fp
+                                 bib <- liftEither . parseBib fp $ content
+                                 put btxState { T.toBib = Just bib }
+                      return rs
 
 -- =============================================================== --
 -- Queries
