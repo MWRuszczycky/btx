@@ -72,4 +72,4 @@ stack install
 7. Errors should be `Text` and not `String`.
 8. Several functions still need commenting.
 9. More testing to try and find more problems.
-10. Commands for the masked loading of all entries to the *context*.
+10. Commands for the masked loading of all entries to the context.
