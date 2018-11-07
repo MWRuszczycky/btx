@@ -57,7 +57,7 @@ numGenKey n = genericKey <>  ( Tx.pack . show ) n
 
 blank :: T.Entry
 blank = T.Entry {
-      T.theType  = "blank"
+      T.theType  = "article"
     , T.comments = []
     , T.fields   = [ ( "author",  "" )
                    , ( "title",   "" )
