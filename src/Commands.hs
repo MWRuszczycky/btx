@@ -338,8 +338,8 @@ newCmdLHelp = intercalate "\n" hs
                , "     the working bibliography."
                , "  4. The currently supported entry templates are:\n"
                , intercalate "\n" sp ++ "\n"
-               , "  5. If an entry is not supported, then a 'blank' type entry"
-               , "     is generated with a minimum number of fields."
+               , "  5. If an entry is not supported, then an 'article' type"
+               , "     entry is generated with a minimum number of fields."
                ]
 
 newCmd :: T.CommandMonad T.Context
