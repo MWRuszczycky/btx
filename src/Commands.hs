@@ -20,7 +20,9 @@ import Control.Monad.State.Lazy                ( get
                                                , put
                                                , lift
                                                , liftIO              )
-import Core                                    ( deleteRefs
+import Core                                    ( allKeysToArgs
+                                               , deleteRefs
+                                               , dropRefByKey
                                                , getRef
                                                , insertRefs
                                                , isPresent
@@ -85,11 +87,6 @@ hub = [ -- Bibliography managers
 toFile :: T.Bibliography -> T.BtxStateMonad ()
 -- ^Convert a bibliography to BibTeX and write to file.
 toFile b = lift . writeFileExcept (T.path b) . bibToBibtex $ b
-
-allKeysToArgs :: T.Bibliography -> [String]
--- ^Get a list of all keys in a bibliography represented as Strings.
--- This is useful for generating argument lists.
-allKeysToArgs = map Tx.unpack . Map.keys . T.refs
 
 ---------------------------------------------------------------------
 ---------------------------------------------------------------------
@@ -539,20 +536,29 @@ sendCmd _         rs = updateTo rs >> return []
 -- tossCmd ----------------------------------------------------------
 
 tossCmdSHelp :: String
-tossCmdSHelp = "toss : depopulate the context"
+tossCmdSHelp = "toss [KEY ..] : remove some or all entries from the context"
 
 tossCmdLHelp :: String
 tossCmdLHelp = intercalate "\n" hs
     where hs = [ tossCmdSHelp ++ "\n"
-               , "That's all this command does. It is particularly useful for"
-               , "deleting entries from the working bibilography using <pull>."
-               , "For example, to delete the reference 'myRef' from the"
-               , "working bibliography you could use:\n"
-               , "    pull myRef and toss"
+               , "This command removes those entries with the specified keys"
+               , "from the current context. This can be used to selectively"
+               , "mask the export of entries between bibliographies or to"
+               , "simply delete an entry from the working bibliography."
+               , "For example, to export all entries but Cats2016 from file"
+               , "Working.bib to Export.bib, you could use\n"
+               , "    btx in Working.bib, get all, toss Cats2016 and send to"
+                      ++ " Export.bib \n"
+               , "The <all> keyword can be used to clear all entries in the"
+               , "context. Used with <pull>, this can be used to delete entries"
+               , "from the working bibliography. For example,\n"
+               , "    btx in Working.bib, pull Cats2016 Dogs1984 and toss all\n"
+               , "deletes Cats2016 and Dogs1984 from the working bibliography."
                ]
 
 tossCmd :: T.CommandMonad [T.Ref]
-tossCmd _ rs = return []
+tossCmd ("all":_) rs = return []
+tossCmd xs        rs = return . foldl' dropRefByKey rs . map Tx.pack $ xs
 
 -- viewCmd ----------------------------------------------------------
 

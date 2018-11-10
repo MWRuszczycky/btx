@@ -1,7 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Core
-    ( deleteRefs
+    ( allKeysToArgs
+    , deleteRefs
+    , dropRefByKey
     , insertRefs
     , isPresent
     , getRef
@@ -35,6 +37,11 @@ isPresent :: T.Ref -> Bool
 isPresent (T.Ref _ _ _     ) = True
 isPresent (T.Missing _ _ _ ) = False
 
+allKeysToArgs :: T.Bibliography -> [String]
+-- ^Get a list of all keys in a bibliography represented as Strings.
+-- This is useful for generating argument lists.
+allKeysToArgs = map Tx.unpack . Map.keys . T.refs
+
 insertRefs :: T.References -> T.Context -> T.References
 -- ^Update a reference map with a list of references.
 insertRefs refs = foldl' go refs . mapMaybe refToPair
@@ -51,6 +58,14 @@ getRef bib x = let key = Tx.pack x
                in  case Map.lookup key ( T.refs bib ) of
                         Nothing -> T.Missing ( T.path bib ) key "no such entry"
                         Just v  -> T.Ref ( T.path bib ) key v
+
+dropRefByKey :: T.Context -> Tx.Text -> T.Context
+-- ^Delete all entries in the context that have the indicated key.
+dropRefByKey []                        _  = []
+dropRefByKey (r@(T.Ref     _ k _ ):rs) k' | k == k'   = dropRefByKey rs k'
+                                          | otherwise = r : dropRefByKey rs k'
+dropRefByKey (r@(T.Missing _ k _ ):rs) k' | k == k'   = dropRefByKey rs k'
+                                          | otherwise = r : dropRefByKey rs k'
 
 updateIn :: T.Context -> T.BtxStateMonad T.Bibliography
 -- ^Save references in context to the in-bibliography and return the
