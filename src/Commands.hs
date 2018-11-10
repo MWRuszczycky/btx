@@ -361,13 +361,13 @@ newCmdLHelp = intercalate "\n" hs
                , "  2. Add new entry templates to the context with the"
                , "     specified types."
                , "  3. Each entry will be given the key '"
-                 ++ Tx.unpack genericKey ++ "', where n is"
+                 ++ Tx.unpack genericKey ++ "n', where n is"
                , "     a number, so as to not conflict with any other key in"
                , "     the working bibliography."
                , "  4. The currently supported entry templates are:\n"
                , intercalate "\n" sp ++ "\n"
-               , "  5. If an entry is not supported, then an 'article' type"
-               , "     entry is generated with a minimum number of fields."
+               , "  5. If an entry is not supported, then a 'misc' type entry"
+               , "     is generated instead."
                ]
 
 newCmd :: T.CommandMonad T.Context

@@ -17,13 +17,20 @@ import Data.Text                        ( Text )
 
 supported :: [ (String, T.Entry) ]
 -- ^Associative list of all supported reference types.
-supported = [ ( "article",      article      )
-            , ( "book",         book         )
-            , ( "incollection", incollection )
-            , ( "inbook",       inbook       )
-            , ( "phdthesis",    phdthesis    )
-            , ( "manual",       manual       )
-            , ( "blank",        blank        )
+supported = [ ( "article",       article       )
+            , ( "book",          book          )
+            , ( "booklet",       booklet       )
+            , ( "conference",    conference    )
+            , ( "inbook",        inbook        )
+            , ( "incollection",  incollection  )
+            , ( "inproceedings", inproceedings )
+            , ( "manual",        manual        )
+            , ( "mastersthesis", mastersthesis )
+            , ( "misc",          misc          )
+            , ( "phdthesis",     phdthesis     )
+            , ( "proceedings",   proceedings   )
+            , ( "techreport",    techreport    )
+            , ( "unpublished",   unpublished   )
             ]
 
 genericKey :: Text
@@ -46,7 +53,7 @@ templates n = foldr go [] . zip [n .. ]
 
 getTemplate :: String -> T.Entry
 -- ^Create an unkeyed BibTeX entry template with the specified type.
-getTemplate x = maybe blank id . lookup x $ supported
+getTemplate x = maybe misc id . lookup x $ supported
 
 numGenKey :: Int -> Text
 -- ^Helper function for numbering generic keys.
@@ -54,17 +61,6 @@ numGenKey n = genericKey <>  ( Tx.pack . show ) n
 
 ---------------------------------------------------------------------
 -- Entry templates
-
-blank :: T.Entry
-blank = T.Entry {
-      T.theType  = "article"
-    , T.comments = []
-    , T.fields   = [ ( "author",  "" )
-                   , ( "title",   "" )
-                   , ( "year",    "" )
-                   , ( "pages",   "" )
-                   , ( "note",    "" )
-                   ] }
 
 article :: T.Entry
 article = T.Entry {
@@ -99,25 +95,35 @@ book = T.Entry {
                    , ( "note",      "" )
                    ] }
 
-incollection :: T.Entry
-incollection = T.Entry {
-      T.theType  = "incollection"
+booklet :: T.Entry
+booklet = T.Entry {
+      T.theType  = "booklet"
+    , T.comments = []
+    , T.fields = [ ( "author",       "" )
+                 , ( "title",        "" )
+                 , ( "howpublished", "" )
+                 , ( "address",      "" )
+                 , ( "year",         "" )
+                 , ( "month",        "" )
+                 , ( "note",         "" )
+                 ] }
+
+conference :: T.Entry
+conference = T.Entry {
+      T.theType  = "conference"
     , T.comments = []
     , T.fields   = [ ( "author",    "" )
-                   , ( "editor",    "" )
                    , ( "title",     "" )
                    , ( "booktitle", "" )
-                   , ( "chapter",   "" )
-                   , ( "pages",     "" )
-                   , ( "publisher", "" )
-                   , ( "address",   "" )
-                   , ( "year",      "" )
+                   , ( "editor",    "" )
                    , ( "volume",    "" )
                    , ( "number",    "" )
                    , ( "series",    "" )
-                   , ( "type",      "" )
-                   , ( "edition",   "" )
+                   , ( "pages",     "" )
+                   , ( "address",   "" )
+                   , ( "year",      "" )
                    , ( "month",     "" )
+                   , ( "publisher", "" )
                    , ( "note",      "" )
                    ] }
 
@@ -142,6 +148,90 @@ inbook = T.Entry {
                    , ( "note",      "" )
                    ] }
 
+incollection :: T.Entry
+incollection = T.Entry {
+      T.theType  = "incollection"
+    , T.comments = []
+    , T.fields   = [ ( "author",    "" )
+                   , ( "editor",    "" )
+                   , ( "title",     "" )
+                   , ( "booktitle", "" )
+                   , ( "chapter",   "" )
+                   , ( "pages",     "" )
+                   , ( "publisher", "" )
+                   , ( "address",   "" )
+                   , ( "year",      "" )
+                   , ( "volume",    "" )
+                   , ( "number",    "" )
+                   , ( "series",    "" )
+                   , ( "type",      "" )
+                   , ( "edition",   "" )
+                   , ( "month",     "" )
+                   , ( "note",      "" )
+                   ] }
+
+inproceedings :: T.Entry
+inproceedings = T.Entry {
+      T.theType  = "inproceedings"
+    , T.comments = []
+    , T.fields   = [ ( "author",       "" )
+                   , ( "title",        "" )
+                   , ( "booktitle",    "" )
+                   , ( "editor",       "" )
+                   , ( "volume",       "" )
+                   , ( "number",       "" )
+                   , ( "series",       "" )
+                   , ( "pages",        "" )
+                   , ( "address",      "" )
+                   , ( "organization", "" )
+                   , ( "publisher",    "" )
+                   , ( "year",         "" )
+                   , ( "month",        "" )
+                   , ( "note",         "" )
+                   ] }
+
+manual :: T.Entry
+manual = T.Entry {
+      T.theType  = "manual"
+    , T.comments = []
+    , T.fields   = [ ( "author",        "" )
+                   , ( "title",         "" )
+                   , ( "author",        "" )
+                   , ( "organization",  "" )
+                   , ( "address",       "" )
+                   , ( "edition",       "" )
+                   , ( "year",          "" )
+                   , ( "month",         "" )
+                   , ( "note",          "" )
+                   ] }
+
+mastersthesis :: T.Entry
+mastersthesis = T.Entry {
+      T.theType  = "mastersthesis"
+    , T.comments = []
+    , T.fields   = [ ( "author",        "" )
+                   , ( "title",         "" )
+                   , ( "school",        "" )
+                   , ( "type",          "" )
+                   , ( "address",       "" )
+                   , ( "year",          "" )
+                   , ( "month",         "" )
+                   , ( "note",          "" )
+                   ] }
+
+misc :: T.Entry
+misc = T.Entry {
+      T.theType  = "misc"
+    , T.comments = []
+    , T.fields   = [ ( "author",        "" )
+                   , ( "title",         "" )
+                   , ( "howpublished",  "" )
+                   , ( "year",          "" )
+                   , ( "month",         "" )
+                   , ( "note",          "" )
+                   ] }
+
+
 phdthesis :: T.Entry
 phdthesis = T.Entry {
       T.theType  = "phdthesis"
@@ -156,13 +246,45 @@ phdthesis = T.Entry {
                    , ( "note",    "" )
                    ] }
 
-manual :: T.Entry
-manual = T.Entry {
-      T.theType  = "manual"
+proceedings :: T.Entry
+proceedings = T.Entry {
+      T.theType  = "proceedings"
     , T.comments = []
-    , T.fields   = [ ( "author",    "" )
-                   , ( "title",     "" )
-                   , ( "publisher", "" )
-                   , ( "address",   "" )
-                   , ( "year",      "" )
+    , T.fields   = [ ( "title",        "" )
+                   , ( "editor",       "" )
+                   , ( "volume",       "" )
+                   , ( "number",       "" )
+                   , ( "series",       "" )
+                   , ( "address",      "" )
+                   , ( "organization", "" )
+                   , ( "publisher",    "" )
+                   , ( "year",         "" )
+                   , ( "month",        "" )
+                   , ( "note",         "" )
+                   ] }
+
+techreport :: T.Entry
+techreport = T.Entry {
+      T.theType  = "techreport"
+    , T.comments = []
+    , T.fields   = [ ( "author",      "" )
+                   , ( "title",       "" )
+                   , ( "year",        "" )
+                   , ( "institution", "" )
+                   , ( "type",        "" )
+                   , ( "number",      "" )
+                   , ( "address",     "" )
+                   , ( "month",       "" )
+                   , ( "note",        "" )
+                   ] }
+
+unpublished :: T.Entry
+unpublished = T.Entry {
+      T.theType  = "unpublished"
+    , T.comments = []
+    , T.fields   = [ ( "author",  "" )
+                   , ( "title",   "" )
+                   , ( "year",    "" )
+                   , ( "month",   "" )
+                   , ( "note",    "" )
                    ] }
