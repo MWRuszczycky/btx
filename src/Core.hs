@@ -6,6 +6,7 @@ module Core
     , isPresent
     , getRef
     , pairToRef
+    , parse
     , refToPair
     , updateIn
     , updateTo
@@ -18,6 +19,10 @@ import Data.Text                        ( Text              )
 import Data.List                        ( foldl'            )
 import Data.Maybe                       ( mapMaybe          )
 import Control.Monad.State.Lazy         ( get, put          )
+
+
+-- =============================================================== --
+-- Utilities for managing references, bibliographies and state
 
 refToPair :: T.Ref -> Maybe (Text, T.Entry)
 refToPair (T.Ref _ k v     ) = Just (k, v)
@@ -36,6 +41,7 @@ insertRefs refs = foldl' go refs . mapMaybe refToPair
     where go = flip $ uncurry Map.insert
 
 deleteRefs :: T.References -> T.Context -> T.References
+-- ^Update a reference map by deleting references in a list.
 deleteRefs refs = foldl' go refs . fst . unzip . mapMaybe refToPair
     where go = flip Map.delete
 
@@ -66,3 +72,34 @@ updateTo rs = do
                     return oldBib { T.refs = insertRefs ( T.refs oldBib ) rs }
     put btxState { T.toBib = newBib }
     return newBib
+
+-- =============================================================== --
+-- Parsing
+
+parse :: String -> T.Start T.ParsedCommand
+parse = parseCmds . words . splitAnd
+
+parseCmds :: [String] -> T.Start T.ParsedCommand
+parseCmds []            = T.Usage "This won't do anything (try: btx help)."
+parseCmds ("in":xs)     = parseFirstIn . break ( == "and" ) $ xs
+parseCmds ("help":xs)   = T.Help xs
+parseCmds ("--help":xs) = T.Help xs
+parseCmds ("-h":xs)     = T.Help xs
+parseCmds xs            = T.Normal [] . parseAnd $ xs
+
+parseFirstIn :: ([String], [String]) -> T.Start T.ParsedCommand
+parseFirstIn ([],_)    = T.Usage "This won't do anything (try: btx help)."
+parseFirstIn (_:_:_,_) = T.Usage "Command <in> allows only one argument."
+parseFirstIn (x:_,cs)  = T.Normal x . parseAnd $ cs
+
+splitAnd :: String -> String
+splitAnd []        = []
+splitAnd (',':xs)  = " and " ++ splitAnd xs
+splitAnd ('\n':xs) = " and " ++ splitAnd xs
+splitAnd (x:xs)    = x : splitAnd xs
+
+parseAnd :: [String] -> [T.ParsedCommand]
+parseAnd []          = []
+parseAnd ("and":xs)  = parseAnd xs
+parseAnd (x:xs)      = (x, ys) : parseAnd zs
+    where (ys,zs)  = break ( == "and" ) xs

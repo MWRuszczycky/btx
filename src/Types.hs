@@ -16,8 +16,8 @@ module Types
     , Context           (..)
     -- Commands
     , Command           (..)
-    , CommandArgsMonad  (..)
     , CommandMonad      (..)
+    , ParsedCommand     (..)
     ) where
 
 import qualified Data.Map.Strict as Map
@@ -91,7 +91,8 @@ type Context = [Ref]
 -- that lists of bibliography entries can be passed between commands.
 type CommandMonad a = [String] -> a -> BtxStateMonad a
 
-type CommandArgsMonad a = a -> BtxStateMonad a
+-- |Pair of the user command input and argument list.
+type ParsedCommand = (String, [String])
 
 -- |Generalized Btx command that includes the monadic component and
 -- additional information including arguments and help strings.

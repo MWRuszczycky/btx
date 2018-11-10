@@ -11,6 +11,7 @@ module Formatting
     , argInvalidErr
     , cmdInvalidErr
     , renameErr
+    , uniqueBibErr
     -- General help formatting
     , formatHelp
     ) where
@@ -165,7 +166,15 @@ renameErr n r = intercalate "\n" es
     where es = [ "The entries cannot be renamed, because the number of"
                , "entries currently in the context (" ++ show r
                   ++ ") does not match"
-               , "the number of new names supplied (" ++ show n ++ ")." ]
+               , "the number of new names supplied (" ++ show n ++ ")."
+               ]
+
+uniqueBibErr :: FilePath -> T.ErrString
+uniqueBibErr fp = intercalate "\n" es
+    where es = [ "Cannot find a unique default .bib file in the current"
+               , "directory (" ++ fp ++ ")"
+               , "(Try: btx help in)"
+               ]
 
 ---------------------------------------------------------------------
 -- General help formatting

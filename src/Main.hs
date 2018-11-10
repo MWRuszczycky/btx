@@ -13,104 +13,65 @@ import Control.Monad.Except             ( runExceptT
                                         , throwError
                                         , liftEither          )
 import Commands                         ( runHelp             )
+import Core                             ( parse               )
 import CoreIO                           ( readOrMakeFile      )
 import BibTeX.Parser                    ( parseBib            )
 import Commands                         ( route, done         )
+import Formatting                       ( uniqueBibErr        )
 
 -- =============================================================== --
 -- Entry point and clean up
 
 main :: IO ()
 main = do
-    start <- parseArgs =<< getArgs
-    case start of
-         T.Usage msg   -> finish . Left $ msg
-         T.Help xs     -> finish . Left . runHelp $ xs
-         T.Normal fp s -> runExceptT ( initBtx s fp >>= runBtx ) >>= finish
+    script <- getScript =<< getArgs
+    case parse script of
+         T.Usage msg    -> finish . Left $ msg
+         T.Help cs      -> finish . Left . runHelp $ cs
+         T.Normal fp cs -> runExceptT ( initBtx cs fp >>= runBtx )
+                           >>= finish
 
 finish :: Either String T.BtxState -> IO ()
 finish (Left msg) = putStrLn msg
-finish (Right _ ) = putStrLn "\nDone."
+finish (Right _ ) = return ()
 
 -- =============================================================== --
 -- Initialization
+
+getScript :: [String] -> IO String
+-- ^Find the script that the user wants to run.
+getScript ("run":fp:_) = readFile fp            -- Script is in a file.
+getScript ("run":[])   = getContents            -- Script is from stdin.
+getScript xs           = return . unwords $ xs  -- Script is from command line.
 
 initBtx :: a -> FilePath -> T.ErrMonad ( a, T.BtxState )
 -- ^Generate the initial state.
 initBtx x [] = initDefaultBtxState x
 initBtx x fp = do
     content <- readOrMakeFile fp
-    bib <- liftEither . parseBib fp $ content
-    return ( x, initBtxState bib )
+    bib     <- liftEither . parseBib fp $ content
+    return ( x, T.BtxState bib Nothing Nothing Tx.empty )
 
 initDefaultBtxState :: a -> T.ErrMonad (a, T.BtxState)
+-- ^User has not specified a working bibliography, so look in current
+-- working directory for a unique .bib file to use instead.
 initDefaultBtxState x = do
     cwd <- liftIO getCurrentDirectory
     fps <- liftIO . listDirectory $ cwd
-    case findSingleBibFile fps of
-         Just fp -> initBtx x fp
-         Nothing -> throwError $ "Cannot find a unique default .bib file in "
-                                 ++ "the current directory.\n"
-                                 ++ "  (Try: btx help in)"
-
-initBtxState :: T.Bibliography -> T.BtxState
-initBtxState b =  T.BtxState { T.inBib   = b
-                             , T.toBib   = Nothing
-                             , T.fromBib = Nothing
-                             , T.logger  = Tx.empty
-                             }
-
-findSingleBibFile :: [FilePath] -> Maybe FilePath
-findSingleBibFile xs
-    | null ys       = Nothing
-    | length ys > 1 = Nothing
-    | otherwise     = Just . head $ ys
-    where ys = filter ( ( == "bib." ) . take 4 . reverse ) xs
+    case filter ( (== "bib.") . take 4 . reverse ) fps of
+         (fp:[])   -> initBtx x fp
+         otherwise -> throwError . uniqueBibErr $ cwd
 
 -- =============================================================== --
 -- Compiling and running
 
-runBtx :: ([T.CommandArgsMonad [T.Ref]], T.BtxState) -> T.ErrMonad T.BtxState
+runBtx :: ( [T.ParsedCommand], T.BtxState ) -> T.ErrMonad T.BtxState
 -- ^Compile and run the commands an the initial state.
-runBtx (cmds, st) = execStateT ( compile cmds [] ) st
+runBtx (cs, st) = execStateT ( compile cs [] ) st
 
----------------------------------------------------------------------
--- Compiling
-
-compile :: [ T.CommandArgsMonad [T.Ref] ] -> [T.Ref] -> T.BtxStateMonad ()
-compile []        rs = done rs
-compile ( c : cs) rs = c rs >>= compile cs
-
----------------------------------------------------------------------
--- Parsing
-
-parseArgs :: [String] -> IO ( T.Start ( T.CommandArgsMonad [T.Ref] ) )
-parseArgs ("run":fp:_) = readFile fp >>= return . parseCmds . words . splitAnd
-parseArgs ("run":[])   = getContents >>= return . parseCmds . words . splitAnd
-parseArgs args         = return . parseCmds . words . splitAnd . unwords $ args
-
-parseCmds :: [String] -> T.Start ( T.CommandArgsMonad [T.Ref] )
-parseCmds []            = T.Usage "This won't do anything (try: btx help)."
-parseCmds ("in":xs)     = parseFirstIn . break ( == "and" ) $ xs
-parseCmds ("help":xs)   = T.Help xs
-parseCmds ("--help":xs) = T.Help xs
-parseCmds ("-h":xs)     = T.Help xs
-parseCmds xs            = T.Normal [] . parseAnd $ xs
-
-parseFirstIn :: ([String], [String]) -> T.Start ( T.CommandArgsMonad [T.Ref] )
-parseFirstIn ([],_)    = T.Usage "This won't do anything (try: btx help)."
-parseFirstIn (x:_:_,_) = T.Usage "Command <in> allows only one argument."
-parseFirstIn (x:_,cs)  = T.Normal x . parseAnd $ cs
-
-splitAnd :: String -> String
-splitAnd []        = []
-splitAnd (',':xs)  = " and " ++ splitAnd xs
-splitAnd ('\n':xs) = " and " ++ splitAnd xs
-splitAnd (x:xs)    = x : splitAnd xs
-
-parseAnd :: [String] -> [ T.CommandArgsMonad [T.Ref] ]
-parseAnd []          = []
-parseAnd ("and":xs)  = parseAnd xs
-parseAnd (x:xs)      = applyCmd x ys : parseAnd zs
-    where (ys,zs)  = break ( == "and" ) xs
-          applyCmd = T.cmdCmd . route
+compile :: [ T.ParsedCommand ] -> T.Context -> T.BtxStateMonad ()
+-- ^Compile parsed commands (i.e., String-String list pairs) into a
+-- runnable BtxStateMonad.
+compile []                 rs = done rs
+compile ( (c, args) : cs ) rs = applyCmd c args rs >>= compile cs
+    where applyCmd = T.cmdCmd . route
