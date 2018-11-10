@@ -266,11 +266,11 @@ listCmdLHelp = intercalate "\n" hs
     where hs = [ listCmdSHelp ++ "\n"
                , "This command leaves the current context unchanged. It can be"
                , "used to query whether the working bibliography contains a"
-               , "specific entry. If no arguments are supplied, then a summary"
-               , "of all entries in the bibliography are shown. If arguments"
-               , "are supplied, then summary information is provided for those"
-               , "entries whose keys initially match the argument."
-               , "For example, the command,\n"
+               , "specific entry. To list a summary of all entries in the"
+               , "working bibilography, use:\n"
+               , "    list all\n"
+               , "To query all entries with specific key-prefixes, supply the"
+               , "prefixes to the <list> command. For example, the command,\n"
                , "    list Cats Dogs\n"
                , "will return summary information for entries with keys such as"
                , "Cats, Cats1964, CatsAndSquirrels, Dogs, Dogs2016, etc., but"
@@ -278,13 +278,14 @@ listCmdLHelp = intercalate "\n" hs
                ]
 
 listCmd :: T.CommandMonad T.Context
-listCmd [] rs = do bib <- T.inBib <$> get
-                   liftIO . Tx.putStrLn . summarizeAllEntries $ bib
-                   return rs
-listCmd xs rs = do bib <- T.inBib <$> get
-                   let go = Tx.putStrLn . summarizeEntries bib . Tx.pack
-                   liftIO . mapM_ go $ xs
-                   return rs
+listCmd [] rs        = return rs
+listCmd ("all":_) rs = do bib <- T.inBib <$> get
+                          liftIO . Tx.putStrLn . summarizeAllEntries $ bib
+                          return rs
+listCmd xs        rs = do bib <- T.inBib <$> get
+                          let go = Tx.putStrLn . summarizeEntries bib . Tx.pack
+                          liftIO . mapM_ go $ xs
+                          return rs
 
 -- =============================================================== --
 -- Context constructors
