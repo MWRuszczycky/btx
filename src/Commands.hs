@@ -3,7 +3,7 @@
 module Commands
     ( route
     , runHelp
-    , done
+    , saveCmd
     ) where
 
 import qualified Data.Text.IO           as Tx
@@ -61,6 +61,7 @@ hub = [ -- Bibliography managers
         T.Command "in"   inCmd   inCmdSHelp   inCmdLHelp
       , T.Command "to"   toCmd   toCmdSHelp   toCmdLHelp
       , T.Command "from" fromCmd fromCmdSHelp fromCmdLHelp
+      , T.Command "save" saveCmd saveCmdSHelp saveCmdLHelp
         -- Queries
       , T.Command "info" infoCmd infoCmdSHelp infoCmdLHelp
       , T.Command "list" listCmd listCmdSHelp listCmdLHelp
@@ -81,14 +82,9 @@ hub = [ -- Bibliography managers
 -- =============================================================== --
 -- State managers
 
-save :: T.Bibliography -> T.BtxStateMonad ()
--- ^Convert a bibliography to BibTeX and write to memory.
-save b = lift . writeFileExcept (T.path b) . bibToBibtex $ b
-
-done :: T.Context -> T.BtxStateMonad ()
--- ^Save the current context references to the in-bibliography and
--- write both the in- and to-bibliographies.
-done rs = updateIn rs >>= save >> get >>= maybe ( return () ) save . T.toBib
+toFile :: T.Bibliography -> T.BtxStateMonad ()
+-- ^Convert a bibliography to BibTeX and write to file.
+toFile b = lift . writeFileExcept (T.path b) . bibToBibtex $ b
 
 ---------------------------------------------------------------------
 ---------------------------------------------------------------------
@@ -98,6 +94,32 @@ done rs = updateIn rs >>= save >> get >>= maybe ( return () ) save . T.toBib
 
 -- =============================================================== --
 -- Bibliography constructors, operators and utilities
+
+-- saveCmd ----------------------------------------------------------
+
+saveCmdSHelp :: String
+saveCmdSHelp = "save : update working bibliography and write everything to file"
+
+saveCmdLHelp :: String
+saveCmdLHelp = intercalate "\n" hs
+    where hs = [ saveCmdSHelp ++ "\n"
+               , "This command is only necessary when working interactively"
+               , "from standard input. Otherwise it is automatically added to"
+               , "the end of any script read from the command line or file."
+               , "<save> ignores all arguments and does the following:\n"
+               , "  1. Update working bibliography with the current context."
+               , "  2. Write the updated working bibliography to file."
+               , "  3. Write the export bibliography to file."
+               , "  4. Clear the context.\n"
+               , "The normal usage of <save> would be at the end of a script"
+               , "entered interactively via standard input and before inputting"
+               , "ctrl-C to terminate standard input."
+               ]
+
+saveCmd :: T.CommandMonad T.Context
+saveCmd _ rs = do updateIn rs >>= toFile
+                  get >>= maybe (return ()) toFile . T.toBib
+                  return []
 
 -- fromCmd ----------------------------------------------------------
 
@@ -162,7 +184,7 @@ inCmdLHelp = intercalate "\n" hs
 inCmd :: T.CommandMonad T.Context
 inCmd []      rs = throwError "Command <in> requires a file path."
 inCmd (_:_:_) rs = throwError "Command <in> allows only one argument."
-inCmd (fp:_)  rs = do updateIn rs >>= save
+inCmd (fp:_)  rs = do updateIn rs >>= toFile
                       btxState <- get
                       content  <- lift . readOrMakeFile $ fp
                       bib      <- liftEither . parseBib fp $ content
@@ -197,7 +219,7 @@ toCmdLHelp = intercalate "\n" hs
 toCmd :: T.CommandMonad T.Context
 toCmd (_:_:_) _  = throwError "Command <to> allows only one or no argument."
 toCmd xs      rs = do btxState <- get
-                      maybe ( return () ) save $ T.toBib btxState
+                      maybe ( return () ) toFile $ T.toBib btxState
                       let fp = head xs
                       if null xs || fp == (T.path . T.inBib) btxState
                          then put btxState { T.toBib = Nothing }
