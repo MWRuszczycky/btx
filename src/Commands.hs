@@ -605,7 +605,8 @@ runHelp :: [String] -> String
 -- ^Generate a help message
 runHelp []            = formatHelp . map T.cmdSHelp $ hub
 runHelp ("run":_)     = H.runHelpStr
-runHelp ("and":_)     = H.keywordHelpStr
-runHelp ("with":_)    = H.keywordHelpStr
+runHelp ("all":_)     = H.allHelpStr
+runHelp ("and":_)     = H.andHelpStr
+runHelp ("with":_)    = H.withHelpStr
 runHelp ("copying":_) = H.copyingHelpStr
 runHelp xs            = intercalate "\n" . map ( T.cmdLHelp . route ) $ xs
