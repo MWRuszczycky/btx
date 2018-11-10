@@ -58,10 +58,10 @@ route c = go hub
 
 hub :: [ T.Command T.Context ]
 hub = [ -- Bibliography managers
-        T.Command "in"   inCmd   inCmdSHelp   inCmdLHelp
-      , T.Command "to"   toCmd   toCmdSHelp   toCmdLHelp
-      , T.Command "from" fromCmd fromCmdSHelp fromCmdLHelp
+        T.Command "from" fromCmd fromCmdSHelp fromCmdLHelp
+      , T.Command "in"   inCmd   inCmdSHelp   inCmdLHelp
       , T.Command "save" saveCmd saveCmdSHelp saveCmdLHelp
+      , T.Command "to"   toCmd   toCmdSHelp   toCmdLHelp
         -- Queries
       , T.Command "info" infoCmd infoCmdSHelp infoCmdLHelp
       , T.Command "list" listCmd listCmdSHelp listCmdLHelp
@@ -94,32 +94,6 @@ toFile b = lift . writeFileExcept (T.path b) . bibToBibtex $ b
 
 -- =============================================================== --
 -- Bibliography constructors, operators and utilities
-
--- saveCmd ----------------------------------------------------------
-
-saveCmdSHelp :: String
-saveCmdSHelp = "save : update working bibliography and write everything to file"
-
-saveCmdLHelp :: String
-saveCmdLHelp = intercalate "\n" hs
-    where hs = [ saveCmdSHelp ++ "\n"
-               , "This command is only necessary when working interactively"
-               , "from standard input. Otherwise it is automatically added to"
-               , "the end of any script read from the command line or file."
-               , "<save> ignores all arguments and does the following:\n"
-               , "  1. Update working bibliography with the current context."
-               , "  2. Write the updated working bibliography to file."
-               , "  3. Write the export bibliography to file."
-               , "  4. Clear the context.\n"
-               , "The normal usage of <save> would be at the end of a script"
-               , "entered interactively via standard input and before inputting"
-               , "ctrl-C to terminate standard input."
-               ]
-
-saveCmd :: T.CommandMonad T.Context
-saveCmd _ rs = do updateIn rs >>= toFile
-                  get >>= maybe (return ()) toFile . T.toBib
-                  return []
 
 -- fromCmd ----------------------------------------------------------
 
@@ -190,6 +164,32 @@ inCmd (fp:_)  rs = do updateIn rs >>= toFile
                       bib      <- liftEither . parseBib fp $ content
                       put btxState { T.inBib = bib }
                       return []
+
+-- saveCmd ----------------------------------------------------------
+
+saveCmdSHelp :: String
+saveCmdSHelp = "save : update working bibliography and write everything to file"
+
+saveCmdLHelp :: String
+saveCmdLHelp = intercalate "\n" hs
+    where hs = [ saveCmdSHelp ++ "\n"
+               , "This command is only necessary when working interactively"
+               , "from standard input. Otherwise it is automatically added to"
+               , "the end of any script read from the command line or file."
+               , "<save> ignores all arguments and does the following:\n"
+               , "  1. Update working bibliography with the current context."
+               , "  2. Write the updated working bibliography to file."
+               , "  3. Write the export bibliography to file."
+               , "  4. Clear the context.\n"
+               , "The normal usage of <save> would be at the end of a script"
+               , "entered interactively via standard input and before inputting"
+               , "ctrl-C to terminate standard input."
+               ]
+
+saveCmd :: T.CommandMonad T.Context
+saveCmd _ rs = do updateIn rs >>= toFile
+                  get >>= maybe (return ()) toFile . T.toBib
+                  return []
 
 -- toCmd ------------------------------------------------------------
 
