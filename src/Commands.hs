@@ -86,6 +86,11 @@ toFile :: T.Bibliography -> T.BtxStateMonad ()
 -- ^Convert a bibliography to BibTeX and write to file.
 toFile b = lift . writeFileExcept (T.path b) . bibToBibtex $ b
 
+allKeysToArgs :: T.Bibliography -> [String]
+-- ^Get a list of all keys in a bibliography represented as Strings.
+-- This is useful for generating argument lists.
+allKeysToArgs = map Tx.unpack . Map.keys . T.refs
+
 ---------------------------------------------------------------------
 ---------------------------------------------------------------------
 -- Commands
@@ -329,15 +334,18 @@ getCmdLHelp = intercalate "\n" hs
                , "     changing the working bibliography."
                , "  3. If a KEY is not found in the working bibliography, then"
                , "     no corresponding reference is copied to the context.\n"
-               , "See also <pull>, which deletes the entries from the working"
-               , "bibliography after moving them to the context, and <take>."
+               , "You can use the argument <all> (i.e., get all) to populate"
+               , "the the context with all the entries in the working"
+               , "bibliography. See also <pull>, which deletes the entries from"
+               , "the working bibliography after moving them to the context,"
+               , "and <take>, which applies to the import bibliography."
                ]
 
 getCmd :: T.CommandMonad T.Context
-getCmd xs rs = do
-    updateIn rs
-    bib <- T.inBib <$> get
-    return . map (getRef bib) $ xs
+getCmd ("all":_) rs = allKeysToArgs . T.inBib <$> get >>= flip getCmd rs
+getCmd xs        rs = do updateIn rs
+                         bib <- T.inBib <$> get
+                         return . map (getRef bib) $ xs
 
 -- newCmd -----------------------------------------------------------
 
@@ -380,12 +388,15 @@ pullCmdSHelp = "pull [KEY .. ] : move entries from "
 pullCmdLHelp :: String
 pullCmdLHelp = intercalate "\n" hs
     where hs = [ pullCmdSHelp ++ "\n"
-               , "This command is the same as <get>; however the entries copied"
-               , "from the working bibliography are then deleted from the"
-               , "working bibliography. Therefore, this command can be used to"
-               , "remove entries from a bibliography using the script:\n"
+               , "This command is the same as <get>; however the entries are"
+               , "moved from the working bibliography to the context and thus"
+               , "deleted from the working bibliography. Therefore, this"
+               , "command can be used to remove entries from the working"
+               , "bibliography using the script:\n"
                , "    pull [KEY ..] and toss\n"
-               , "See also <get> and <toss>."
+               , "You can move all entries from the working bibilography to the"
+               , "context using the <all> keyword (i.e., pull all). See also"
+               , "<get> and <toss>."
                ]
 
 pullCmd :: T.CommandMonad T.Context
@@ -405,19 +416,27 @@ takeCmdSHelp = "take [KEY .. ] : copy entries from "
 takeCmdLHelp :: String
 takeCmdLHelp = intercalate "\n" hs
     where hs = [ takeCmdSHelp ++ "\n"
-               , "This command is the same as <get>; however the entries copied"
-               , "from the import bibliography rather than the working."
-               , "bibliography. If the import bibliography is unset, then"
-               , "the context is just cleared."
+               , "This command is the same as <get>; however the entries are"
+               , "copied to the context from the import bibliography rather"
+               , "than the working bibliography. If the import bibliography is"
+               , "unset, then the context is just cleared after updating the"
+               , "working bibliography first. You can also copy all the entries"
+               , "in the import bibliography to the context using the <all>"
+               , "keyword. For example, the script\n"
+               , "    btx in Working.bib, from Import.bib, take all\n"
+               , "will add all the entries in Import.bib to Working.bib. If"
+               , "Working.bib did not previously exist, then this is the same"
+               , "as copying Import.bib to Working.bib."
                ]
 
 takeCmd :: T.CommandMonad T.Context
-takeCmd xs rs = do
-    updateIn rs
-    btxState <- get
-    case T.fromBib btxState of
-         Nothing  -> return []
-         Just bib -> return . map ( getRef bib ) $ xs
+takeCmd ("all":_) rs = do xs <- maybe [] allKeysToArgs . T.fromBib <$> get
+                          takeCmd xs rs
+takeCmd xs        rs = do updateIn rs
+                          btxState <- get
+                          case T.fromBib btxState of
+                               Nothing  -> return []
+                               Just bib -> return . map ( getRef bib ) $ xs
 
 -- =============================================================== --
 -- Context operators
