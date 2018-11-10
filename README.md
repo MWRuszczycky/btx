@@ -1,10 +1,10 @@
 # *btx*
 
-This is a light-weight, declarative, command-line interface for working with BibTeX bibliographies (i.e., `.bib` files). **btx is currently a work in-progress so there are still a few rough spots**; however, much of the basic functionality is already in place. A more complete description about how *btx* works with several examples can be found in the [*btx* wiki](https://github.com/MWRuszczycky/btx/wiki).
+This is a light-weight, declarative, command-line interface for working with *BibTeX* bibliographies (i.e., `.bib` files). **btx is currently a work in-progress so there are still a few rough spots**; however, much of the basic functionality is already in place. A more complete description about how *btx* works with several examples can be found in the [*btx* wiki](https://github.com/MWRuszczycky/btx/wiki).
 
 ## Introduction
 
-The *btx* program lets you write declarative scripts to manipulate both BibTeX bibliographies and the entries they contain. For example, suppose you want to create a new `.bib` file called `animals.bib`, download a BibTeX reference for an article with a specific digital-object-identifier, rename it `Cats2016` and then edit the fields using your favorite editor, such as *Vim*. This could then all be accomplished using the following *btx* script entered at the command-line:
+The *btx* program lets you write declarative scripts to manipulate both *BibTeX* bibliographies and the entries they contain. For example, suppose you want to create a new `.bib` file called `animals.bib`, download a *BibTeX* reference for an article with a specific digital-object-identifier, rename it `Cats2016` and then edit the fields using your favorite editor, such as *Vim*. This could then all be accomplished using the following *btx* script entered at the command-line:
 ```
 btx in animals.bib and doi 10.1016/bs.mie.2017.07.022 and name Cats2016 and edit vim
 ```
@@ -12,7 +12,7 @@ This breaks down as follows:
 1. The `btx` command invokes *btx* at the command line as usual.
 2. The `in` command sets (or creates) the working bibliography as the file `animals.bib`.
 3. The `and` key-words separate the individual commands.
-4. The `doi` command downloads the BibTeX reference for the publication with digital-object-identifier `10.1016/bs.mie.2017.07.022`.
+4. The `doi` command downloads the *BibTeX* reference for the publication with digital-object-identifier `10.1016/bs.mie.2017.07.022`.
 5. The `name` command changes the key of the newly downloaded BibTex entry to `Cats2016`.
 6. The `edit` command runs the `vim` process on the downloaded and renamed entry so you make any necessary changes using *Vim* or whatever editor you prefer.
 7. Finally, the `animals.bib` file is updated with the new entry.
@@ -26,9 +26,9 @@ The use of `and` and `,` are completely interchangeable and can be used together
 btx in animals.bib, doi 10.1016/bs.mie.2017.07.022, name Cats2016 and edit vim
 ```
 
-## BibTeX reference format
+## *BibTeX* reference format
 
-Currently *btx* requires that BibTeX references use the "braced" format, namely,
+Currently *btx* requires that *BibTeX* references use the "braced" format, namely,
 ```tex
 @article{Cats2016,
     author = {Norman and Felix and Hilbert},
@@ -63,11 +63,10 @@ stack install
 
 ## To do and known issues
 
-1. "At" symbols (i.e., `@`) in comments that are separated from the references by line breaks will cause the parser to fail. This isn't a big deal, because you can still have ,`@` symbols in the BibTeX fields and the comments that immediately follow the references and are not separated by line breaks; however, it still needs to be fixed.
-2. Add complete list of BibTeX entry types. Right now there are only about a half dozen.
+1. "At" symbols (i.e., `@`) in comments that are separated from the references by line breaks will cause the parser to fail. This isn't a big deal, because you can still have ,`@` symbols in the *BibTeX* fields and the comments that immediately follow the references and are not separated by line breaks; however, it still needs to be fixed.
+2. Add complete list of *BibTeX* entry types. Right now there are only about a half dozen.
 3. Add an option to run a script without writing to the files so that you can test it out before using it.
-4. Improve the REPL functionality.
+4. Improve the REPL functionality and output formatting.
 5. The general help string needs to be written.
-6. Errors should be `Text` and not `String`.
-7. Several functions still need commenting.
-8. More testing to try and find more problems.
+6. Several functions still need commenting.
+7. More testing to try and find more problems.
