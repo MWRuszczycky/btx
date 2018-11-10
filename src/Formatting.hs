@@ -19,6 +19,7 @@ module Formatting
 import qualified Data.Text          as Tx
 import qualified Data.Map.Strict    as Map
 import qualified Types              as T
+import qualified Help               as H
 import Data.Text                            ( Text          )
 import Data.List                            ( intercalate
                                             , sort          )
@@ -182,8 +183,28 @@ uniqueBibErr fp = intercalate "\n" es
 padRightStr :: Int -> String -> String
 padRightStr n x = x ++ replicate (n - length x) ' '
 
-formatHelp :: [String] -> String
-formatHelp xs = intercalate "\n" . map go $ xs'
+summarizeCommands :: [String] -> String
+summarizeCommands xs = intercalate "\n" . map go $ xs'
     where xs'      = map ( break (== ':') ) . sort $ xs
           n        = maximum . map ( length . fst ) $ xs'
           go (c,s) = padRightStr n c ++ s
+
+formatHelp :: [String] -> String
+formatHelp xs = unlines hs
+    where hs = [ H.helpStrHeader
+               , "\n-- usage --------------------------------------------------"
+                 ++ replicate 20 '-'
+               , "btx [run [FILE-PATH] | help [COMMAND] | version] [SCRIPT]"
+               , "\n-- btx directives -----------------------------------------"
+                 ++ replicate 20 '-'
+               , H.directiveHelpStr
+               , "\n-- btx keyword summaries ----------------------------------"
+                 ++ replicate 20 '-'
+               , H.keywordHelpStr
+               , "\n-- btx command summaries ----------------------------------"
+                 ++ replicate 20 '-'
+               , summarizeCommands xs
+               , "\n-- copying ------------------------------------------------"
+                 ++ replicate 20 '-'
+               , H.helpStrFooter
+               ]

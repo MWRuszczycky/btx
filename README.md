@@ -1,6 +1,6 @@
 # *btx*
 
-This is a light-weight, declarative, command-line interface for working with *BibTeX* bibliographies (i.e., `.bib` files). **btx is currently a work in-progress so there are still a few rough spots**; however, much of the basic functionality is already in place. A more complete description about how *btx* works with several examples can be found in the [*btx* wiki](https://github.com/MWRuszczycky/btx/wiki).
+This is a light-weight, declarative, command-line interface for working with *BibTeX* bibliographies (i.e., `.bib` files). **btx is currently a work in-progress so there are still a few rough spots**; however, much of the basic functionality is already in place. A more complete description about how *btx* works with several examples can be found in the [*btx* wiki](https://github.com/MWRuszczycky/btx/wiki) and detailed help information can also be found by running `btx help`.
 
 ## Introduction
 
@@ -66,6 +66,5 @@ stack install
 1. "At" symbols (i.e., `@`) in comments that are separated from the references by line breaks will cause the parser to fail. This isn't a big deal, because you can still have ,`@` symbols in the *BibTeX* fields and the comments that immediately follow the references and are not separated by line breaks; however, it still needs to be fixed.
 2. Add an option to run a script without writing to the files so that you can test it out before using it.
 3. Improve the REPL functionality and output formatting.
-4. The general help string needs to be written.
-5. Several functions still need commenting.
-6. More testing to try and find more problems.
+4. Several functions still need commenting.
+5. More testing to try and find more problems.

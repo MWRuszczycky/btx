@@ -1,18 +1,41 @@
 module Help
     ( copyingHelpStr
-    , helpStr
+    , directiveHelpStr
+    , helpStrHeader
+    , helpStrFooter
+    , keywordHelpStr
     , andHelpStr
     , withHelpStr
     , allHelpStr
     , runHelpStr
+    , versionHelpStr
+    , versionStr
     ) where
+
+import Data.List ( intercalate )
 
 -- =============================================================== --
 -- General help strings
 
+keywordHelpStr :: String
+keywordHelpStr = intercalate "\n" hs
+    where hs = [ "and  : separates btx commands"
+               , "with : eliminate preceding <and> or its equivalent"
+               , "all  : apply command to all entries in the context or "
+                 ++ "bibliography"
+               ]
+
+directiveHelpStr :: String
+directiveHelpStr = intercalate "\n" hs
+    where hs = [ "run [FILE-PATH] : run btx script from a file"
+               , "help [ARGUMENT] : show this help screen or more help for"
+                 ++ " ARGUMENT"
+               , "version         : display version information"
+               ]
+
 andHelpStr :: String
 andHelpStr = unlines hs
-    where hs = [ "and/,/\\n  : separates btx commands\n"
+    where hs = [ "and  : separates btx commands (same as ',' and '\\n')\n"
                , "The <and> keyword is used to separate btx scripting"
                , "commands in a btx script. For example,\n"
                , "    btx in animals.bib and get Cats2016 and view\n"
@@ -28,7 +51,8 @@ andHelpStr = unlines hs
 
 withHelpStr :: String
 withHelpStr = unlines hs
-    where hs = [ "with/+ : eliminate preceding <and> or its equivalent\n"
+    where hs = [ "with : eliminate preceding <and> or its equivalent (same as"
+                 ++ " '+')\n"
                , "The <with> keyword is used to eliminate an <and> or its"
                , "equivalent that immediately precedes it. This can be used to"
                , "more easily pass a large number of arguments to a single btx"
@@ -66,11 +90,39 @@ allHelpStr = unlines hs
                ]
 
 runHelpStr :: String
-runHelpStr = "help for <run>\n"
+runHelpStr = unlines hs
+    where hs = [ "run [FILE-PATH] : run btx script from a file\n"
+               , "Rather than run a script entered at the command line, you"
+               , "can use the <run> directive to run a script from a text file."
+               , "In this case you can take advantage of line breaks and the"
+               , "<with> command to better lay out the script. Line breaks are"
+               , "directly interpreted as <and> keywords (see help and). White-"
+               , "space is otherwise ignored. If no FILE-PATH is supplied to"
+               , "<run>, then btx attempts to read commands from standard input"
+               , "producing a REPL-like interpreter. To exit this interactive"
+               , "editing of bibliographies, use <ctrl-c> after saving your"
+               , "work with the <save> command (see also help for the <and>,"
+               , "<save> and <with> keywords and commands)."
+               ]
 
-helpStr :: String
-helpStr = "General help string.\n"
+helpStrHeader :: String
+helpStrHeader = "Weclome to btx! btx is a light-weight, declarative, command"
+                 ++ " line interface for\nworking with BibTeX"
+                 ++ " bibliography files."
 
+helpStrFooter :: String
+helpStrFooter = intercalate "\n" hs
+    where hs = [ "btx is free, open-source software maintained with full"
+                 ++ " documentation and\n  licensing information at:"
+                 ++ " https://github.com/MWRuszczycky/btx\n"
+               , "For binary copyright information, try: btx help copying"
+               ]
+
+versionStr :: String
+versionStr = "btx version 0.1.0.0"
+
+versionHelpStr :: String
+versionHelpStr = "display version information"
 
 -- =============================================================== --
 -- License string
