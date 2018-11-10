@@ -235,7 +235,7 @@ toCmd xs      rs = do btxState <- get
 
 infoCmdSHelp :: String
 infoCmdSHelp = "info [Args] : display summary of all bibliographies "
-               ++ "and the current context."
+               ++ "and the current context"
 
 infoCmdLHelp :: String
 infoCmdLHelp = intercalate "\n" hs
@@ -290,7 +290,7 @@ listCmd xs rs = do bib <- T.inBib <$> get
 -- doiCmd -----------------------------------------------------------
 
 doiCmdSHelp :: String
-doiCmdSHelp = "doi  [DOI] : download an entry using the doi of its publication."
+doiCmdSHelp = "doi  [DOI] : download an entry using the doi of its publication"
 
 doiCmdLHelp :: String
 doiCmdLHelp = intercalate "\n" hs
@@ -316,7 +316,7 @@ doiCmd xs rs = do
 
 getCmdSHelp :: String
 getCmdSHelp = "get  [KEY .. ] : copy entries from "
-              ++ "working bibliography to context."
+              ++ "working bibliography to context"
 
 getCmdLHelp :: String
 getCmdLHelp = intercalate "\n" hs
@@ -343,7 +343,7 @@ getCmd xs rs = do
 
 newCmdSHelp :: String
 newCmdSHelp = "new  [type .. ] : populate context with template entries "
-              ++ "of specified types."
+              ++ "of specified types"
 
 newCmdLHelp :: String
 newCmdLHelp = intercalate "\n" hs
@@ -375,7 +375,7 @@ newCmd xs rs = do
 
 pullCmdSHelp :: String
 pullCmdSHelp = "pull [KEY .. ] : move entries from "
-              ++ "working bibliography to context."
+              ++ "working bibliography to context"
 
 pullCmdLHelp :: String
 pullCmdLHelp = intercalate "\n" hs
@@ -454,7 +454,7 @@ editCmd (x:xs) _  = throwError "Only one editor may be specified with <edit>."
 -- nameCmd ----------------------------------------------------------
 
 nameCmdSHelp :: String
-nameCmdSHelp = "name [KEY .. ] : change key names for entries in the context."
+nameCmdSHelp = "name [KEY .. ] : change key names for entries in the context"
 
 nameCmdLHelp :: String
 nameCmdLHelp = intercalate "\n" hs
@@ -492,7 +492,7 @@ nameCmd ns rs
 -- sendCmd ----------------------------------------------------------
 
 sendCmdSHelp :: String
-sendCmdSHelp = "send : update export bibliography with the current context."
+sendCmdSHelp = "send : update export bibliography with the current context"
 
 sendCmdLHelp :: String
 sendCmdLHelp = intercalate "\n" hs
@@ -520,7 +520,7 @@ sendCmd _         rs = updateTo rs >> return []
 -- tossCmd ----------------------------------------------------------
 
 tossCmdSHelp :: String
-tossCmdSHelp = "toss : depopulate the context."
+tossCmdSHelp = "toss : depopulate the context"
 
 tossCmdLHelp :: String
 tossCmdLHelp = intercalate "\n" hs
@@ -538,7 +538,7 @@ tossCmd _ rs = return []
 -- viewCmd ----------------------------------------------------------
 
 viewCmdSHelp :: String
-viewCmdSHelp = "view : view the details of all entries in the context."
+viewCmdSHelp = "view : view the details of all entries in the context"
 
 viewCmdLHelp :: String
 viewCmdLHelp = intercalate "\n" hs
