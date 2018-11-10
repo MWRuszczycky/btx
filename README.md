@@ -65,10 +65,9 @@ stack install
 
 1. "At" symbols (i.e., `@`) in comments that are separated from the references by line breaks will cause the parser to fail. This isn't a big deal, because you can still have ,`@` symbols in the BibTeX fields and the comments that immediately follow the references and are not separated by line breaks; however, it still needs to be fixed.
 2. Add complete list of BibTeX entry types. Right now there are only about a half dozen.
-3. Implement better handling of multiple arguments per command in scripts.
-4. Add an option to run a script without writing to the files so that you can test it out before using it.
-5. Implement a REPL for interactive manipulation of bibliographies.
-6. The general help string needs to be written.
-7. Errors should be `Text` and not `String`.
-8. Several functions still need commenting.
-9. More testing to try and find more problems.
+3. Add an option to run a script without writing to the files so that you can test it out before using it.
+4. Improve the REPL functionality.
+5. The general help string needs to be written.
+6. Errors should be `Text` and not `String`.
+7. Several functions still need commenting.
+8. More testing to try and find more problems.
