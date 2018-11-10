@@ -10,6 +10,7 @@ import qualified Data.Text.IO           as Tx
 import qualified Data.Text              as Tx
 import qualified Data.Map.Strict        as Map
 import qualified Types                  as T
+import qualified Help                   as H
 import Data.Text                               ( Text                )
 import Data.List                               ( foldl'
                                                , intercalate         )
@@ -54,7 +55,7 @@ import Formatting                              ( argInvalidErr
 
 route :: String -> T.Command T.Context
 route c = go hub
-    where go []     = T.Command "err" (errCmd c) [] []
+    where go []     = errCmd c -- T.Command "err" (errCmd c) [] []
           go (x:xs) | T.cmdName x == c = x
                     | otherwise        = go xs
 
@@ -103,7 +104,7 @@ fromCmdSHelp :: String
 fromCmdSHelp = "from [FILE-PATH] : reset the import bibliography"
 
 fromCmdLHelp :: String
-fromCmdLHelp = intercalate "\n" hs
+fromCmdLHelp = unlines hs
     where hs = [ fromCmdSHelp ++ "\n"
                , "The import bibliography is a bibliography separate from the"
                , "working bibliography (set with <in>) that you can use to"
@@ -140,7 +141,7 @@ inCmdSHelp = "in    FILE-PATH : initialize, reset or create the working"
              ++ " bibliography"
 
 inCmdLHelp :: String
-inCmdLHelp = intercalate "\n" hs
+inCmdLHelp = unlines hs
     where hs = [ inCmdSHelp ++ "\n"
                , "This command has the following effects:\n"
                , "  1. Update working bibliography with the current context."
@@ -173,7 +174,7 @@ saveCmdSHelp :: String
 saveCmdSHelp = "save : update working bibliography and write everything to file"
 
 saveCmdLHelp :: String
-saveCmdLHelp = intercalate "\n" hs
+saveCmdLHelp = unlines hs
     where hs = [ saveCmdSHelp ++ "\n"
                , "This command is only necessary when working interactively"
                , "from standard input. Otherwise it is automatically added to"
@@ -199,7 +200,7 @@ toCmdSHelp :: String
 toCmdSHelp = "to   [FILE-PATH] : reset or create new export bibliography"
 
 toCmdLHelp :: String
-toCmdLHelp = intercalate "\n" hs
+toCmdLHelp = unlines hs
     where hs = [ toCmdSHelp ++ "\n"
                , "The export bibliography is separate from the working"
                , "bibliography (set with <in>) and represents a target where"
@@ -240,7 +241,7 @@ infoCmdSHelp = "info [Args] : display summary of all bibliographies "
                ++ "and the current context"
 
 infoCmdLHelp :: String
-infoCmdLHelp = intercalate "\n" hs
+infoCmdLHelp = unlines hs
     where hs = [ infoCmdSHelp ++ "\n"
                , "This command has the following effects:\n"
                , "  1. Leave the current context unchanged."
@@ -262,7 +263,7 @@ listCmdSHelp = "list : display a summary of the entries "
                ++ "in the working bibliography"
 
 listCmdLHelp :: String
-listCmdLHelp = intercalate "\n" hs
+listCmdLHelp = unlines hs
     where hs = [ listCmdSHelp ++ "\n"
                , "This command leaves the current context unchanged. It can be"
                , "used to query whether the working bibliography contains a"
@@ -296,7 +297,7 @@ doiCmdSHelp :: String
 doiCmdSHelp = "doi  [DOI] : download an entry using the doi of its publication"
 
 doiCmdLHelp :: String
-doiCmdLHelp = intercalate "\n" hs
+doiCmdLHelp = unlines hs
     where sp = map ( \ x -> replicate 9 ' ' <> fst x ) supported
           hs = [ doiCmdSHelp ++ "\n"
                , "This command populates the context with entries downloaded"
@@ -322,7 +323,7 @@ getCmdSHelp = "get  [KEY .. ] : copy entries from "
               ++ "working bibliography to context"
 
 getCmdLHelp :: String
-getCmdLHelp = intercalate "\n" hs
+getCmdLHelp = unlines hs
     where hs = [ getCmdSHelp ++ "\n"
                , "This command has the following effects:\n"
                , "  1. Update the working bibliography with the current context"
@@ -352,8 +353,8 @@ newCmdSHelp = "new  [type .. ] : populate context with template entries "
               ++ "of specified types"
 
 newCmdLHelp :: String
-newCmdLHelp = intercalate "\n" hs
-    where sp = map ( \ x -> replicate 9 ' ' <> fst x ) supported
+newCmdLHelp = unlines hs
+    where sp = unlines . map ( \ x -> replicate 9 ' ' <> fst x ) $ supported
           hs = [ newCmdSHelp ++ "\n"
                , "The command has the following effects:\n"
                , "  1. Update the working bibliography with the current context"
@@ -365,7 +366,7 @@ newCmdLHelp = intercalate "\n" hs
                , "     a number, so as to not conflict with any other key in"
                , "     the working bibliography."
                , "  4. The currently supported entry templates are:\n"
-               , intercalate "\n" sp ++ "\n"
+               ,       sp
                , "  5. If an entry is not supported, then a 'misc' type entry"
                , "     is generated instead."
                ]
@@ -384,7 +385,7 @@ pullCmdSHelp = "pull [KEY .. ] : move entries from "
               ++ "working bibliography to context"
 
 pullCmdLHelp :: String
-pullCmdLHelp = intercalate "\n" hs
+pullCmdLHelp = unlines hs
     where hs = [ pullCmdSHelp ++ "\n"
                , "This command is the same as <get>; however the entries are"
                , "moved from the working bibliography to the context and thus"
@@ -412,7 +413,7 @@ takeCmdSHelp = "take [KEY .. ] : copy entries from "
                ++ "import bibliography to context"
 
 takeCmdLHelp :: String
-takeCmdLHelp = intercalate "\n" hs
+takeCmdLHelp = unlines hs
     where hs = [ takeCmdSHelp ++ "\n"
                , "This command is the same as <get>; however the entries are"
                , "copied to the context from the import bibliography rather"
@@ -446,7 +447,7 @@ editCmdSHelp = "edit  EDITOR : edit entries in the context "
                ++ "using the external EDITOR"
 
 editCmdLHelp :: String
-editCmdLHelp = intercalate "\n" hs
+editCmdLHelp = unlines hs
     where hs = [ editCmdSHelp ++ "\n"
                , "This command allows you to run an editor program on all the"
                , "bibliography entries currently in the context. The edited"
@@ -474,7 +475,7 @@ nameCmdSHelp :: String
 nameCmdSHelp = "name [KEY .. ] : change key names for entries in the context"
 
 nameCmdLHelp :: String
-nameCmdLHelp = intercalate "\n" hs
+nameCmdLHelp = unlines hs
     where hs = [ nameCmdSHelp ++ "\n"
                , "For example, if you have the following bibliography entries"
                , "in context:"
@@ -512,7 +513,7 @@ sendCmdSHelp :: String
 sendCmdSHelp = "send : update export bibliography with the current context"
 
 sendCmdLHelp :: String
-sendCmdLHelp = intercalate "\n" hs
+sendCmdLHelp = unlines hs
     where hs = [ sendCmdSHelp ++ "\n"
                , "This command has the following effects:\n"
                , "  1. Update the export bibliography with the current context"
@@ -540,7 +541,7 @@ tossCmdSHelp :: String
 tossCmdSHelp = "toss [KEY ..] : remove some or all entries from the context"
 
 tossCmdLHelp :: String
-tossCmdLHelp = intercalate "\n" hs
+tossCmdLHelp = unlines hs
     where hs = [ tossCmdSHelp ++ "\n"
                , "This command removes those entries with the specified keys"
                , "from the current context. This can be used to selectively"
@@ -557,7 +558,7 @@ tossCmdLHelp = intercalate "\n" hs
                , "deletes Cats2016 and Dogs1984 from the working bibliography."
                ]
 
-tossCmd :: T.CommandMonad [T.Ref]
+tossCmd :: T.CommandMonad T.Context
 tossCmd ("all":_) rs = return []
 tossCmd xs        rs = return . foldl' dropRefByKey rs . map Tx.pack $ xs
 
@@ -567,14 +568,14 @@ viewCmdSHelp :: String
 viewCmdSHelp = "view : view the details of all entries in the context"
 
 viewCmdLHelp :: String
-viewCmdLHelp = intercalate "\n" hs
+viewCmdLHelp = unlines hs
     where hs = [ viewCmdSHelp ++ "\n"
                , "This command has no other effect besides displaying the"
                , "entires in the context in a nicely formatted way. See also"
                , "the <list> and <info> commands."
                ]
 
-viewCmd :: T.CommandMonad [T.Ref]
+viewCmd :: T.CommandMonad T.Context
 viewCmd _ [] = do
     liftIO . putStrLn $ "\nNo entries to view.\n"
     return []
@@ -586,11 +587,25 @@ viewCmd _ rs = do
 -- =============================================================== --
 -- Errors and help
 
+-- errCmd -----------------------------------------------------------
+-- This is the command for non-commands. It just throws an exception
+-- and provides help strings for invalid commands.
+
+errCmdLHelp :: String -> String
+-- ^Used as an error message for help regarding an invalid command.
+errCmdLHelp c = c ++ " is not a valid btx scripting command"
+
+errCmd :: String -> T.Command T.Context
+errCmd c = T.Command "err" (\ _ _ -> throwError . cmdInvalidErr $ c)
+                     [] (errCmdLHelp c)
+
+---------------------------------------------------------------------
+
 runHelp :: [String] -> String
 -- ^Generate a help message
-runHelp [] = formatHelp . map T.cmdSHelp $ hub
--- intercalate "\n" . map T.cmdSHelp $ hub
-runHelp xs = intercalate "\n" . map ( T.cmdLHelp . route ) $ xs
-
-errCmd :: String -> T.CommandMonad [T.Ref]
-errCmd c _ _ = throwError . cmdInvalidErr $ c
+runHelp []            = formatHelp . map T.cmdSHelp $ hub
+runHelp ("run":_)     = H.runHelpStr
+runHelp ("and":_)     = H.keywordHelpStr
+runHelp ("with":_)    = H.keywordHelpStr
+runHelp ("copying":_) = H.copyingHelpStr
+runHelp xs            = intercalate "\n" . map ( T.cmdLHelp . route ) $ xs

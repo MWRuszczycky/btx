@@ -32,7 +32,7 @@ main = do
                            >>= finish
 
 finish :: Either String T.BtxState -> IO ()
-finish (Left msg) = putStrLn msg
+finish (Left msg) = putStr msg
 finish (Right _ ) = return ()
 
 -- =============================================================== --
@@ -69,7 +69,7 @@ runBtx :: ( [T.ParsedCommand], T.BtxState ) -> T.ErrMonad T.BtxState
 -- ^Compile and run the commands an the initial state.
 runBtx (cs, st) = execStateT ( compile cs [] ) st
 
-compile :: [ T.ParsedCommand ] -> T.Context -> T.BtxStateMonad T.Context
+compile :: [T.ParsedCommand] -> T.Context -> T.BtxStateMonad T.Context
 -- ^Compile parsed commands (i.e., String-String list pairs) into a
 -- runnable BtxStateMonad.
 compile []                 rs = saveCmd [] rs

@@ -35,5 +35,6 @@ executable btx
                       , Commands
                       , Core
                       , CoreIO
+                      , Help
                       , Paths_btx
                       , Types
