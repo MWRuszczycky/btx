@@ -13,11 +13,11 @@ This breaks down as follows:
 2. The `in` command sets (or creates) the working bibliography as the file `animals.bib`.
 3. The `and` key-words separate the individual commands.
 4. The `doi` command downloads the *BibTeX* reference for the publication with digital-object-identifier `10.1016/bs.mie.2017.07.022`.
-5. The `name` command changes the key of the newly downloaded BibTex entry to `Cats2016`.
-6. The `edit` command runs the `vim` process on the downloaded and renamed entry so you make any necessary changes using *Vim* or whatever editor you prefer.
+5. The `name` command changes the key of the newly downloaded *BibTeX* entry to `Cats2016`.
+6. The `edit` command runs the `vim` process on the downloaded and renamed entry so you make any necessary changes using *Vim* or whatever editor you prefer (e.g., you could replace `edit vim` with `edit nano`).
 7. Finally, the `animals.bib` file is updated with the new entry.
 
-The `and` key-word can also be written more concisely using a comma. Therefore, the script in the above example could just as well be written as:
+The `and` keyword can also be written more concisely using a comma. Therefore, the script in the above example could just as well be written as:
 ```
 btx in animals.bib, doi 10.1016/bs.mie.2017.07.022, name Cats2016, edit vim
 ```
