@@ -131,8 +131,8 @@ versionHelpStr = "display version information"
 
 copyingHelpStr :: String
 copyingHelpStr = intercalate "\n"
-  [ "This binary contains code generated from the following sources. Each of the"
-  , "licenses represented are reproduced in full below.\n"
+  [ "The btx binary contains code generated from the following sources. Each of"
+  , "the licenses represented are reproduced in full below.\n"
   , "btx | BSD-3"
   , "    (c) Mark W. Ruszczycky 2018"
   , "    Author: Mark W. Ruszczycky"
