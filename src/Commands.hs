@@ -307,6 +307,7 @@ doiCmdLHelp = unlines hs
                , "  2. Download BibTeX entries from each doi provided, e.g.,"
                , "         doi 10.1016/bs.mie.2017.07.022"
                , "  3. Populate the context with the downloaded entries.\n"
+               , "Any non-ascii characters in the entry are replaced with '[?]'."
                , "If there is an error in downloading or parsing an entry"
                , "then a missing entry is added to the context in its place."
                ]

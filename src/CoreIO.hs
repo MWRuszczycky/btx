@@ -147,8 +147,8 @@ fmt :: ByteString -> Text
 fmt = Tx.reverse . Tx.foldl' addAscii Tx.empty . Tx.decodeUtf8 . toStrict
 
 addAscii :: Text -> Char -> Text
--- ^Add character to text if ascii or add '?' if non-ascii.
+-- ^Add character to text if ascii or add "[?]" if non-ascii.
 addAscii cs c
     | n < 128   = Tx.cons c cs
-    | otherwise = ">?<" <> cs
+    | otherwise = "]?[" <> cs
     where n = fromEnum c
