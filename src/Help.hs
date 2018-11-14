@@ -108,7 +108,7 @@ runHelpStr = unlines hs
                ]
 
 helpStrHeader :: String
-helpStrHeader = "Weclome to btx! btx is a light-weight, declarative, command"
+helpStrHeader = "Welcome to btx! btx is a light-weight, declarative, command"
                  ++ " line interface for\nworking with BibTeX"
                  ++ " bibliography files."
 
