@@ -55,7 +55,7 @@ import Formatting                              ( argInvalidErr
 
 route :: String -> T.Command T.Context
 route c = go hub
-    where go []     = errCmd c -- T.Command "err" (errCmd c) [] []
+    where go []     = errCmd c
           go (x:xs) | T.cmdName x == c = x
                     | otherwise        = go xs
 
@@ -68,6 +68,7 @@ hub = [ -- Bibliography managers
         -- Queries
       , T.Command "info" infoCmd infoCmdSHelp infoCmdLHelp
       , T.Command "list" listCmd listCmdSHelp listCmdLHelp
+      , T.Command "view" viewCmd viewCmdSHelp viewCmdLHelp
         -- Context constructors
       , T.Command "doi"  doiCmd  doiCmdSHelp  doiCmdLHelp
       , T.Command "get"  getCmd  getCmdSHelp  getCmdLHelp
@@ -79,7 +80,6 @@ hub = [ -- Bibliography managers
       , T.Command "name" nameCmd nameCmdSHelp nameCmdLHelp
       , T.Command "send" sendCmd sendCmdSHelp sendCmdLHelp
       , T.Command "toss" tossCmd tossCmdSHelp tossCmdLHelp
-      , T.Command "view" viewCmd viewCmdSHelp viewCmdLHelp
       ]
 
 -- =============================================================== --
@@ -237,7 +237,7 @@ toCmd xs      rs = do btxState <- get
 -- infoCmd ----------------------------------------------------------
 
 infoCmdSHelp :: String
-infoCmdSHelp = "info [Args] : display summary of all bibliographies "
+infoCmdSHelp = "info [ARG..] : display summary of all bibliographies "
                ++ "and the current context"
 
 infoCmdLHelp :: String
@@ -259,7 +259,7 @@ infoCmd xs rs = get >>= liftIO . Tx.putStrLn . summarize xs rs >> return rs
 ---------------------------------------------------------------------
 
 listCmdSHelp :: String
-listCmdSHelp = "list : display a summary of the entries "
+listCmdSHelp = "list [ARG..] : display a summary of the entries "
                ++ "in the working bibliography"
 
 listCmdLHelp :: String
@@ -288,13 +288,36 @@ listCmd xs        rs = do bib <- T.inBib <$> get
                           liftIO . mapM_ go $ xs
                           return rs
 
+-- viewCmd ----------------------------------------------------------
+
+viewCmdSHelp :: String
+viewCmdSHelp = "view : view the details of all entries in the context"
+
+viewCmdLHelp :: String
+viewCmdLHelp = unlines hs
+    where hs = [ viewCmdSHelp ++ "\n"
+               , "This command has no other effect besides displaying the"
+               , "entires in the context in a nicely formatted way. See also"
+               , "the <list> and <info> commands."
+               ]
+
+viewCmd :: T.CommandMonad T.Context
+viewCmd _ [] = do
+    liftIO . putStrLn $ "\nNo entries to view.\n"
+    return []
+viewCmd _ rs = do
+    liftIO . Tx.putStrLn $ Tx.empty
+    liftIO . Tx.putStrLn . Tx.intercalate "\n\n" . map formatRef $ rs
+    return rs
+
 -- =============================================================== --
 -- Context constructors
 
 -- doiCmd -----------------------------------------------------------
 
 doiCmdSHelp :: String
-doiCmdSHelp = "doi  [DOI] : download an entry using the doi of its publication"
+doiCmdSHelp = "doi  [DOI..] : download an entry using the doi of its" 
+              ++ " publication"
 
 doiCmdLHelp :: String
 doiCmdLHelp = unlines hs
@@ -307,7 +330,7 @@ doiCmdLHelp = unlines hs
                , "  2. Download BibTeX entries from each doi provided, e.g.,"
                , "         doi 10.1016/bs.mie.2017.07.022"
                , "  3. Populate the context with the downloaded entries.\n"
-               , "Any non-ascii characters in the entry are replaced with '[?]'."
+               , "Non-ascii characters in the entry are replaced with '[?]'."
                , "If there is an error in downloading or parsing an entry"
                , "then a missing entry is added to the context in its place."
                ]
@@ -320,7 +343,7 @@ doiCmd xs rs = do
 -- getCmd -----------------------------------------------------------
 
 getCmdSHelp :: String
-getCmdSHelp = "get  [KEY .. ] : copy entries from "
+getCmdSHelp = "get  [KEY..] : copy entries from "
               ++ "working bibliography to context"
 
 getCmdLHelp :: String
@@ -350,8 +373,8 @@ getCmd xs        rs = do updateIn rs
 -- newCmd -----------------------------------------------------------
 
 newCmdSHelp :: String
-newCmdSHelp = "new  [type .. ] : populate context with template entries "
-              ++ "of specified types"
+newCmdSHelp = "new  [TYPE..] : populate context with template entries "
+              ++ "of specified TYPEs"
 
 newCmdLHelp :: String
 newCmdLHelp = unlines hs
@@ -366,10 +389,10 @@ newCmdLHelp = unlines hs
                  ++ Tx.unpack genericKey ++ "n', where n is"
                , "     a number, so as to not conflict with any other key in"
                , "     the working bibliography."
-               , "  4. The currently supported entry templates are:\n"
+               , "  4. The currently supported entry template types are:\n"
                ,       sp
-               , "  5. If an entry is not supported, then a 'misc' type entry"
-               , "     is generated instead."
+               , "  5. If an entry type is not supported, then a 'misc' type"
+               , "     entry is generated instead."
                ]
 
 newCmd :: T.CommandMonad T.Context
@@ -382,7 +405,7 @@ newCmd xs rs = do
 -- pullCmd ----------------------------------------------------------
 
 pullCmdSHelp :: String
-pullCmdSHelp = "pull [KEY .. ] : move entries from "
+pullCmdSHelp = "pull [KEY..] : move entries from "
               ++ "working bibliography to context"
 
 pullCmdLHelp :: String
@@ -393,7 +416,7 @@ pullCmdLHelp = unlines hs
                , "deleted from the working bibliography. Therefore, this"
                , "command can be used to remove entries from the working"
                , "bibliography using the script:\n"
-               , "    pull [KEY ..] and toss\n"
+               , "    pull [KEY..] and toss\n"
                , "You can move all entries from the working bibilography to the"
                , "context using the <all> keyword (i.e., pull all). See also"
                , "<get> and <toss>."
@@ -410,7 +433,7 @@ pullCmd xs rs = do
 -- takeCmd ----------------------------------------------------------
 
 takeCmdSHelp :: String
-takeCmdSHelp = "take [KEY .. ] : copy entries from "
+takeCmdSHelp = "take [KEY..] : copy entries from "
                ++ "import bibliography to context"
 
 takeCmdLHelp :: String
@@ -473,7 +496,7 @@ editCmd (x:xs) _  = throwError "Only one editor may be specified with <edit>."
 -- nameCmd ----------------------------------------------------------
 
 nameCmdSHelp :: String
-nameCmdSHelp = "name [KEY .. ] : change key names for entries in the context"
+nameCmdSHelp = "name [KEY..] : change key names for entries in the context"
 
 nameCmdLHelp :: String
 nameCmdLHelp = unlines hs
@@ -539,7 +562,7 @@ sendCmd _         rs = updateTo rs >> return []
 -- tossCmd ----------------------------------------------------------
 
 tossCmdSHelp :: String
-tossCmdSHelp = "toss [KEY ..] : remove some or all entries from the context"
+tossCmdSHelp = "toss [KEY..] : remove some or all entries from the context"
 
 tossCmdLHelp :: String
 tossCmdLHelp = unlines hs
@@ -562,28 +585,6 @@ tossCmdLHelp = unlines hs
 tossCmd :: T.CommandMonad T.Context
 tossCmd ("all":_) rs = return []
 tossCmd xs        rs = return . foldl' dropRefByKey rs . map Tx.pack $ xs
-
--- viewCmd ----------------------------------------------------------
-
-viewCmdSHelp :: String
-viewCmdSHelp = "view : view the details of all entries in the context"
-
-viewCmdLHelp :: String
-viewCmdLHelp = unlines hs
-    where hs = [ viewCmdSHelp ++ "\n"
-               , "This command has no other effect besides displaying the"
-               , "entires in the context in a nicely formatted way. See also"
-               , "the <list> and <info> commands."
-               ]
-
-viewCmd :: T.CommandMonad T.Context
-viewCmd _ [] = do
-    liftIO . putStrLn $ "\nNo entries to view.\n"
-    return []
-viewCmd _ rs = do
-    liftIO . Tx.putStrLn $ Tx.empty
-    liftIO . Tx.putStrLn . Tx.intercalate "\n\n" . map formatRef $ rs
-    return rs
 
 -- =============================================================== --
 -- Errors and help

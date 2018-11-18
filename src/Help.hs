@@ -14,7 +14,9 @@ module Help
     , versionStr
     ) where
 
-import Data.List ( intercalate )
+import Data.List    ( intercalate )
+import Data.Version ( showVersion )
+import Paths_btx    ( version     )
 
 -- =============================================================== --
 -- General help strings
@@ -121,7 +123,7 @@ helpStrFooter = intercalate "\n" hs
                ]
 
 versionStr :: String
-versionStr = "btx version 0.1.0.0"
+versionStr = "btx version " ++ showVersion version
 
 versionHelpStr :: String
 versionHelpStr = "display version information"
