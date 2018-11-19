@@ -1,6 +1,8 @@
 # *btx*
 
-This is a light-weight, declarative, command-line interface for working with *BibTeX* bibliographies (i.e., `.bib` files). **btx is currently a work in-progress so there are still a few rough spots**; however, much of the basic functionality is already in place. A more complete description about how *btx* works with several examples can be found in the [*btx* wiki](https://github.com/MWRuszczycky/btx/wiki) and detailed help information can also be found by running `btx help`.
+This is a light-weight, declarative, command-line interface for working with basic *BibTeX* bibliographies (i.e., `.bib` files). A more complete description about how *btx* works with several examples can be found in the [*btx* wiki](https://github.com/MWRuszczycky/btx/wiki) and detailed help information can also be found by running `btx help`.
+
+**Note:** The parser used by *btx* is still fairly rudimentary, and will not work with all *BibTeX* files. Likewise, *btx* works by reformatting `.bib` files and will strip any comments that are not recognized as metadata (see below for details). So, **please play around with it using a test bibliography first before trying it with anything you care about**.
 
 ## Introduction
 
@@ -26,9 +28,9 @@ The use of `and` and `,` are completely interchangeable and can be used together
 btx in animals.bib, doi 10.1016/bs.mie.2017.07.022, name Cats2016 and edit vim
 ```
 
-## *BibTeX* reference format
+## *BibTeX* reference entry format
 
-Currently *btx* requires that *BibTeX* references use the "braced" format, namely,
+The parser used by *btx* does not currently recognize all the features specified in the [*BibTeX Documentation*](ftp://ftp.ctan.org/tex-archive/biblio/bibtex/contrib/doc), because I didn't even know about this when I first wrote it. In particular, references must follow the 'braced'-format, such as in the following example:
 ```tex
 @article{Cats2016,
     author = {Norman and Felix and Hilbert},
@@ -41,7 +43,7 @@ Currently *btx* requires that *BibTeX* references use the "braced" format, namel
 % folder = Chemistry/terpenoids
 % file = Cats_2016_JImpRes.pdf
 ```
-Metadata can be associated with the reference as comments that immediately follow the closing brace with no new lines in between (see example above). White space as well as any comment blocks that do not represent metadata are ignored.
+All comments must be preceeded by a `%`-symbol as they do in *LaTeX*, and **will be stripped unless they immediately follow the entry**. Comments that immediately follow the entry (i.e., not separated from the closing brace by an empty line) as shown in the above example will be retained as metadata associated with the entry. Likewise, *btx* does not (yet) work with `@PREAMBLE`, `@COMMENT` or `@STRING` entry types nor does it work with the `#`-concantenation operator.
 
 ## Installation
 
@@ -63,8 +65,7 @@ stack install
 
 ## To do and known issues
 
-1. "At" symbols (i.e., `@`) in comments that are separated from the references by line breaks will cause the parser to fail. This isn't a big deal, because you can still have ,`@` symbols in the *BibTeX* fields and the comments that immediately follow the references and are not separated by line breaks; however, it still needs to be fixed.
-2. Add an option to run a script without writing to the files so that you can test it out before using it.
-3. Improve the REPL functionality and output formatting.
-4. Several functions still need commenting.
-5. More testing to try and find more problems.
+1. Try to find a way to manage the more advanced *BibTeX* features such as the `@PREAMBLE`, `@STRING` and maybe `@COMMENT` entry types as well as the concatenation `#` operator.
+2. Several functions still need commenting.
+3. More testing to try and find more problems.
+4. Include a test bibliography and short getting-started tutorial.
