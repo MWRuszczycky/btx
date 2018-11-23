@@ -124,7 +124,7 @@ fromCmdLHelp = unlines hs
 fromCmd :: T.CommandMonad T.Context
 fromCmd xs rs
     | null xs       = get >>= \ b -> put b { T.fromBib = Nothing } >> return rs
-    | length xs > 1 = throwError "Command <from> allows one or no argument."
+    | length xs > 1 = throwError "Command <from> allows one or no argument.\n"
     | otherwise     = do btxState <- get
                          let fp = head xs
                          if fp == ( T.path . T.inBib ) btxState
@@ -159,8 +159,8 @@ inCmdLHelp = unlines hs
                ]
 
 inCmd :: T.CommandMonad T.Context
-inCmd []      rs = throwError "Command <in> requires a file path."
-inCmd (_:_:_) rs = throwError "Command <in> allows only one argument."
+inCmd []      rs = throwError "Command <in> requires a file path.\n"
+inCmd (_:_:_) rs = throwError "Command <in> allows only one argument.\n"
 inCmd (fp:_)  rs = do updateIn rs >>= toFile
                       btxState <- get
                       content  <- lift . readOrMakeFile $ fp
@@ -220,7 +220,7 @@ toCmdLHelp = unlines hs
                ]
 
 toCmd :: T.CommandMonad T.Context
-toCmd (_:_:_) _  = throwError "Command <to> allows only one or no argument."
+toCmd (_:_:_) _  = throwError "Command <to> allows only one or no argument.\n"
 toCmd xs      rs = do btxState <- get
                       maybe ( return () ) toFile $ T.toBib btxState
                       let fp = head xs
@@ -488,10 +488,10 @@ editCmdLHelp = unlines hs
                ]
 
 editCmd :: T.CommandMonad T.Context
-editCmd []     _  = throwError "An editor program must be specified."
+editCmd []     _  = throwError "An editor program must be specified.\n"
 editCmd _      [] = return []
 editCmd (x:[]) rs = lift ( mapM (runExternal x) rs ) >>= return
-editCmd (x:xs) _  = throwError "Only one editor may be specified with <edit>."
+editCmd (x:xs) _  = throwError "Only one editor may be specified with <edit>.\n"
 
 -- nameCmd ----------------------------------------------------------
 
@@ -595,7 +595,7 @@ tossCmd xs        rs = return . foldl' dropRefByKey rs . map Tx.pack $ xs
 
 errCmdLHelp :: String -> String
 -- ^Used as an error message for help regarding an invalid command.
-errCmdLHelp c = c ++ " is not a valid btx scripting command"
+errCmdLHelp c = "<" ++ c ++ ">" ++ " is not a valid btx scripting command.\n"
 
 errCmd :: String -> T.Command T.Context
 errCmd c = T.Command "err" (\ _ _ -> throwError . cmdInvalidErr $ c)

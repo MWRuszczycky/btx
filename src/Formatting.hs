@@ -157,13 +157,13 @@ overHang n k x
 -- Error messages
 
 argInvalidErr :: String -> String -> T.ErrString
-argInvalidErr c a = "Invalid argument for " ++ c ++ ": " ++ a
+argInvalidErr c a = "Invalid argument for " ++ c ++ ": " ++ a ++ ".\n"
 
 cmdInvalidErr :: String -> T.ErrString
-cmdInvalidErr = (++) "Invalid command: "
+cmdInvalidErr c = "Invalid command: " ++ "<" ++ c ++ ">.\n"
 
 renameErr :: Int -> Int -> T.ErrString
-renameErr n r = intercalate "\n" es
+renameErr n r = unlines es
     where es = [ "The entries cannot be renamed, because the number of"
                , "entries currently in the context (" ++ show r
                   ++ ") does not match"
@@ -171,7 +171,7 @@ renameErr n r = intercalate "\n" es
                ]
 
 uniqueBibErr :: FilePath -> T.ErrString
-uniqueBibErr fp = intercalate "\n" es
+uniqueBibErr fp = unlines es
     where es = [ "Cannot find a unique default .bib file in the current"
                , "directory (" ++ fp ++ ")"
                , "(Try: btx help in)"

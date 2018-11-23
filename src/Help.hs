@@ -123,10 +123,10 @@ helpStrFooter = intercalate "\n" hs
                ]
 
 versionStr :: String
-versionStr = "btx version " ++ showVersion version
+versionStr = "btx version " ++ showVersion version ++ "\n"
 
 versionHelpStr :: String
-versionHelpStr = "display version information"
+versionHelpStr = "display version information\n"
 
 -- =============================================================== --
 -- License string
