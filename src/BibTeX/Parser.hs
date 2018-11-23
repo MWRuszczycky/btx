@@ -12,7 +12,8 @@ import qualified Types                as T
 import Data.Bifunctor                       ( bimap       )
 import Control.Applicative                  ( (<|>)       )
 import Data.Text                            ( Text, pack  )
-import Data.Char                            ( isAlphaNum  )
+import Data.Char                            ( isAlphaNum
+                                            , isSpace     )
 
 -- =============================================================== --
 -- Types
@@ -32,32 +33,31 @@ parseBib :: FilePath -> Text -> Either String T.Bibliography
 -- ^Exposed parser takes the file path to the .bib file and the input
 -- text to parse.
 parseBib fp = bimap (errorMessage fp) go . At.parseOnly bibParser
-    where go x = T.Bibliography { T.path = fp
-                                , T.refs = x  }
+    where go (h, rs) = T.Bibliography { T.path   = fp
+                                      , T.refs   = rs
+                                      , T.header = h
+                                      }
 
 errorMessage :: FilePath -> String -> String
 errorMessage fp err = unlines hs
     where hs = [ "Unable to parse " ++ fp ++ " as a BibTeX bibliography"
                  ++ " (.bib) file."
-               , "The btx .bib parser is still fairly rudimentary and does not"
-               , "yet support all the BibTeX features. In particular:"
-               , "    1. Be sure that you are using the braced format."
-               , "    2. Make sure that all comments are preceeded by a"
-               , "       %-symbol just like in LaTeX."
-               , "    3. The parser does not yet support @PREAMBLE or"
-               , "       @COMMENT entries."
-               , "    4. The parser does not yet support use of the"
-               , "       #-concatenation operator.\n"
+               , "The btx BibTeX parser requires that:"
+               , "    1. All reference entries use the braced format."
+               , "    2. @PREAMBLE and @STRING entries precede all other"
+               , "       entries. In contrast, @COMMENT entries can follow"
+               , "       reference entries and will be parsed as metadata"
+               , "       associated with the reference entry they follow.\n"
                , "Additional information from the parser: " ++ err
                ]
 
-bibParser :: At.Parser T.References
+bibParser :: At.Parser (Text, T.References)
 -- ^Main file parser for reading each BibTeX reference.
 bibParser = do
-    ignored
-    rs <- At.many' reference
+    hdr <- Tx.strip <$> header
+    rs  <- At.many' reference
     At.endOfInput
-    return . M.fromList $ rs
+    return ( hdr, M.fromList rs )
 
 ---------------------------------------------------------------------
 -- Single reference parser
@@ -76,7 +76,7 @@ parseRef fp x = do
 oneRef :: At.Parser KeyEntry
 -- ^Parses a single isolated entry from a Text string.
 oneRef = do
-    ignored
+    At.skipWhile (/= '@')
     r <- reference
     At.endOfInput
     return r
@@ -88,28 +88,16 @@ oneRef = do
 -- Parsing references
 
 reference :: At.Parser KeyEntry
--- ^Parses an individual BibTeX entry. Metadata associated with the
--- reference immediately follows the reference entry. All other
--- comments are ignored.
+-- ^Parses an individual BibTeX entry. All comments that follow the
+-- reference are treated as metadata associated with the reference.
 reference = do
     (rt, rk) <- refHeader
     At.skipSpace
     fields <- At.many' kvPair
     -- Entries can end with either a brace or comma-spaces-brace.
     ( At.char ',' >> At.skipSpace >> At.char '}' ) <|> At.char '}'
-    skipLineSpaces
-    next <- At.peekChar'
-    case next of
-         -- The next reference starts on the same line as the closing brace.
-         '@' -> return ( rk, T.Entry rt fields [] )
-         -- There is meta data after the closing brace.
-         '%' -> do cs <- At.many' metaData
-                   ignored
-                   return ( rk, T.Entry rt fields cs )
-         -- Otherwise there can only be spaces after the closing brace.
-         _   -> do cs <- At.endOfLine >> At.many' metaData
-                   ignored
-                   return ( rk, T.Entry rt fields cs)
+    md <- metadata
+    return ( rk, T.Entry rt fields md )
 
 ---------------------------------------------------------------------
 -- Parsing reference headers
@@ -183,32 +171,38 @@ value = do
          _    -> At.char '}' >> return start
 
 ---------------------------------------------------------------------
--- Parsing comments and ignored material
+-- Parsing metadata and headers
 
-ignored :: At.Parser ()
--- ^Space and comments between entries that should be ignored.
-ignored = At.many' ignoredLine >> At.skipSpace
+metadata :: At.Parser [Text]
+metadata = do
+    xs <- formatMeta <$> At.takeWhile ( /= '@' )
+    c  <- metaBibTeX "comment" <|> return Tx.empty
+    if Tx.null c
+       then return xs
+       else do rest <- metadata
+               return $ xs ++ [c] ++ rest
 
-skipRestOfLine :: At.Parser ()
-skipRestOfLine = At.skipWhile ( not . At.isEndOfLine ) >> At.endOfLine
+header :: At.Parser Text
+header = do
+    xs <- At.takeWhile ( /= '@' )
+    u  <- anyMetaBibTeX
+    if Tx.null u
+       then return xs
+       else do rest <- header
+               return $ xs <> u <> rest
 
-ignoredLine :: At.Parser ()
--- ^Empty lines and comments that are ignored.
-ignoredLine = do
+anyMetaBibTeX :: At.Parser Text
+anyMetaBibTeX = metaBibTeX "comment"
+                <|> metaBibTeX "string"
+                <|> metaBibTeX "preamble"
+                <|> return Tx.empty
+
+metaBibTeX :: Text -> At.Parser Text
+metaBibTeX t = do
+    At.char '@'
     At.skipSpace
-    At.char '%' >> skipRestOfLine <|> At.endOfLine
+    At.asciiCI t
+    return $ Tx.cons '@' t
 
-metaData :: At.Parser Text
-metaData = do
-    At.char '%'
-    skipLineSpaces
-    c <- pack <$> ( At.manyTill At.anyChar $ At.endOfLine )
-    skipLineSpaces
-    return c
-
----------------------------------------------------------------------
--- Miscellaneous parsing
-
-skipLineSpaces :: At.Parser ()
--- ^Skip spaces and tabs but not newlines.
-skipLineSpaces = At.skipWhile ( \ x -> x == ' ' || x == '\t' )
+formatMeta :: Text -> [Text]
+formatMeta = filter (not . Tx.null) . map (Tx.dropWhile isSpace ) . Tx.lines

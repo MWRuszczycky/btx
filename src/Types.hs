@@ -57,8 +57,9 @@ data Start a = Help [String]
 
 -- |Representation of a BibTeX bibliography
 data Bibliography = Bibliography {
-      path :: FilePath      -- Path to the .bib BibTeX file
-    , refs :: References    -- Encoded references from the .bib file
+      path   :: FilePath      -- Path to the .bib BibTeX file
+    , refs   :: References    -- Encoded references from the .bib file
+    , header :: Text          -- Header metadata associated with the .bib file
     } deriving ( Eq, Show )
 
 -- |Representation of an individual BibTeX entry
@@ -66,7 +67,7 @@ data Bibliography = Bibliography {
 data Entry = Entry {
       theType  :: Text        -- Entry type (e.g., article, book, ..)
     , fields   :: [ Field ]   -- Entry fields (e.g., authors, title ..)
-    , comments :: [ Text  ]   -- Entry comments
+    , metadata :: [ Text  ]   -- Entry metadata
     } deriving ( Show, Eq )
 
 -- |Representation of a bibliography entry in the context.

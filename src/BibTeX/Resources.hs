@@ -40,7 +40,7 @@ genericKey = "new_key_"
 genKeyNumber :: T.Bibliography -> Int
 -- ^Generate a number n so that n appended to genericKey is not a key
 -- already used in the bibliography.
-genKeyNumber (T.Bibliography _ rs) = go 0
+genKeyNumber (T.Bibliography _ rs _) = go 0
     where go n | Map.member (numGenKey n) rs = go $ n + 1
                | otherwise                   = n
 
@@ -65,7 +65,7 @@ numGenKey n = genericKey <>  ( Tx.pack . show ) n
 article :: T.Entry
 article = T.Entry {
       T.theType  = "article"
-    , T.comments = []
+    , T.metadata = []
     , T.fields   = [ ( "author",  "" )
                    , ( "title",   "" )
                    , ( "year",    "" )
@@ -80,7 +80,7 @@ article = T.Entry {
 book :: T.Entry
 book = T.Entry {
       T.theType  = "book"
-    , T.comments = []
+    , T.metadata = []
     , T.fields   = [ ( "author",    "" )
                    , ( "title",     "" )
                    , ( "publisher", "" )
@@ -98,7 +98,7 @@ book = T.Entry {
 booklet :: T.Entry
 booklet = T.Entry {
       T.theType  = "booklet"
-    , T.comments = []
+    , T.metadata = []
     , T.fields = [ ( "author",       "" )
                  , ( "title",        "" )
                  , ( "howpublished", "" )
@@ -111,7 +111,7 @@ booklet = T.Entry {
 conference :: T.Entry
 conference = T.Entry {
       T.theType  = "conference"
-    , T.comments = []
+    , T.metadata = []
     , T.fields   = [ ( "author",    "" )
                    , ( "title",     "" )
                    , ( "booktitle", "" )
@@ -130,7 +130,7 @@ conference = T.Entry {
 inbook :: T.Entry
 inbook = T.Entry {
       T.theType  = "inbook"
-    , T.comments = []
+    , T.metadata = []
     , T.fields   = [ ( "author",    "" )
                    , ( "editor",    "" )
                    , ( "title",     "" )
@@ -151,7 +151,7 @@ inbook = T.Entry {
 incollection :: T.Entry
 incollection = T.Entry {
       T.theType  = "incollection"
-    , T.comments = []
+    , T.metadata = []
     , T.fields   = [ ( "author",    "" )
                    , ( "editor",    "" )
                    , ( "title",     "" )
@@ -173,7 +173,7 @@ incollection = T.Entry {
 inproceedings :: T.Entry
 inproceedings = T.Entry {
       T.theType  = "inproceedings"
-    , T.comments = []
+    , T.metadata = []
     , T.fields   = [ ( "author",       "" )
                    , ( "title",        "" )
                    , ( "booktitle",    "" )
@@ -193,7 +193,7 @@ inproceedings = T.Entry {
 manual :: T.Entry
 manual = T.Entry {
       T.theType  = "manual"
-    , T.comments = []
+    , T.metadata = []
     , T.fields   = [ ( "author",        "" )
                    , ( "title",         "" )
                    , ( "author",        "" )
@@ -208,7 +208,7 @@ manual = T.Entry {
 mastersthesis :: T.Entry
 mastersthesis = T.Entry {
       T.theType  = "mastersthesis"
-    , T.comments = []
+    , T.metadata = []
     , T.fields   = [ ( "author",        "" )
                    , ( "title",         "" )
                    , ( "school",        "" )
@@ -222,7 +222,7 @@ mastersthesis = T.Entry {
 misc :: T.Entry
 misc = T.Entry {
       T.theType  = "misc"
-    , T.comments = []
+    , T.metadata = []
     , T.fields   = [ ( "author",        "" )
                    , ( "title",         "" )
                    , ( "howpublished",  "" )
@@ -235,7 +235,7 @@ misc = T.Entry {
 phdthesis :: T.Entry
 phdthesis = T.Entry {
       T.theType  = "phdthesis"
-    , T.comments = []
+    , T.metadata = []
     , T.fields   = [ ( "author",  "" )
                    , ( "title",   "" )
                    , ( "school",  "" )
@@ -249,7 +249,7 @@ phdthesis = T.Entry {
 proceedings :: T.Entry
 proceedings = T.Entry {
       T.theType  = "proceedings"
-    , T.comments = []
+    , T.metadata = []
     , T.fields   = [ ( "title",        "" )
                    , ( "editor",       "" )
                    , ( "volume",       "" )
@@ -266,7 +266,7 @@ proceedings = T.Entry {
 techreport :: T.Entry
 techreport = T.Entry {
       T.theType  = "techreport"
-    , T.comments = []
+    , T.metadata = []
     , T.fields   = [ ( "author",      "" )
                    , ( "title",       "" )
                    , ( "year",        "" )
@@ -281,7 +281,7 @@ techreport = T.Entry {
 unpublished :: T.Entry
 unpublished = T.Entry {
       T.theType  = "unpublished"
-    , T.comments = []
+    , T.metadata = []
     , T.fields   = [ ( "author",  "" )
                    , ( "title",   "" )
                    , ( "year",    "" )

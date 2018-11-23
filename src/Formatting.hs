@@ -84,22 +84,22 @@ summarizeEntry (k, v) = kt <> title
 
 bibToBibtex :: T.Bibliography -> Text
 -- ^Generates a text representation of the bibliography.
-bibToBibtex = Tx.intercalate "\n"
-              . Map.elems
-              . Map.mapWithKey refToBibtex
-              . T.refs
+bibToBibtex b
+    | Tx.null h = rs
+    | otherwise = h <> "\n\n" <> rs
+    where h  = T.header b
+          rs = Tx.intercalate "\n"
+               . Map.elems
+               . Map.mapWithKey refToBibtex
+               . T.refs $ b
 
 refToBibtex :: Text -> T.Entry -> Text
 -- ^Generates a text representation of a bibliography reference.
 refToBibtex k v  = Tx.concat [ key, fields, close, coms <> "\n" ]
     where key    = Tx.concat [ "@", T.theType v, "{", k, ",\n" ]
           fields = Tx.intercalate ",\n" . map fieldToBibtex $ T.fields v
-          coms   = Tx.intercalate "\n" . map commentToBibtex $ T.comments v
+          coms   = Tx.intercalate "\n" . T.metadata $ v
           close  = if Tx.null coms then "\n}" else "\n}\n"
-
-commentToBibtex :: Text -> Text
--- ^Generates a string representation of a comment line.
-commentToBibtex = Tx.append "% "
 
 fieldToBibtex :: T.Field -> Text
 -- ^Generates a text representation of a bibliography entry field.
@@ -115,8 +115,8 @@ formatRef (T.Missing fp k e ) = "Missing: " <> k <> " from " <> Tx.pack fp
 formatRef (T.Ref fp k v  )    = Tx.concat x
     where x = [ k <> " in " <> Tx.pack fp <> "\n"
               , formatFields . T.fields $ v
-              , if length (T.comments v) > 0
-                   then formatComments . T.comments $ v
+              , if length (T.metadata v) > 0
+                   then formatMetadata . T.metadata $ v
                    else Tx.empty
               ]
 
@@ -125,16 +125,16 @@ formatFields :: [T.Field] -> Text
 formatFields xs = Tx.intercalate "\n" . map ( formatPair n ) $ xs
     where n = max 7 . maximum . map Tx.length . fst . unzip $ xs
 
-formatComments :: [Text] -> Text
--- ^Format the comments for pretty-printing.
-formatComments xs = let ys = zip (repeat "comment") xs
+formatMetadata :: [Text] -> Text
+-- ^Format the metadata for pretty-printing.
+formatMetadata xs = let ys = zip (repeat "metadata") xs
                     in  Tx.append "\n"
                         . Tx.intercalate "\n"
-                        . map ( formatPair 7 )
+                        . map ( formatPair 8 ) -- 8 == length "metadata"
                         $ ys
 
 formatPair :: Int -> (Text, Text) -> Text
--- ^Take a key value pair, and pretty print with an overhand and a
+-- ^Take a key value pair, and pretty print with an overhang and a
 -- fixed indent for the value text.
 formatPair n (x,y) = overHang 80 (n+4)
                      $ "  " <> padRight (n+1) ( x <> ":" ) <> " " <> y
