@@ -62,52 +62,74 @@ writeFileExcept fp x = ExceptT $ do
           hndlErr = return . Left . show
 
 ---------------------------------------------------------------------
--- Handling external processes
+-- Handling external processes with temporary files
 
 callProcExcept :: FilePath -> [String] -> T.ErrMonad ()
+-- ^Wraps an external process inside the ErrMonad monad.
 callProcExcept p args = ExceptT $ do
     liftIO . catch ( Right <$> callProcess p args ) $ hndlErr
     where hndlErr :: IOException -> IO ( Either T.ErrString () )
           hndlErr = return . Left . displayException
 
+cleanUp :: FilePath -> FilePath -> String -> T.ErrMonad a
+-- ^Handle exceptions when attempting to envoke an external process p
+-- on a temporary file. The exception is rethrown whith a more
+-- informative message and the temporary file is removed.
+cleanUp p temp errMsg = liftIO (removeFile temp) >> throwError msg
+    where msg = unlines [ "Unable to run process '" ++ p ++ "'."
+                        , "Aborting with no changes made."
+                        , "Additional information: " ++ errMsg ]
+
 runExternal :: String -> T.Ref -> T.ErrMonad T.Ref
+-- ^If an entry is not missing, convert it to a formatted BibTeX
+-- string and write to a temporary file. Then run the external
+-- process p on the file to get a new BibTeX entry, which is parsed
+-- in as new a new, modified btx entry and returned. Do not return
+-- until either parsing succeeds or the user aborts.
 runExternal p (T.Missing fp k e)  = return $ T.Missing fp k e
 runExternal p r@(T.Ref fp k v   ) = do
-    let toEdit = Tx.append editIntro . refToBibtex k $ v
+    let bibtexString = Tx.append editIntro . refToBibtex k $ v
     temp   <- liftIO . emptyTempFile "." . Tx.unpack $ k <> ".bib"
-    result <- catchError ( parseLoop p fp temp toEdit )
-                         ( \ e -> liftIO (removeFile temp) >> throwError e )
+    result <- catchError ( parseLoop p fp temp bibtexString ) ( cleanUp p temp )
     liftIO . removeFile $ temp
     return . maybe r id $ result
 
 parseLoop :: String -> FilePath -> FilePath -> Text -> T.ErrMonad (Maybe T.Ref)
+-- ^Continue calling the external process p on a single-reference
+-- BibTeX file until it parses or the user aborts by deleting all the
+-- '@' symbols in the file. Error messages are included in the file
+-- if it fails to parse.
 parseLoop p fp temp xs = do
     writeFileExcept temp $ xs
     callProcExcept p [temp]
     content <- readFileExcept temp
-    if quit content
+    if wantsToAbort content
        then return Nothing
        else case parseRef fp content of
-                 Left err -> parseLoop p fp temp ( addErrMsg content )
-                 Right r  -> return . Just $ r
+                 Left _  -> parseLoop p fp temp ( addErrMsg content )
+                 Right r -> return . Just $ r
 
 editIntro :: Text
-editIntro = Tx.intercalate "\n" hs
-    where hs = [ "\n% Please edit the BibTeX entry below."
-               , "% Leading comments will be stripped."
-               , "% Following comments will be stripped if they are separated"
-               , "% from the reference by line breaks."
-               , "\n% TO ABORT THE EDIT, delete the full entry, save and quit."
-               , "\n\n"
+-- ^Instruction to user added as a leading comment when editing.
+editIntro = Tx.unlines hs
+    where hs = [ "\nPlease edit the *single* BibTeX entry below."
+               , "Leading comments will be stripped."
+               , "Following comments (other than blank lines) will be treated"
+               , "as metadata associated with the reference."
+               , "\nTO ABORT THE EDIT:"
+                 <> " delete all 'at'-symbols (e.g., the entire entry).\n"
                ]
 
 addErrMsg :: Text -> Text
+-- ^Delete any leading comments prior to the reference entry and
+-- ^replace with an an failure-to-parse error message along with the
+-- standard editing instruction string.
 addErrMsg = Tx.append (hs <> editIntro) . Tx.dropWhile ( /= '@' )
-    where hs = "\n% PARSE ERROR: Check the BibTeX syntax and try again.\n"
+    where hs = "\nPARSE ERROR: Check the BibTeX syntax and try again.\n"
 
-quit :: Text -> Bool
-quit = null . filter isRef . map (Tx.dropWhile isSpace) . Tx.lines
-    where isRef x = not $ Tx.null x || Tx.head x == '%'
+wantsToAbort :: Text -> Bool
+-- ^Determine whether or not the user wants to abort editing.
+wantsToAbort = Tx.null . Tx.dropWhile ( /= '@' )
 
 ---------------------------------------------------------------------
 -- Interfacing with the internet
