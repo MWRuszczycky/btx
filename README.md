@@ -2,7 +2,7 @@
 
 This is a light-weight, declarative, command-line interface for working with basic *BibTeX* bibliographies (i.e., `.bib` files). A more complete description about how *btx* works with several examples can be found in the [*btx* wiki](https://github.com/MWRuszczycky/btx/wiki) and detailed help information can also be found by running `btx help`.
 
-**Note:** The parser used by *btx* will not work with all *BibTeX* files, especially those that do not use the braced-format (see below). Likewise, *btx* collects and reformats all data between entries as metadata associated with the preceding reference entry. So, **please play around with it using a test bibliography first before trying it with anything you care about**.
+**Note:** The parser used by *btx* will not work with all *BibTeX* files, especially those that do not use the braced-format (see below). Likewise, *btx* collects and reformats all data between entries as metadata associated with the preceding reference entry. So, **please play around with it using a test bibliography before trying it with anything you care about**.
 
 ## Introduction
 
@@ -43,7 +43,7 @@ The parser used by *btx* requires that any `@STRING` or `@PREAMBLE` entries prec
 folder = Chemistry/terpenoids
 file = Cats_2016_JImpRes.pdf
 ```
-Any comment lines (other than those containing only spaces) or `@COMMENT` entries that follow a reference entry are treated as metadata associated with the preceding entry on a line-by-line basis. Any comment lines, `@STRING`, `@PREAMBLE` or `@COMMENT` lines that precede the first entry are treated as metadata associated with the whole bibliography and retained. Finally, *btx* will treat the `#`-character as any other.
+Any comment lines (other than those containing only spaces) or `@COMMENT` entries that follow a reference entry are treated as metadata associated with the preceding entry on a line-by-line basis. Any comment lines, `@STRING`, `@PREAMBLE` or `@COMMENT` entries that precede the first entry are treated as metadata associated with the whole bibliography and retained. Finally, *btx* will treat the `#`-character as any other.
 
 ## Installation
 
