@@ -2,7 +2,7 @@
 
 This is a light-weight, declarative, command-line interface for working with basic *BibTeX* bibliographies (i.e., `.bib` files). A more complete description about how *btx* works with several examples can be found in the [*btx* wiki](https://github.com/MWRuszczycky/btx/wiki) and detailed help information can also be found by running `btx help`.
 
-**Note:** The parser used by *btx* is still fairly rudimentary, and will not work with all *BibTeX* files. Likewise, *btx* works by reformatting `.bib` files and will strip any comments that are not recognized as metadata (see below for details). So, **please play around with it using a test bibliography first before trying it with anything you care about**.
+**Note:** The parser used by *btx* will not work with all *BibTeX* files, especially those that do not use the braced-format (see below). Likewise, *btx* collects and reformats all data between entries as metadata associated with the preceding reference entry. So, **please play around with it using a test bibliography first before trying it with anything you care about**.
 
 ## Introduction
 
@@ -30,7 +30,7 @@ btx in animals.bib, doi 10.1016/bs.mie.2017.07.022, name Cats2016 and edit vim
 
 ## *BibTeX* reference entry format
 
-The parser used by *btx* does not currently recognize all the features specified in the [*BibTeX Documentation*](ftp://ftp.ctan.org/tex-archive/biblio/bibtex/contrib/doc), because I didn't even know about this when I first wrote it. In particular, references must follow the 'braced'-format, such as in the following example:
+The parser used by *btx* requires that any `@STRING` or `@PREAMBLE` entries precede any normal reference entries. Furthermore, all reference entries must follow the braced-format such as in the following example:
 ```tex
 @article{Cats2016,
     author = {Norman and Felix and Hilbert},
@@ -40,10 +40,10 @@ The parser used by *btx* does not currently recognize all the features specified
     pages = {4625-4637},
     year = {2016}
 }
-% folder = Chemistry/terpenoids
-% file = Cats_2016_JImpRes.pdf
+folder = Chemistry/terpenoids
+file = Cats_2016_JImpRes.pdf
 ```
-All comments must be preceeded by a `%`-symbol as they do in *LaTeX*, and **will be stripped unless they immediately follow the entry**. Comments that immediately follow the entry (i.e., not separated from the closing brace by an empty line) as shown in the above example will be retained as metadata associated with the entry. Likewise, *btx* does not (yet) work with `@PREAMBLE`, `@COMMENT` or `@STRING` entry types nor does it work with the `#`-concantenation operator.
+Any comment lines (other than those containing only spaces) or `@COMMENT` entries that follow a reference entry are treated as metadata associated with the preceding entry on a line-by-line basis. Any comment lines, `@STRING`, `@PREAMBLE` or `@COMMENT` lines that precede the first entry are treated as metadata associated with the whole bibliography and retained. Finally, *btx* will treat the `#`-character as any other.
 
 ## Installation
 
@@ -65,7 +65,6 @@ stack install
 
 ## To do and known issues
 
-1. Try to find a way to manage the more advanced *BibTeX* features such as the `@PREAMBLE`, `@STRING` and maybe `@COMMENT` entry types as well as the concatenation `#` operator.
-2. Several functions still need commenting.
-3. More testing to try and find more problems.
-4. Include a test bibliography and short getting-started tutorial.
+1. Several functions still need commenting.
+2. More testing to try and find more problems.
+3. Include a test bibliography and short getting-started tutorial.
