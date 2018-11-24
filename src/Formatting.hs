@@ -108,6 +108,12 @@ fieldToBibtex (k, v) = Tx.concat [ "    ", k, " = ", "{", v, "}" ]
 ---------------------------------------------------------------------
 -- Pretty print references
 
+-- Magic numbers
+
+lenMeta, lenLine :: Int
+lenMeta = 8  -- Length of the word 'metadata' used for formatting.
+lenLine = 80 -- Maximum line length.
+
 formatRef :: T.Ref -> Text
 -- ^Represent a Ref value as pretty-printed text.
 formatRef (T.Missing fp k e ) = "Missing: " <> k <> " from " <> Tx.pack fp
@@ -122,21 +128,24 @@ formatRef (T.Ref fp k v  )    = Tx.concat x
 
 formatFields :: [T.Field] -> Text
 -- ^Format the field key-value pairs for pretty-printing.
-formatFields xs = Tx.intercalate "\n" . map ( formatPair n ) $ xs
-    where n = max 7 . maximum . map Tx.length . fst . unzip $ xs
+formatFields fs
+    | null fs'  = "  " <> "No non-empty fields"
+    | otherwise = Tx.intercalate "\n" . map ( formatPair n ) $ fs'
+    where fs' = filter ( not . Tx.null . snd ) fs
+          n   = max lenMeta . maximum . map Tx.length . fst . unzip $ fs'
 
 formatMetadata :: [Text] -> Text
 -- ^Format the metadata for pretty-printing.
 formatMetadata xs = let ys = zip (repeat "metadata") xs
                     in  Tx.append "\n"
                         . Tx.intercalate "\n"
-                        . map ( formatPair 8 ) -- 8 == length "metadata"
+                        . map ( formatPair lenMeta )
                         $ ys
 
 formatPair :: Int -> (Text, Text) -> Text
 -- ^Take a key value pair, and pretty print with an overhang and a
 -- fixed indent for the value text.
-formatPair n (x,y) = overHang 80 (n+4)
+formatPair n (x,y) = overHang lenLine (n+4)
                      $ "  " <> padRight (n+1) ( x <> ":" ) <> " " <> y
 
 padRight :: Int -> Text -> Text
