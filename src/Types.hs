@@ -9,11 +9,12 @@ module Types
     , Start             (..)
     -- Bibliographies
     , Bibliography      (..)
+    , Context           (..)
     , Entry             (..)
     , Field             (..)
+    , Key               (..)
     , Ref               (..)
     , References        (..)
-    , Context           (..)
     -- Commands
     , Command           (..)
     , CommandMonad      (..)

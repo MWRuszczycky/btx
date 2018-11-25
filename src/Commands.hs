@@ -43,7 +43,7 @@ import Formatting                              ( argInvalidErr
                                                , bibToBibtex
                                                , cmdInvalidErr
                                                , formatHelp
-                                               , formatRef
+                                               , viewRef
                                                , refToBibtex
                                                , renameErr
                                                , summarize
@@ -307,7 +307,7 @@ viewCmd _ [] = do
     return []
 viewCmd _ rs = do
     liftIO . Tx.putStrLn $ Tx.empty
-    liftIO . Tx.putStrLn . Tx.intercalate "\n\n" . map formatRef $ rs
+    liftIO . Tx.putStrLn . Tx.intercalate "\n\n" . map viewRef $ rs
     return rs
 
 -- =============================================================== --

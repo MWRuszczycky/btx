@@ -3,7 +3,7 @@
 module Formatting
     ( refToBibtex
     , bibToBibtex
-    , formatRef
+    , viewRef
     , summarize
     , summarizeAllEntries
     , summarizeEntries
@@ -21,7 +21,8 @@ import qualified Data.Map.Strict    as Map
 import qualified Types              as T
 import qualified Help               as H
 import Data.Text                            ( Text          )
-import Data.List                            ( intercalate
+import Data.List                            ( foldl'
+                                            , intercalate
                                             , sort          )
 
 ---------------------------------------------------------------------
@@ -106,61 +107,74 @@ fieldToBibtex :: T.Field -> Text
 fieldToBibtex (k, v) = Tx.concat [ "    ", k, " = ", "{", v, "}" ]
 
 ---------------------------------------------------------------------
--- Pretty print references
+-- Pretty print references for use with <view> command
 
--- Magic numbers
-
-lenMeta, lenLine :: Int
-lenMeta = 8  -- Length of the word 'metadata' used for formatting.
-lenLine = 80 -- Maximum line length.
-
-formatRef :: T.Ref -> Text
+viewRef :: T.Ref -> Text
 -- ^Represent a Ref value as pretty-printed text.
-formatRef (T.Missing fp k e ) = "Missing: " <> k <> " from " <> Tx.pack fp
-                                <> " (" <> Tx.pack e <> ")"
-formatRef (T.Ref fp k v  )    = Tx.concat x
-    where x = [ k <> " in " <> Tx.pack fp <> "\n"
-              , formatFields . T.fields $ v
-              , if length (T.metadata v) > 0
-                   then formatMetadata . T.metadata $ v
-                   else Tx.empty
-              ]
+viewRef (T.Missing fp k e ) = viewMissing fp k e
+viewRef (T.Ref     fp k v ) = hdr <> viewEntry v
+    where hdr = k <> " in " <> Tx.pack fp <> "\n"
 
-formatFields :: [T.Field] -> Text
--- ^Format the field key-value pairs for pretty-printing.
-formatFields fs
-    | null fs'  = "  " <> "No non-empty fields"
-    | otherwise = Tx.intercalate "\n" . map ( formatPair n ) $ fs'
+viewMissing :: FilePath -> T.Key -> T.ErrString -> Text
+-- ^Formats a missing entry as Text for viewing.
+viewMissing fp k e = Tx.concat [ "Missing: " <> k
+                               , " from " <> Tx.pack fp
+                               , " (" <> Tx.pack e <> ")"
+                               ]
+
+viewEntry :: T.Entry -> Text
+-- ^Formats a non-missing entry as Text for view.
+viewEntry (T.Entry t fs cs) = viewPairs $ ("type", t) : fs' ++ ms
     where fs' = filter ( not . Tx.null . snd ) fs
-          n   = max lenMeta . maximum . map Tx.length . fst . unzip $ fs'
+          ms  = zip (repeat "metadata") cs
 
-formatMetadata :: [Text] -> Text
--- ^Format the metadata for pretty-printing.
-formatMetadata xs = let ys = zip (repeat "metadata") xs
-                    in  Tx.append "\n"
-                        . Tx.intercalate "\n"
-                        . map ( formatPair lenMeta )
-                        $ ys
+viewPairs :: [(Text, Text)] -> Text
+-- ^Format the field key-value pairs for pretty-printing.
+viewPairs fs
+    | length fs' < 2 = Tx.intercalate "\n" $ map ( formatPair 0 ) fs' ++ msg
+    | otherwise      = Tx.intercalate "\n" . map ( formatPair n ) $ fs'
+    where fs' = filter ( not . Tx.null . snd ) fs
+          n   = maximum . map Tx.length . fst . unzip $ fs'
+          msg = ["  No non-empty fields or metadata"]
 
 formatPair :: Int -> (Text, Text) -> Text
--- ^Take a key value pair, and pretty print with an overhang and a
--- fixed indent for the value text.
-formatPair n (x,y) = overHang lenLine (n+4)
-                     $ "  " <> padRight (n+1) ( x <> ":" ) <> " " <> y
+-- ^Take a key value pair, and pretty print reserving n characters
+-- for the key preceded by 2 spaces and followed by a colon and a
+-- space and then the field. Field lines then all line up using a
+-- fixed indent of 2 + n + 2 spaces.
+formatPair n (x,y) = let lineLength = 80 -- characters
+                         keyTxt     = "  " <> padRight (n+2) (x <> ": ")
+                         fieldTxt   = overHang (lineLength - n - 4) (n+4) y
+                     in  keyTxt <> fieldTxt
 
 padRight :: Int -> Text -> Text
--- ^Add patting after a text so the total length is n.
+-- ^Add padding spaces after a text so the total length is n.
 padRight n x = x <> Tx.replicate ( n - Tx.length x ) " "
 
 overHang :: Int -> Int -> Text -> Text
 -- ^Generate k-overhangs for n-length lines.
-overHang n k x
-    | Tx.null x = Tx.empty
-    | otherwise = Tx.intercalate ind $ p : go s
-    where (p,s) = Tx.splitAt n x
-          ind   = "\n" <> Tx.replicate k " "
-          go xs | Tx.null xs = []
-                | otherwise  = ( \ (x,y) -> x : go y ) . Tx.splitAt (n-k) $ xs
+overHang n k t
+    | Tx.null t = Tx.empty
+    | otherwise = Tx.intercalate indent $ breakToFit n t
+    where indent = "\n" <> Tx.replicate k " "
+
+breakToFit :: Int -> Text -> [Text]
+-- ^Break text up so that it all fits on a line of n characters.
+-- Breaks are placed between words unless the word is too long to fit
+-- on a single line, in which case it is hyphenated.
+breakToFit n x
+    | n < 1     = []
+    | n == 1    = map Tx.singleton . Tx.unpack $ x
+    | otherwise = reverse . foldl' go [] . Tx.words $ x
+    where go []     w | Tx.null w  = []   -- nothing to do
+                      | Tx.null w2 = [w1] -- everything fits
+                      | otherwise  = go [] w4 ++ [ w3 <> "-" ]
+                      where (w1,w2) = Tx.splitAt n w
+                            (w3,w4) = Tx.splitAt ( n - 1 ) w
+          go (t:ts) w | Tx.null w  = []                    -- nothing to do
+                      | Tx.null w2 = (t <> " " <> w1) : ts -- everthing fits
+                      | otherwise  = go [] w ++ (t : ts)   -- doesn't fit
+                      where (w1,w2) = Tx.splitAt ( n - Tx.length t - 1 ) w
 
 ---------------------------------------------------------------------
 -- Error messages
