@@ -143,7 +143,7 @@ getDoi :: String -> T.ErrMonad T.Ref
 getDoi doi = do
     let ps = [ "text/bibliography; style=bibtex" ]
         os = Wreq.defaults & Wreq.header "Accept" .~ ps
-        ad = "http://dx.doi.org/" ++ doi
+        ad = "https://doi.org/" ++ doi
     catchError ( tryToConnectWithGet os ad >>= readResponse ad )
                ( return . T.Missing doi "no-key"               )
 
