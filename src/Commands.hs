@@ -12,7 +12,8 @@ import qualified Data.Map.Strict        as Map
 import qualified Types                  as T
 import qualified Help                   as H
 import Data.Text                               ( Text                )
-import Data.List                               ( foldl'
+import Data.List                               ( find
+                                               , foldl'
                                                , intercalate         )
 import Control.Monad                           ( unless              )
 import Control.Monad.Except                    ( throwError
@@ -54,12 +55,12 @@ import Formatting                              ( argInvalidErr
 -- Hub and router
 
 route :: String -> T.Command T.Context
-route c = go hub
-    where go []     = errCmd c
-          go (x:xs) | T.cmdName x == c = x
-                    | otherwise        = go xs
+-- ^Get the requested command function based on the command string.
+route x = maybe (errCmd x) id . find ( (== x) . T.cmdName) $ hub
 
 hub :: [ T.Command T.Context ]
+-- ^Organizes all the command functions, command strings and both the
+-- long and short help strings.
 hub = [ -- Bibliography managers
         T.Command "from" fromCmd fromCmdSHelp fromCmdLHelp
       , T.Command "in"   inCmd   inCmdSHelp   inCmdLHelp
