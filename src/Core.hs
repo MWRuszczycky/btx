@@ -14,6 +14,10 @@ module Core
     , updateTo
     ) where
 
+-- =============================================================== --
+-- DSL for working with modeled bibliography information
+-- =============================================================== --
+
 import qualified Data.Map.Strict as Map
 import qualified Data.Text       as Tx
 import qualified Types           as T

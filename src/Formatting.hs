@@ -16,6 +16,10 @@ module Formatting
     , formatHelp
     ) where
 
+-- =============================================================== --
+-- DSL for converting bibliography information to meaningful output
+-- =============================================================== --
+
 import qualified Data.Text          as Tx
 import qualified Data.Map.Strict    as Map
 import qualified Types              as T

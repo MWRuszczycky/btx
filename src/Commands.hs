@@ -6,6 +6,11 @@ module Commands
     , saveCmd
     ) where
 
+-- =============================================================== --
+-- This is where all the commands and their help strings are defined.
+-- Commands are documented using their help strings.
+-- =============================================================== --
+
 import qualified Data.Text.IO           as Tx
 import qualified Data.Text              as Tx
 import qualified Data.Map.Strict        as Map

@@ -14,6 +14,10 @@ module Help
     , versionStr
     ) where
 
+-- =============================================================== --
+-- Help, copying and other information strings
+-- =============================================================== --
+
 import Data.List    ( intercalate )
 import Data.Version ( showVersion )
 import Paths_btx    ( version     )

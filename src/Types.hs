@@ -21,6 +21,10 @@ module Types
     , ParsedCommand     (..)
     ) where
 
+-- =============================================================== --
+-- Defines how bibliographies and program state are modeled
+-- =============================================================== --
+
 import qualified Data.Map.Strict as Map
 import Data.Text                        ( Text, unpack  )
 import Data.List                        ( intercalate   )

@@ -5,6 +5,10 @@ module BibTeX.Parser
     , parseRef
     ) where
 
+-- =============================================================== --
+-- Parsers for reading BibTeX .bib files
+-- =============================================================== --
+
 import qualified Data.Attoparsec.Text as At
 import qualified Data.Text            as Tx
 import qualified Data.Map.Strict      as M

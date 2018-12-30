@@ -8,6 +8,10 @@ module CoreIO
     , runExternal
     ) where
 
+-- =============================================================== --
+-- IO DSL for working with bibliography information
+-- =============================================================== --
+
 import qualified Data.Text.IO        as Tx
 import qualified Data.Text           as Tx
 import qualified Data.Text.Encoding  as Tx

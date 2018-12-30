@@ -7,6 +7,10 @@ module BibTeX.Resources
     , templates
     ) where
 
+-- =============================================================== --
+-- Templates and handlers for adding new bibliography entries
+-- =============================================================== --
+
 import qualified Data.Text       as Tx
 import qualified Data.Map.Strict as Map
 import qualified Types           as T
