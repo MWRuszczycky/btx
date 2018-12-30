@@ -12,12 +12,12 @@ import Control.Monad.State.Lazy         ( execStateT, get
 import Control.Monad.Except             ( runExceptT
                                         , throwError
                                         , liftEither          )
-import Commands                         ( runHelp             )
+import BibTeX.Parser                    ( parseBib            )
 import Core                             ( parse               )
 import CoreIO                           ( readOrMakeFile      )
-import BibTeX.Parser                    ( parseBib            )
-import Commands                         ( route, saveCmd      )
 import Formatting                       ( uniqueBibErr        )
+import Commands                         ( route, saveCmd
+                                        , runHelp             )
 
 -- =============================================================== --
 -- Entry point and clean up
