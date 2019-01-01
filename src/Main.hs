@@ -4,15 +4,15 @@ module Main where
 -- Entry and exit point
 -- =============================================================== --
 
-import qualified Types          as T
-import System.Environment            ( getArgs    )
-import Control.Monad.Except          ( runExceptT )
-import Core                          ( parse      )
-import Controller                    ( finish
-                                     , getScript
-                                     , initBtx
-                                     , runBtx
-                                     , runHelp    )
+import qualified Model.Core.Types as T
+import System.Environment               ( getArgs    )
+import Control.Monad.Except             ( runExceptT )
+import Model.Core.ScriptParser          ( parse      )
+import Controller                       ( finish
+                                        , getScript
+                                        , initBtx
+                                        , runBtx
+                                        , runHelp    )
 
 main :: IO ()
 main = do

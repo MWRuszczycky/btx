@@ -1,79 +1,41 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module CoreIO
-    ( readOrMakeFile
-    , readFileExcept
-    , writeFileExcept
-    , getDoi
+module Model.CoreIO.External
+    ( getDoi
     , runExternal
     ) where
 
 -- =============================================================== --
--- IO DSL for working with bibliography information
+-- IO DSL for commands involving the internet and external processes
 -- =============================================================== --
 
-import qualified Data.Text.IO        as Tx
-import qualified Data.Text           as Tx
-import qualified Data.Text.Encoding  as Tx
-import qualified Network.Wreq        as Wreq
-import qualified Types               as T
-import Data.Char                             ( isSpace             )
-import Data.ByteString.Lazy.Internal         ( ByteString          )
-import Data.ByteString.Lazy                  ( toStrict            )
-import Data.Bifunctor                        ( bimap               )
-import Lens.Micro                            ( (^.), (.~), (&)     )
-import Data.Text                             ( Text                )
-import System.Process                        ( callProcess         )
-import System.Directory                      ( removeFile          )
-import System.IO.Temp                        ( emptyTempFile       )
-import System.IO.Error                       ( isDoesNotExistError )
-import Control.Monad.Trans                   ( liftIO              )
-import Control.Monad.Except                  ( ExceptT (..)
-                                             , throwError
-                                             , catchError
-                                             , liftEither          )
-import Control.Exception                     ( try, IOException
-                                             , SomeException
-                                             , displayException
-                                             , catch               )
-import Formatting                            ( refToBibtex         )
-import BibTeX.Parser                         ( parseRef            )
+import qualified Data.Text.IO          as Tx
+import qualified Data.Text             as Tx
+import qualified Data.Text.Encoding    as Tx
+import qualified Network.Wreq          as Wreq
+import qualified Model.Core.Types      as T
+import qualified Model.CoreIO.ErrMonad as E
+import Data.Char                               ( isSpace          )
+import Data.ByteString.Lazy.Internal           ( ByteString       )
+import Data.ByteString.Lazy                    ( toStrict         )
+import Data.Bifunctor                          ( bimap            )
+import Lens.Micro                              ( (^.), (.~), (&)  )
+import Data.Text                               ( Text             )
+import System.Directory                        ( removeFile       )
+import System.IO.Temp                          ( emptyTempFile    )
+import Control.Monad.Trans                     ( liftIO           )
+import Control.Monad.Except                    ( ExceptT (..)
+                                               , throwError
+                                               , catchError
+                                               , liftEither       )
+import Control.Exception                       ( SomeException
+                                               , try
+                                               , catch            )
+import Model.Core.Formatting                   ( refToBibtex      )
+import Model.BibTeX.Parser                     ( parseRef         )
 
 -- =============================================================== --
--- IO with exception handling
-
----------------------------------------------------------------------
--- Reading and writing files
-
-readOrMakeFile :: FilePath -> T.ErrMonad Text
--- ^Try to read a file, and if it does not exist, then create it.
-readOrMakeFile fp = ExceptT $ do
-    liftIO . catch ( Right <$> Tx.readFile fp ) $ hndlErr
-    where hndlErr :: IOException -> IO ( Either T.ErrString Text )
-          hndlErr e | isDoesNotExistError e = return . Right $ Tx.empty
-                    | otherwise             = return . Left . show $ e
-
-readFileExcept :: FilePath -> T.ErrMonad Text
-readFileExcept fp = ExceptT $ do
-    liftIO . catch ( Right <$> Tx.readFile fp ) $ hndlErr
-    where hndlErr :: IOException -> IO ( Either T.ErrString Text )
-          hndlErr = return . Left . show
-
-writeFileExcept :: FilePath -> Text -> T.ErrMonad ()
-writeFileExcept fp x = ExceptT $ do
-    liftIO . catch ( Right <$> Tx.writeFile fp x ) $ hndlErr
-    where hndlErr :: IOException -> IO ( Either T.ErrString () )
-          hndlErr = return . Left . show
-
----------------------------------------------------------------------
 -- Handling external processes with temporary files
-
-callProcExcept :: FilePath -> [String] -> T.ErrMonad ()
--- ^Wraps an external process inside the ErrMonad monad.
-callProcExcept p args = ExceptT $ do
-    liftIO . catch ( Right <$> callProcess p args ) $ hndlErr
-    where hndlErr :: IOException -> IO ( Either T.ErrString () )
-          hndlErr = return . Left . displayException
 
 cleanUp :: FilePath -> FilePath -> String -> T.ErrMonad a
 -- ^Handle exceptions when attempting to envoke an external process p
@@ -104,9 +66,9 @@ parseLoop :: String -> FilePath -> FilePath -> Text -> T.ErrMonad (Maybe T.Ref)
 -- '@' symbols in the file. Error messages are included in the file
 -- if it fails to parse.
 parseLoop p fp temp xs = do
-    writeFileExcept temp $ xs
-    callProcExcept p [temp]
-    content <- readFileExcept temp
+    E.writeFileExcept temp $ xs
+    E.callProcExcept p [temp]
+    content <- E.readFileExcept temp
     if wantsToAbort content
        then return Nothing
        else case parseRef fp content of
@@ -135,7 +97,7 @@ wantsToAbort :: Text -> Bool
 -- ^Determine whether or not the user wants to abort editing.
 wantsToAbort = Tx.null . Tx.dropWhile ( /= '@' )
 
----------------------------------------------------------------------
+-- =============================================================== --
 -- Interfacing with the internet
 
 type WreqResponse = Wreq.Response ByteString

@@ -1,36 +1,35 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Formatting
-    ( refToBibtex
+module Model.Core.Formatting
+    ( -- Bibliography formatting
+      refToBibtex
     , bibToBibtex
     , viewRef
     , summarize
     , summarizeAllEntries
     , summarizeEntries
-    -- Error messaging
-    , argInvalidErr
-    , cmdInvalidErr
-    , renameErr
-    , uniqueBibErr
-    -- General help formatting
+      -- General help formatting
     , formatHelp
     ) where
 
 -- =============================================================== --
--- DSL for converting bibliography information to meaningful output
+-- DSL for converting bibliography information to readable output
 -- =============================================================== --
 
-import qualified Data.Text          as Tx
-import qualified Data.Map.Strict    as Map
-import qualified Types              as T
-import qualified Help               as H
-import Data.Text                            ( Text          )
-import Data.List                            ( foldl'
-                                            , intercalate
-                                            , sort          )
+import qualified Data.Text                as Tx
+import qualified Data.Map.Strict          as Map
+import qualified Model.Core.Types         as T
+import qualified Model.Core.Messages.Help as H
+import Data.Text                                 ( Text          )
+import Data.List                                 ( foldl'
+                                                 , intercalate
+                                                 , sort          )
+
+-- =============================================================== --
+-- Bibliography formatting
 
 ---------------------------------------------------------------------
--- Summarizing bibilographies
+-- Summarizing state and context
 
 summarize :: [String] -> T.Context -> T.BtxState -> Text
 summarize xs rs s
@@ -180,32 +179,7 @@ breakToFit n x
                       | otherwise  = go [] w ++ (t : ts)   -- doesn't fit
                       where (w1,w2) = Tx.splitAt ( n - Tx.length t - 1 ) w
 
----------------------------------------------------------------------
--- Error messages
-
-argInvalidErr :: String -> String -> T.ErrString
-argInvalidErr c a = "Invalid argument for " ++ c ++ ": " ++ a ++ ".\n"
-
-cmdInvalidErr :: String -> T.ErrString
-cmdInvalidErr c = "Invalid command: " ++ "<" ++ c ++ ">.\n"
-
-renameErr :: Int -> Int -> T.ErrString
-renameErr n r = unlines es
-    where es = [ "The entries cannot be renamed, because the number of"
-               , "entries currently in the context (" ++ show r
-                  ++ ") does not match"
-               , "the number of new names supplied (" ++ show n ++ ")."
-               ]
-
-uniqueBibErr :: FilePath -> T.ErrString
-uniqueBibErr fp = unlines es
-    where es = [ "Cannot find a unique default .bib file in the current"
-                 ++ " directory:"
-               , fp
-               , "Try: btx help in"
-               ]
-
----------------------------------------------------------------------
+-- =============================================================== --
 -- General help formatting
 
 padRightStr :: Int -> String -> String

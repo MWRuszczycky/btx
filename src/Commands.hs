@@ -11,50 +11,48 @@ module Commands
 -- Commands are documented using their help strings.
 -- =============================================================== --
 
-import qualified Data.Text.IO           as Tx
-import qualified Data.Text              as Tx
-import qualified Data.Map.Strict        as Map
-import qualified Types                  as T
-import qualified Help                   as H
-import Data.Text                               ( Text                )
-import Data.List                               ( find
-                                               , foldl'
-                                               , intercalate         )
-import Control.Monad                           ( unless              )
-import Control.Monad.Except                    ( throwError
-                                               , liftEither          )
-import Control.Monad.State.Lazy                ( get
-                                               , put
-                                               , lift
-                                               , liftIO              )
-import Core                                    ( allKeysToArgs
-                                               , deleteRefs
-                                               , dropRefByKey
-                                               , getRef
-                                               , insertRefs
-                                               , isPresent
-                                               , updateIn
-                                               , updateTo            )
-import CoreIO                                  ( getDoi
-                                               , readOrMakeFile
-                                               , readFileExcept
-                                               , runExternal
-                                               , writeFileExcept     )
-import BibTeX.Parser                           ( parseBib            )
-import BibTeX.Resources                        ( genericKey
-                                               , genKeyNumber
-                                               , supported
-                                               , templates           )
-import Formatting                              ( argInvalidErr
-                                               , bibToBibtex
-                                               , cmdInvalidErr
-                                               , formatHelp
-                                               , viewRef
-                                               , refToBibtex
-                                               , renameErr
-                                               , summarize
-                                               , summarizeAllEntries
-                                               , summarizeEntries    )
+import qualified Data.Text.IO             as Tx
+import qualified Data.Text                as Tx
+import qualified Data.Map.Strict          as Map
+import qualified Model.Core.Types         as T
+import qualified Model.Core.Messages.Help as H
+import Data.Text                                 ( Text                )
+import Data.List                                 ( find
+                                                 , foldl'
+                                                 , intercalate         )
+import Control.Monad                             ( unless              )
+import Control.Monad.Except                      ( throwError
+                                                 , liftEither          )
+import Control.Monad.State.Lazy                  ( get
+                                                 , put
+                                                 , lift
+                                                 , liftIO              )
+import Model.Core.Core                           ( allKeysToArgs
+                                                 , deleteRefs
+                                                 , dropRefByKey
+                                                 , getRef
+                                                 , insertRefs
+                                                 , isPresent           )
+import Model.CoreIO.CoreIO                       ( bibToFile
+                                                 , updateIn
+                                                 , updateTo            )
+import Model.CoreIO.External                     ( getDoi
+                                                 , runExternal         )
+import Model.CoreIO.ErrMonad                     ( readOrMakeFile
+                                                 , readFileExcept
+                                                 , writeFileExcept     )
+import Model.BibTeX.Parser                       ( parseBib            )
+import Model.BibTeX.Resources                    ( genericKey
+                                                 , genKeyNumber
+                                                 , supported
+                                                 , templates           )
+import Model.Core.Formatting                     ( bibToBibtex
+                                                 , formatHelp
+                                                 , viewRef
+                                                 , refToBibtex
+                                                 , summarize
+                                                 , summarizeAllEntries
+                                                 , summarizeEntries    )
 
 -- =============================================================== --
 -- Hub and router
@@ -89,22 +87,9 @@ hub = [ -- Bibliography managers
       ]
 
 -- =============================================================== --
--- State managers
-
-toFile :: T.Bibliography -> T.BtxStateMonad ()
--- ^Convert a bibliography to BibTeX and write to file.
-toFile b = lift . writeFileExcept (T.path b) . bibToBibtex $ b
-
----------------------------------------------------------------------
----------------------------------------------------------------------
--- Commands
----------------------------------------------------------------------
----------------------------------------------------------------------
-
--- =============================================================== --
 -- Bibliography constructors, operators and utilities
 
--- fromCmd ----------------------------------------------------------
+-- from command -----------------------------------------------------
 
 fromCmdSHelp :: String
 fromCmdSHelp = "from [FILE-PATH] : reset the import bibliography"
@@ -140,7 +125,7 @@ fromCmd xs rs
                                     put btxState { T.fromBib = Just bib }
                                     return rs
 
--- inCmd ------------------------------------------------------------
+-- in command -------------------------------------------------------
 
 inCmdSHelp :: String
 inCmdSHelp = "in    FILE-PATH : initialize, reset or create the working"
@@ -167,14 +152,14 @@ inCmdLHelp = unlines hs
 inCmd :: T.CommandMonad T.Context
 inCmd []      rs = throwError "Command <in> requires a file path.\n"
 inCmd (_:_:_) rs = throwError "Command <in> allows only one argument.\n"
-inCmd (fp:_)  rs = do updateIn rs >>= toFile
+inCmd (fp:_)  rs = do updateIn rs >>= bibToFile
                       btxState <- get
                       content  <- lift . readOrMakeFile $ fp
                       bib      <- liftEither . parseBib fp $ content
                       put btxState { T.inBib = bib }
                       return []
 
--- saveCmd ----------------------------------------------------------
+-- save command -----------------------------------------------------
 
 saveCmdSHelp :: String
 saveCmdSHelp = "save : update working bibliography and write everything to file"
@@ -196,11 +181,11 @@ saveCmdLHelp = unlines hs
                ]
 
 saveCmd :: T.CommandMonad T.Context
-saveCmd _ rs = do updateIn rs >>= toFile
-                  get >>= maybe (return ()) toFile . T.toBib
+saveCmd _ rs = do updateIn rs >>= bibToFile
+                  get >>= maybe (return ()) bibToFile . T.toBib
                   return []
 
--- toCmd ------------------------------------------------------------
+-- to command -------------------------------------------------------
 
 toCmdSHelp :: String
 toCmdSHelp = "to   [FILE-PATH] : reset or create new export bibliography"
@@ -228,7 +213,7 @@ toCmdLHelp = unlines hs
 toCmd :: T.CommandMonad T.Context
 toCmd (_:_:_) _  = throwError "Command <to> allows only one or no argument.\n"
 toCmd xs      rs = do btxState <- get
-                      maybe ( return () ) toFile $ T.toBib btxState
+                      maybe ( return () ) bibToFile $ T.toBib btxState
                       let fp = head xs
                       if null xs || fp == (T.path . T.inBib) btxState
                          then put btxState { T.toBib = Nothing }
@@ -240,7 +225,7 @@ toCmd xs      rs = do btxState <- get
 -- =============================================================== --
 -- Queries
 
--- infoCmd ----------------------------------------------------------
+-- info command -----------------------------------------------------
 
 infoCmdSHelp :: String
 infoCmdSHelp = "info [ARG..] : display summary of all bibliographies "
@@ -262,7 +247,7 @@ infoCmdLHelp = unlines hs
 infoCmd :: T.CommandMonad T.Context
 infoCmd xs rs = get >>= liftIO . Tx.putStrLn . summarize xs rs >> return rs
 
----------------------------------------------------------------------
+-- list command -----------------------------------------------------
 
 listCmdSHelp :: String
 listCmdSHelp = "list [ARG..] : display a summary of the entries "
@@ -294,7 +279,7 @@ listCmd xs        rs = do bib <- T.inBib <$> get
                           liftIO . mapM_ go $ xs
                           return rs
 
--- viewCmd ----------------------------------------------------------
+-- view command -----------------------------------------------------
 
 viewCmdSHelp :: String
 viewCmdSHelp = "view : view the details of all entries in the context"
@@ -319,7 +304,7 @@ viewCmd _ rs = do
 -- =============================================================== --
 -- Context constructors
 
--- doiCmd -----------------------------------------------------------
+-- doi command ------------------------------------------------------
 
 doiCmdSHelp :: String
 doiCmdSHelp = "doi  [DOI..] : download an entry using the doi of its" 
@@ -346,7 +331,7 @@ doiCmd xs rs = do
     updateIn rs
     lift . mapM getDoi $ xs
 
--- getCmd -----------------------------------------------------------
+-- get command ------------------------------------------------------
 
 getCmdSHelp :: String
 getCmdSHelp = "get  [KEY..] : copy entries from "
@@ -376,7 +361,7 @@ getCmd xs        rs = do updateIn rs
                          bib <- T.inBib <$> get
                          return . map (getRef bib) $ xs
 
--- newCmd -----------------------------------------------------------
+-- new command ------------------------------------------------------
 
 newCmdSHelp :: String
 newCmdSHelp = "new  [TYPE..] : populate context with template entries "
@@ -408,7 +393,7 @@ newCmd xs rs = do
     let n = genKeyNumber bib
     return . templates n $ xs
 
--- pullCmd ----------------------------------------------------------
+-- pull command -----------------------------------------------------
 
 pullCmdSHelp :: String
 pullCmdSHelp = "pull [KEY..] : move entries from "
@@ -436,7 +421,7 @@ pullCmd xs rs = do
     put btxState { T.inBib = bib { T.refs = deleteRefs ( T.refs bib ) rs' } }
     return rs'
 
--- takeCmd ----------------------------------------------------------
+-- take command -----------------------------------------------------
 
 takeCmdSHelp :: String
 takeCmdSHelp = "take [KEY..] : copy entries from "
@@ -470,7 +455,7 @@ takeCmd xs        rs = do updateIn rs
 -- =============================================================== --
 -- Context operators
 
--- editCmd ----------------------------------------------------------
+-- edit command -----------------------------------------------------
 
 editCmdSHelp :: String
 editCmdSHelp = "edit  EDITOR : edit entries in the context "
@@ -499,7 +484,7 @@ editCmd _      [] = return []
 editCmd (x:[]) rs = lift ( mapM (runExternal x) rs ) >>= return
 editCmd (x:xs) _  = throwError "Only one editor may be specified with <edit>.\n"
 
--- nameCmd ----------------------------------------------------------
+-- name command -----------------------------------------------------
 
 nameCmdSHelp :: String
 nameCmdSHelp = "name [KEY..] : change key names for entries in the context"
@@ -529,7 +514,7 @@ nameCmdLHelp = unlines hs
 nameCmd :: T.CommandMonad T.Context
 nameCmd ns rs
     | nn == nr  = return . zipWith go ns $ rs
-    | otherwise = ( liftIO . putStrLn $ renameErr nn nr ) >> return rs
+    | otherwise = ( liftIO . putStrLn $ H.renameErr nn nr ) >> return rs
     where nn                      = length ns
           nr                      = length rs
           go n (T.Ref fp k v)     = T.Ref (newFp fp k) (Tx.pack n) v
@@ -537,7 +522,7 @@ nameCmd ns rs
           newFp fp k              = fp ++ " (originally " ++ Tx.unpack k ++ ")"
           newName n               = ", tried to rename " ++ n
 
--- sendCmd ----------------------------------------------------------
+-- send command -----------------------------------------------------
 
 sendCmdSHelp :: String
 sendCmdSHelp = "send : update export bibliography with the current context"
@@ -565,7 +550,7 @@ sendCmd :: T.CommandMonad T.Context
 sendCmd ("to":xs) rs = toCmd xs rs >>= sendCmd []
 sendCmd _         rs = updateTo rs >> return []
 
--- tossCmd ----------------------------------------------------------
+-- toss command -----------------------------------------------------
 
 tossCmdSHelp :: String
 tossCmdSHelp = "toss [KEY..] : remove some or all entries from the context"
@@ -595,7 +580,7 @@ tossCmd xs        rs = return . foldl' dropRefByKey rs . map Tx.pack $ xs
 -- =============================================================== --
 -- Errors and help
 
--- errCmd -----------------------------------------------------------
+-- err command ------------------------------------------------------
 -- This is the command for non-commands. It just throws an exception
 -- and provides help strings for invalid commands.
 
@@ -604,5 +589,5 @@ errCmdLHelp :: String -> String
 errCmdLHelp c = "<" ++ c ++ ">" ++ " is not a valid btx scripting command.\n"
 
 errCmd :: String -> T.Command T.Context
-errCmd c = T.Command "err" (\ _ _ -> throwError . cmdInvalidErr $ c)
+errCmd c = T.Command "err" (\ _ _ -> throwError . H.cmdInvalidErr $ c)
                      [] (errCmdLHelp c)

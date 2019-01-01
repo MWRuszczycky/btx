@@ -12,21 +12,21 @@ module Controller
 -- Provides the interface between the user and the model
 -- =============================================================== --
 
-import qualified Data.Text      as Tx
-import qualified Types          as T
-import qualified Help           as H
-import Data.List                      ( intercalate         )
-import System.Directory               ( listDirectory
-                                      , getCurrentDirectory )
-import Control.Monad.State.Lazy       ( execStateT, get
-                                      , liftIO              )
-import Control.Monad.Except           ( throwError
-                                      , liftEither          )
-import BibTeX.Parser                  ( parseBib            )
-import CoreIO                         ( readOrMakeFile      )
-import Formatting                     ( formatHelp
-                                      , uniqueBibErr        )
-import Commands                       ( hub, route, saveCmd )
+import qualified Data.Text                   as Tx
+import qualified Model.Core.Types            as T
+import qualified Model.Core.Messages.Help    as H
+import qualified Model.Core.Messages.Copying as H
+import Data.List                                    ( intercalate         )
+import System.Directory                             ( listDirectory
+                                                    , getCurrentDirectory )
+import Control.Monad.State.Lazy                     ( execStateT, get
+                                                    , liftIO              )
+import Control.Monad.Except                         ( throwError
+                                                    , liftEither          )
+import Model.BibTeX.Parser                          ( parseBib            )
+import Model.CoreIO.ErrMonad                        ( readOrMakeFile      )
+import Model.Core.Formatting                        ( formatHelp          )
+import Commands                                     ( hub, route, saveCmd )
 
 -- =============================================================== --
 -- Initialization
@@ -58,7 +58,7 @@ findUniqueBibFile = do
     fps <- liftIO . listDirectory $ cwd
     case filter ( (== "bib.") . take 4 . reverse ) fps of
          (fp:[])   -> return fp
-         otherwise -> throwError . uniqueBibErr $ cwd
+         otherwise -> throwError . H.uniqueBibErr $ cwd
 
 -- =============================================================== --
 -- Managers for program execution
@@ -88,7 +88,7 @@ runHelp ("and":_)     = H.andHelpStr
 runHelp (",":_)       = H.andHelpStr
 runHelp ("with":_)    = H.withHelpStr
 runHelp ("+":_)       = H.withHelpStr
-runHelp ("copying":_) = H.copyingHelpStr
+runHelp ("copying":_) = H.copyingStr
 runHelp ("version":_) = H.versionHelpStr
 runHelp xs            = intercalate "\n" . map ( T.cmdLHelp . route ) $ xs
 

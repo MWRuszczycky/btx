@@ -28,13 +28,17 @@ executable btx
                       , temporary
                       , text
                       , wreq
-  other-modules:        BibTeX.Parser
-                      , BibTeX.Resources
-                      , Commands
+  other-modules:        Commands
                       , Controller
-                      , Core
-                      , CoreIO
-                      , Formatting
-                      , Help
+                      , Model.BibTeX.Parser
+                      , Model.BibTeX.Resources
+                      , Model.Core.Core
+                      , Model.Core.ScriptParser
+                      , Model.Core.Formatting
+                      , Model.Core.Types
+                      , Model.Core.Messages.Help
+                      , Model.Core.Messages.Copying
+                      , Model.CoreIO.CoreIO
+                      , Model.CoreIO.External
+                      , Model.CoreIO.ErrMonad
                       , Paths_btx
-                      , Types

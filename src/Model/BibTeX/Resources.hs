@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module BibTeX.Resources
+module Model.BibTeX.Resources
     ( genericKey
     , genKeyNumber
     , supported
@@ -11,10 +11,10 @@ module BibTeX.Resources
 -- Templates and handlers for adding new bibliography entries
 -- =============================================================== --
 
-import qualified Data.Text       as Tx
-import qualified Data.Map.Strict as Map
-import qualified Types           as T
-import Data.Text                        ( Text )
+import qualified Data.Text        as Tx
+import qualified Data.Map.Strict  as Map
+import qualified Model.Core.Types as T
+import Data.Text                         ( Text )
 
 -- =============================================================== --
 -- Standard references

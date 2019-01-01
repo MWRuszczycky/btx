@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Types
+module Model.Core.Types
     ( -- State
       BtxState          (..)
     , BtxStateMonad     (..)
