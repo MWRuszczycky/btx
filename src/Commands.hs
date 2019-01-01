@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Commands
-    ( route
-    , runHelp
+    ( hub
+    , route
     , saveCmd
     ) where
 
@@ -606,18 +606,3 @@ errCmdLHelp c = "<" ++ c ++ ">" ++ " is not a valid btx scripting command.\n"
 errCmd :: String -> T.Command T.Context
 errCmd c = T.Command "err" (\ _ _ -> throwError . cmdInvalidErr $ c)
                      [] (errCmdLHelp c)
-
----------------------------------------------------------------------
-
-runHelp :: [String] -> String
--- ^Generate a help message
-runHelp []            = formatHelp . map T.cmdSHelp $ hub
-runHelp ("run":_)     = H.runHelpStr
-runHelp ("all":_)     = H.allHelpStr
-runHelp ("and":_)     = H.andHelpStr
-runHelp (",":_)       = H.andHelpStr
-runHelp ("with":_)    = H.withHelpStr
-runHelp ("+":_)       = H.withHelpStr
-runHelp ("copying":_) = H.copyingHelpStr
-runHelp ("version":_) = H.versionHelpStr
-runHelp xs            = intercalate "\n" . map ( T.cmdLHelp . route ) $ xs

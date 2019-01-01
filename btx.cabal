@@ -30,10 +30,11 @@ executable btx
                       , wreq
   other-modules:        BibTeX.Parser
                       , BibTeX.Resources
-                      , Formatting
                       , Commands
+                      , Controller
                       , Core
                       , CoreIO
+                      , Formatting
                       , Help
                       , Paths_btx
                       , Types

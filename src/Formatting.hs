@@ -200,8 +200,9 @@ renameErr n r = unlines es
 uniqueBibErr :: FilePath -> T.ErrString
 uniqueBibErr fp = unlines es
     where es = [ "Cannot find a unique default .bib file in the current"
-               , "directory (" ++ fp ++ ")"
-               , "(Try: btx help in)"
+                 ++ " directory:"
+               , fp
+               , "Try: btx help in"
                ]
 
 ---------------------------------------------------------------------
