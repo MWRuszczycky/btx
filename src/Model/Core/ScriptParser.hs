@@ -35,10 +35,11 @@ parseFirstIn (x:_,cs)  = T.Normal x . parseAnd $ cs
 
 preprocess :: String -> [String]
 -- ^Convert all command separators to <and> keyword and remove
--- the <and with> keyword pairs to extend argument lists.
+-- the <and with> keyword pairs to extend argument lists. Place a
+-- <save> command at the end of the script.
 preprocess = handleWith . words . formatTokens
-    where -- Reformat to use only <and> and <with>
-          formatTokens []        = []
+    where -- Reformat to use only <and> and <with> and add <save>
+          formatTokens []        = " and save"
           formatTokens (',':xs)  = " and " ++ formatTokens xs
           formatTokens ('\n':xs) = " and " ++ formatTokens xs
           formatTokens ('+':xs)  = " with " ++ formatTokens xs

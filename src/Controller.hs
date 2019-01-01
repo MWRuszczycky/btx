@@ -26,7 +26,7 @@ import Control.Monad.Except                         ( throwError
 import Model.BibTeX.Parser                          ( parseBib            )
 import Model.CoreIO.ErrMonad                        ( readOrMakeFile      )
 import Model.Core.Formatting                        ( formatHelp          )
-import Commands                                     ( hub, route, saveCmd )
+import Commands                                     ( hub, route,         )
 
 -- =============================================================== --
 -- Initialization
@@ -73,7 +73,7 @@ runBtx (cs, st) = execStateT ( compile cs [] ) st
 compile :: [T.ParsedCommand] -> T.Context -> T.BtxStateMonad T.Context
 -- ^Compile parsed commands (i.e., String-String list pairs) into a
 -- runnable BtxStateMonad.
-compile []                 rs = saveCmd [] rs
+compile []                 rs = return rs
 compile ( (c, args) : cs ) rs = applyCmd c args rs >>= compile cs
     where applyCmd = T.cmdCmd . route
 
