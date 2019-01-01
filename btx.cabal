@@ -13,10 +13,31 @@ cabal-version:          >= 1.10
 extra-source-files:     README.md
 
 executable btx
-  hs-source-dirs:       src
+  hs-source-dirs:       app
   main-is:              Main.hs
   default-language:     Haskell2010
   ghc-options:          -O2
+  build-depends:        base >=4.7 && <5
+                      , btx-internal
+                      , mtl
+
+library btx-internal
+  exposed-modules:      Commands
+                      , Controller
+                      , Model.Core.Types
+                      , Model.BibTeX.Parser
+                      , Model.BibTeX.Resources
+                      , Model.Core.Core
+                      , Model.Core.ScriptParser
+                      , Model.Core.Formatting
+                      , Model.Core.Messages.Help
+                      , Model.Core.Messages.Copying
+                      , Model.CoreIO.CoreIO
+                      , Model.CoreIO.External
+                      , Model.CoreIO.ErrMonad
+                      , Paths_btx
+  hs-source-dirs:       src
+  default-language:     Haskell2010
   build-depends:        base >=4.7 && <5
                       , attoparsec
                       , bytestring
@@ -28,17 +49,3 @@ executable btx
                       , temporary
                       , text
                       , wreq
-  other-modules:        Commands
-                      , Controller
-                      , Model.BibTeX.Parser
-                      , Model.BibTeX.Resources
-                      , Model.Core.Core
-                      , Model.Core.ScriptParser
-                      , Model.Core.Formatting
-                      , Model.Core.Types
-                      , Model.Core.Messages.Help
-                      , Model.Core.Messages.Copying
-                      , Model.CoreIO.CoreIO
-                      , Model.CoreIO.External
-                      , Model.CoreIO.ErrMonad
-                      , Paths_btx
