@@ -53,7 +53,9 @@ clone https://github.com/MWRuszczycky/btx.git
 cd btx
 stack build
 ```
-This will build the executable isolated within the repository. To run it, create an alias for the *Stack* `exec` command:
+This will build the executable isolated within the repository. If you get an error at this point regarding buildable sublibraries but no buildable libraries, then you may need to upgrade your version of *Stack* by first running `stack update` and then `stack upgrade` (I can get it to compile with *Stack*-1.9.3).
+
+Once you have compiled the binary, you can run it by creating an alias for the *Stack* `exec` command:
 ```sh
 alias btx='stack exec btx --'
 ```
@@ -63,8 +65,12 @@ stack install
 ```
 *Stack* will tell you where the binary is placed (e.g., `.local/bin` in your home directory) in case you want to later delete it, which is all you need to do to uninstall it. Now you can envoke *btx* anywhere with just `btx` and no need to create an alias.
 
+A test-suite is also currently under development. You can run the tests so far implemented with
+```sh
+stack test
+```
+
 ## To do and known issues
 
-1. Several functions still need commenting.
-2. More testing to try and find more problems.
-3. Include a test bibliography and short getting-started tutorial.
+* Write more tests.
+* Include a test bibliography and short getting-started tutorial.
