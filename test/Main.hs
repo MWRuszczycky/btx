@@ -74,8 +74,8 @@ testOneBibScript cue script target = it (makeTitle cue script) action
                       actual   <- readFile $ "test/testBib.bib"
                       actual `shouldBe` expected
 
-makeTitle :: String -> String -> String
-makeTitle cue script = cue ++ "\n    Script file: " ++ script
+makeTitle :: String -> FilePath -> String
+makeTitle cue fp = cue ++ "\n    Script file: " ++ fp
 
 ---------------------------------------------------------------------
 -- Utilities for cleaning up the test bibliographies
@@ -86,4 +86,4 @@ tearDown = do
     mapM_ ( removeFile . ("test/" ++) ) bibFiles
 
 isBibFile :: FilePath -> Bool
-isBibFile fp = (== ".bib") . reverse . take 4 . reverse $ fp
+isBibFile = (== ".bib") . reverse . take 4 . reverse
