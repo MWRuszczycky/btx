@@ -81,7 +81,11 @@ summarizeEntry (k, v) = kt <> title
           room   = 80 - Tx.length kt
           go x   | room < Tx.length x = Tx.take (room - 2) x <> ".."
                  | otherwise          = x
-          title  = maybe " no title" go . lookup "title" . T.fields $ v
+          title  = case lookup "title" . T.fields $ v of
+                        Nothing -> " <no title field>"
+                        Just t  -> if Tx.null t
+                                      then " <empty title field>"
+                                      else go t
 
 ---------------------------------------------------------------------
 -- Conversion to BibTeX format
