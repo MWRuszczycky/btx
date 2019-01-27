@@ -73,4 +73,5 @@ stack test
 ## To do and known issues
 
 * Write more tests.
+* Implement a `find` command for searching a bibliography using regular expressions.
 * Include a test bibliography and short getting-started tutorial.

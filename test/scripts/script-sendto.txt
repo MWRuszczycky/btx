@@ -1,0 +1,1 @@
+in test/testBib.bib, get Cats2016 Watson1953, name Felines2016 DNA_Structure and send to test/testExportBib.bib
