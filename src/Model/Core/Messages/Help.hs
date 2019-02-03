@@ -118,9 +118,8 @@ runHelpStr = unlines hs
                ]
 
 helpStrHeader :: String
-helpStrHeader = "Welcome to btx! btx is a light-weight, declarative, command"
-                 ++ " line interface for\nworking with BibTeX"
-                 ++ " bibliography files."
+helpStrHeader = "Welcome to btx! btx is a light-weight, command-line interface"
+                 ++ " for working with\nBibTeX bibliography files."
 
 helpStrFooter :: String
 helpStrFooter = intercalate "\n" hs

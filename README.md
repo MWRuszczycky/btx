@@ -1,12 +1,12 @@
 # *btx*
 
-This is a light-weight, declarative, command-line interface for working with basic *BibTeX* bibliographies (i.e., `.bib` files). A more complete description about how *btx* works with several examples can be found in the [*btx* wiki](https://github.com/MWRuszczycky/btx/wiki) and detailed help information can also be found by running `btx help`.
+This is a light-weight, command-line interface for working with basic *BibTeX* bibliographies (i.e., `.bib` files). A more complete description about how *btx* works with several examples can be found in the [*btx* wiki](https://github.com/MWRuszczycky/btx/wiki) and detailed help information can also be found by running `btx help`.
 
 **Note:** The parser used by *btx* will not work with all *BibTeX* files, especially those that do not use the braced-format (see below). Likewise, *btx* collects and reformats all data between entries as metadata associated with the preceding reference entry. So, **please play around with it using a test bibliography before trying it with anything you care about**.
 
 ## Introduction
 
-The *btx* program lets you write declarative scripts to manipulate both *BibTeX* bibliographies and the entries they contain. For example, suppose you want to create a new `.bib` file called `animals.bib`, download a *BibTeX* reference for an article with a specific digital-object-identifier, rename it `Cats2016` and then edit the fields using your favorite editor, such as *Vim*. This could then all be accomplished using the following *btx* script entered at the command-line:
+The *btx* program lets you write scripts to manipulate both *BibTeX* bibliographies and the entries they contain. For example, suppose you want to create a new `.bib` file called `animals.bib`, download a *BibTeX* reference for an article with a specific digital-object-identifier, rename it `Cats2016` and then edit the fields using your favorite editor, such as *Vim*. This could then all be accomplished using the following *btx* script entered at the command-line:
 ```
 btx in animals.bib and doi 10.1016/bs.mie.2017.07.022 and name Cats2016 and edit vim
 ```
