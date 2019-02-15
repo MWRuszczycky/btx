@@ -122,21 +122,16 @@ tryToConnectWithGet ops address = ExceptT $ do
 readResponse :: String -> WreqResponse -> T.ErrMonad T.Ref
 -- ^Helper function for reading the response to a get request.
 readResponse ad resp
-    | code == 200 = liftEither . perr . parseRef ad . fmt $ body
+    | code == 200 = liftEither . perr . parseRef ad . format $ body
     | otherwise   = liftEither . Left $ errs
     where code = resp ^. Wreq.responseStatus . Wreq.statusCode
           body = resp ^. Wreq.responseBody
           errs = "Cannot access " ++ ad ++ ", error code: " ++ show code
           perr = bimap ("Cannot parse: " ++) id
 
-fmt :: ByteString -> Text
+format :: ByteString -> Text
 -- ^Converts a bytestring to text changing all non-ascii characters
--- to question marks.
-fmt = Tx.reverse . Tx.foldl' addAscii Tx.empty . Tx.decodeUtf8 . toStrict
-
-addAscii :: Text -> Char -> Text
--- ^Add character to text if ascii or add "[?]" if non-ascii.
-addAscii cs c
-    | n < 128   = Tx.cons c cs
-    | otherwise = "]?[" <> cs
-    where n = fromEnum c
+-- to bracketed question marks.
+format = Tx.concatMap toAscii . Tx.decodeUtf8 . toStrict
+    where toAscii c | fromEnum c < 128 = Tx.singleton c
+                    | otherwise        = "[?]"
