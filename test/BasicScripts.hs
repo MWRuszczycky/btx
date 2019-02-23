@@ -1,7 +1,7 @@
-module Main where
+-- Do not add a module declaration or it will fail to compile
 
 -- =============================================================== --
--- This is the 'basic' test-suite
+-- This is the 'basic' test-suite: BasicScripts.hs
 -- =============================================================== --
 
 import qualified Model.Core.Types        as T
@@ -22,29 +22,29 @@ import System.Directory                       ( copyFile
 -- =============================================================== --
 -- Running the basic test-suite
 -- Tests involve a script/BibTeX-file pair. The script when run on
--- the test bibliography 'test/testBib.bib' should generate the
--- associated BibTeX file(s) as the target. The scripts are found in
--- test/scripts and the target bibliographies are found in test/bibs
+-- the test bibliography 'test/bib/testBib.bib' should generate the
+-- associated BibTeX file(s) as the target. Scripts are listed by
+-- name in the test/scripts.txt file.
 
 main :: IO ()
 main = hspec $ around_ manageScriptTests $ do
     describe "btx working with a single bibliography" $ do
         testOneBibScript "can read and format a badly formatted bibliography"
-                         "script-formatted.txt"
+                         "script-formatted"
                          "testBib-formatted.bib"
         testOneBibScript "can rename entries"
-                         "script-renaming.txt"
+                         "script-renaming"
                          "testBib-renaming.bib"
         testOneBibScript "can download entries by doi and rename"
-                         "script-doi.txt"
+                         "script-doi"
                          "testBib-doi.bib"
     describe "btx working with an export bibliography" $ do
         testExportScript "'to export, send' syntax works"
-                         "script-tosend.txt"
+                         "script-tosend"
                          "testBib-formatted.bib"
                          "testExportBib-renaming.bib"
         testExportScript "'send to export' syntax works"
-                         "script-sendto.txt"
+                         "script-sendto"
                          "testBib-formatted.bib"
                          "testExportBib-renaming.bib"
 
@@ -56,8 +56,8 @@ mock :: [String] -> IO ()
 mock args = do
     script <- C.getScript args
     case M.parse script of
-         T.Usage msg    -> return ()
-         T.Help cs      -> return ()
+         T.Usage msg    -> pure ()
+         T.Help cs      -> pure ()
          T.Normal fp cs -> runExceptT ( C.initBtx cs fp >>= C.runBtx )
                            >>= C.finish
 
@@ -72,25 +72,18 @@ manageScriptTests :: IO () -> IO ()
 manageScriptTests = bracket_ setupBib tearDown
     where setupBib = copyFile "test/bib/testBib.bib" "test/testBib.bib"
 
-testOneBibScript :: String -> FilePath -> FilePath -> Spec
--- ^Runs a test script on a single-bibliography test. The file name
--- of the script and the target bibliography are provided as
--- arguments. The processed  bibliography should end up being the
--- same as the target bibliography.
-testOneBibScript cue script target = it (makeTitle cue script) action
-    where action = do readFile ("test/scripts/" ++ script) >>= mock . words
+testOneBibScript :: String -> String -> FilePath -> Spec
+-- ^Run tests involving only a single bibliography.
+testOneBibScript cue name target = it (makeTitle cue name) action
+    where action = do getTestScript name >>= mock . words
                       expected <- readFile $ "test/bib/" ++ target
                       actual   <- readFile "test/testBib.bib"
                       actual `shouldBe` expected
 
-testExportScript :: String -> FilePath -> FilePath -> FilePath -> Spec
--- ^Runs a test script that generates an export bibligraphy. The file
--- name of the script, working target and export target bibliography
--- are provided as the arguments. The processed export bibliography
--- should be the same as the export target bibliography. The original
--- working bibliography should be the same as the working target.
-testExportScript cue script targetWk targetEx = it (makeTitle cue script) action
-    where action = do readFile ("test/scripts/" ++ script) >>= mock . words
+testExportScript :: String -> String -> FilePath -> FilePath -> Spec
+-- ^Run tests involving an export bibliography.
+testExportScript cue name targetWk targetEx = it (makeTitle cue name) action
+    where action = do getTestScript name >>= mock . words
                       expectedEx <- readFile $ "test/bib/" ++ targetEx
                       expectedWk <- readFile $ "test/bib/" ++ targetWk
                       actualEx   <- readFile "test/testExportBib.bib"
@@ -98,8 +91,16 @@ testExportScript cue script targetWk targetEx = it (makeTitle cue script) action
                       actualEx `shouldBe` expectedEx
                       actualWk `shouldBe` expectedWk
 
-makeTitle :: String -> FilePath -> String
-makeTitle cue fp = cue ++ "\n    Script file: " ++ fp
+getTestScript :: String -> IO String
+-- ^Finds the test script by name from the /test/scripts.txt file.
+getTestScript name = do
+    scripts <- map ( break (== ':') ) . lines <$> readFile "test/scripts.txt"
+    case lookup name scripts of
+         Nothing -> pure []
+         Just x  -> pure . tail $ x
+
+makeTitle :: String -> String -> String
+makeTitle cue script = cue ++ "\n    script: " ++ script
 
 ---------------------------------------------------------------------
 -- Utilities for cleaning up the test bibliographies

@@ -52,7 +52,7 @@ library btx-internal
 
 test-suite basic
   type:                 exitcode-stdio-1.0
-  main-is:              Main.hs
+  main-is:              BasicScripts.hs
   hs-source-dirs:       test
   build-depends:        base >=4.7 && <5
                       , btx-internal
