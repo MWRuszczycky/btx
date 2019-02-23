@@ -1,2 +1,4 @@
+*.nix
 .stack-work/
+dist/
 dev/
