@@ -56,6 +56,7 @@ data BtxState = BtxState {
 data Start a = Help [String]
              | Usage String
              | Normal FilePath [a]
+             deriving ( Show )
 
 ---------------------------------------------------------------------
 -- Bibliographies
