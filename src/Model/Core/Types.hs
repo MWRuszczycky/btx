@@ -53,10 +53,10 @@ data BtxState = BtxState {
     }
 
 -- |Starting state
-data Start a = Help [String]
-             | Usage String
-             | Normal FilePath [a]
-             deriving ( Show )
+data Start = Help [String]
+           | Usage String
+           | Script (Maybe FilePath) [ParsedCommand]
+           deriving ( Eq, Show )
 
 ---------------------------------------------------------------------
 -- Bibliographies

@@ -58,8 +58,8 @@ mock args = do
     case M.parse script of
          T.Usage msg    -> pure ()
          T.Help cs      -> pure ()
-         T.Normal fp cs -> runExceptT ( C.initBtx cs fp >>= C.runBtx )
-                           >>= C.finish
+         T.Script mbFp cs -> runExceptT ( C.initBtx mbFp >>= C.runBtx cs )
+                             >>= C.finish
 
 -- =============================================================== --
 -- Utilities for preparing tests, running them and cleaning up after

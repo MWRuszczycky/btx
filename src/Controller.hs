@@ -34,22 +34,22 @@ import Commands                                     ( hub, route,         )
 ---------------------------------------------------------------------
 -- Finding the script that the user wants to run
 
-getScript :: [String] -> IO String
-getScript ("run":fp:_) = readFile fp            -- Script is in a file.
-getScript ("run":[])   = getContents            -- Script is from stdin.
-getScript xs           = return . unwords $ xs  -- Script is from command line.
+getScript :: [String] -> IO (Either String String)
+getScript ("run":fp:_) = Right <$> readFile fp
+getScript ("run":[])   = pure . Left $ H.missingScriptErr
+getScript xs           = pure . Right . unwords $ xs
 
 ---------------------------------------------------------------------
 -- Finding the working BibTeX bibliography that the user wants to use
 -- and initializing the btx state with it
 
-initBtx :: a -> FilePath -> T.ErrMonad ( a, T.BtxState )
+initBtx :: Maybe FilePath -> T.ErrMonad T.BtxState
 -- ^Generate the initial state given a file path.
-initBtx x [] = findUniqueBibFile >>= initBtx x
-initBtx x fp = do
+initBtx Nothing   = findUniqueBibFile >>= initBtx . Just
+initBtx (Just fp) = do
     content <- readOrMakeFile fp
     bib     <- liftEither . parseBib fp $ content
-    return ( x, T.BtxState bib Nothing Nothing Tx.empty )
+    pure $ T.BtxState bib Nothing Nothing Tx.empty
 
 findUniqueBibFile :: T.ErrMonad FilePath
 -- ^Look in current working directory for a unique .bib file.
@@ -57,7 +57,7 @@ findUniqueBibFile = do
     cwd <- liftIO getCurrentDirectory
     fps <- liftIO . listDirectory $ cwd
     case filter ( (== "bib.") . take 4 . reverse ) fps of
-         (fp:[])   -> return fp
+         (fp:[])   -> pure fp
          otherwise -> throwError . H.uniqueBibErr $ cwd
 
 -- =============================================================== --
@@ -66,14 +66,14 @@ findUniqueBibFile = do
 ---------------------------------------------------------------------
 -- Compiling and running a btx script
 
-runBtx :: ( [T.ParsedCommand], T.BtxState ) -> T.ErrMonad T.BtxState
+runBtx :: [T.ParsedCommand] -> T.BtxState -> T.ErrMonad T.BtxState
 -- ^Compile and run the commands an the initial state.
-runBtx (cs, st) = execStateT ( compile cs [] ) st
+runBtx cs = execStateT $ compile cs []
 
 compile :: [T.ParsedCommand] -> T.Context -> T.BtxStateMonad T.Context
 -- ^Compile parsed commands (i.e., String-String list pairs) into a
 -- runnable BtxStateMonad.
-compile []                 rs = return rs
+compile []                 rs = pure rs
 compile ( (c, args) : cs ) rs = applyCmd c args rs >>= compile cs
     where applyCmd = T.cmdCmd . route
 
@@ -98,4 +98,4 @@ runHelp xs            = intercalate "\n" . map ( T.cmdLHelp . route ) $ xs
 finish :: Either String T.BtxState -> IO ()
 -- ^Cleanup after running a script.
 finish (Left msg) = putStr msg
-finish (Right _ ) = return ()
+finish (Right _ ) = pure ()

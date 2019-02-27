@@ -18,6 +18,6 @@ main :: IO ()
 main = do
     script <- getScript =<< getArgs
     case parse script of
-         T.Usage msg    -> finish . Left $ msg
-         T.Help cs      -> finish . Left . runHelp $ cs
-         T.Normal fp cs -> runExceptT ( initBtx cs fp >>= runBtx ) >>= finish
+         T.Usage msg      -> finish . Left $ msg
+         T.Help cs        -> finish . Left . runHelp $ cs
+         T.Script mbFp cs -> runExceptT (initBtx mbFp >>= runBtx cs) >>= finish

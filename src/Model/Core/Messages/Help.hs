@@ -13,7 +13,11 @@ module Model.Core.Messages.Help
     -- Error messages
     , argInvalidErr
     , cmdInvalidErr
+    , invalidUsageErr
+    , missingScriptErr
+    , noCommandsErr
     , renameErr
+    , unableToParseErr
     , uniqueBibErr
     ) where
 
@@ -144,6 +148,20 @@ argInvalidErr c a = "Invalid argument for " ++ c ++ ": " ++ a ++ ".\n"
 cmdInvalidErr :: String -> T.ErrString
 cmdInvalidErr c = "Invalid command: " ++ "<" ++ c ++ ">.\n"
 
+invalidUsageErr :: String -> T.ErrString
+invalidUsageErr c = unwords [ "Invalid usage for command <" ++ c ++ ">."
+                            , "(try help " ++ c ++ ")\n"
+                            ]
+
+missingScriptErr :: T.ErrString
+missingScriptErr = "Script file required (no repl just yet).\n"
+
+noCommandsErr :: T.ErrString
+noCommandsErr   = unwords [ "This won't do anything --"
+                          , "a script or command needs to be provided."
+                          , "(Try: btx help)\n"
+                          ]
+
 renameErr :: Int -> Int -> T.ErrString
 renameErr n r = unlines es
     where es = [ "The entries cannot be renamed, because the number of"
@@ -151,6 +169,9 @@ renameErr n r = unlines es
                   ++ ") does not match"
                , "the number of new names supplied (" ++ show n ++ ")."
                ]
+
+unableToParseErr :: T.ErrString
+unableToParseErr  = "Unable to parse input. (Try: btx help)\n"
 
 uniqueBibErr :: FilePath -> T.ErrString
 uniqueBibErr fp = unlines es

@@ -76,3 +76,4 @@ stack test
 * Implement a `find` command for searching a bibliography using regular expressions.
 * Make the "regular expression" matcher work more correctly (the behavior is not quite correct).
 * Include a test bibliography and short getting-started tutorial.
+* Fix/add a real REPL.
