@@ -24,7 +24,6 @@ import Model.Core.Messages.Help               ( invalidUsageErr
 
 -- ******************************** --
 -- ToDo: 1. Fix the quotes parser
---       2. Write tests
 -- ******************************** --
 
 ---------------------------------------------------------------------
@@ -78,6 +77,7 @@ toCommands :: [String] -> [T.ParsedCommand]
 -- append a final <save> command.
 toCommands []       = [ ("save", []) ]
 toCommands (",":xs) = toCommands xs
+toCommands ("+":xs) = toCommands xs
 toCommands (x:xs)   = case break ( flip elem [",", "+"] ) xs of
                            (ys, "+":zs)     -> toCommands $ x : (ys ++ zs)
                            (ys, ",":"+":zs) -> toCommands $ x : (ys ++ zs)
@@ -87,15 +87,6 @@ aToken :: At.Parser String
 aToken = do
     At.skipWhile (== ' ')
     At.choice [ withKey, andKey, aWord, quotedString ]
-
-aWord :: At.Parser String
-aWord = At.many1' $ At.satisfy (At.notInClass "+, \n\r'\"")
-
-quotedString :: At.Parser String
--- !!! Needs to be fixed: internal '\"' will not be recognized !!!
-quotedString = do
-    open <- At.char '\"' <|> At.char '\''
-    At.manyTill At.anyChar (At.char open)
 
 withKey :: At.Parser String
 withKey = At.choice [ At.char   '+'    *> pure "+"
@@ -108,3 +99,21 @@ andKey  = At.choice [ At.char   ','    *> pure ","
                     , At.char   '\n'   *> pure ","
                     , At.string "\n\r" *> pure ","
                     ]
+
+aWord :: At.Parser String
+aWord = At.many1' $ At.satisfy (At.notInClass "+, \n\r'\"")
+
+quotedString :: At.Parser String
+quotedString = do
+    open <- At.char '\"' <|> At.char '\''
+    unpack <$> quotedContent ( Tx.singleton open )
+
+quotedContent :: Text -> At.Parser Text
+quotedContent c = matches >>= go
+    where escaped = "\\" <> c
+          matches = At.choice [ At.string escaped
+                              , At.string c
+                              , Tx.singleton <$> At.anyChar ]
+          go n | n == c       = pure Tx.empty
+               | n == escaped = (c <>) <$> quotedContent c
+               | otherwise    = (n <>) <$> quotedContent c
