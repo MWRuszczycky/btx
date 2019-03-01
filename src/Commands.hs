@@ -306,7 +306,7 @@ viewCmd _ rs = do
 -- doi command ------------------------------------------------------
 
 doiCmdSHelp :: String
-doiCmdSHelp = "doi  [DOI..] : download an entry using the doi of its" 
+doiCmdSHelp = "doi  [DOI..] : download an entry using the doi of its"
               ++ " publication"
 
 doiCmdLHelp :: String

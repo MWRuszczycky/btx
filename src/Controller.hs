@@ -13,9 +13,11 @@ module Controller
 -- =============================================================== --
 
 import qualified Data.Text                   as Tx
+import qualified Data.Text.IO                as Tx
 import qualified Model.Core.Types            as T
 import qualified Model.Core.Messages.Help    as H
 import qualified Model.Core.Messages.Copying as H
+import Data.Text                                    ( Text, pack          )
 import Data.List                                    ( intercalate         )
 import System.Directory                             ( listDirectory
                                                     , getCurrentDirectory )
@@ -34,10 +36,10 @@ import Commands                                     ( hub, route,         )
 ---------------------------------------------------------------------
 -- Finding the script that the user wants to run
 
-getScript :: [String] -> IO (Either String String)
-getScript ("run":fp:_) = Right <$> readFile fp
+getScript :: [String] -> IO (Either String Text)
+getScript ("run":fp:_) = Right <$> Tx.readFile fp
 getScript ("run":[])   = pure . Left $ H.missingScriptErr
-getScript xs           = pure . Right . unwords $ xs
+getScript xs           = pure . Right . pack . unwords $ xs
 
 ---------------------------------------------------------------------
 -- Finding the working BibTeX bibliography that the user wants to use

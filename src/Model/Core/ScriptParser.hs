@@ -11,7 +11,8 @@ module Model.Core.ScriptParser
 import qualified Data.Attoparsec.Text   as At
 import qualified Data.Text              as Tx
 import qualified Model.Core.Types       as T
-import Control.Applicative                    ( (<|>)            )
+import Control.Applicative                    ( (<|>), liftA2
+                                              , many, some       )
 import Control.Monad                          ( guard            )
 import Data.Char                              ( isSpace          )
 import Data.Text                              ( Text
@@ -22,19 +23,18 @@ import Model.Core.Messages.Help               ( invalidUsageErr
                                               , unableToParseErr
                                               , versionStr       )
 
--- ******************************** --
--- ToDo: 1. Fix the quotes parser
--- ******************************** --
-
 ---------------------------------------------------------------------
--- Exported parser interface
+-- Exported btx parser interface
 
-parse :: Either String String -> T.Start
+parse :: Either String Text -> T.Start
 parse (Left  x) = T.Usage x
-parse (Right x) = either err check . At.parseOnly btxParser . pack $ x
+parse (Right x) = either err check . At.parseOnly btxParser $ x
     where err = const $ T.Usage unableToParseErr
 
 check :: T.Start -> T.Start
+-- ^Check result of btx input parsing. In particular, make sure the
+-- first <in> command, if used, is used correctly. This is necessary
+-- to ensure proper loading of the *initial* working bibliography.
 check (T.Usage xs)        = T.Usage xs
 check (T.Help  xs)        = T.Help xs
 check (T.Script _ [])     = T.Usage noCommandsErr
@@ -50,7 +50,9 @@ check (T.Script _ (x:xs)) = case x of
 btxParser :: At.Parser T.Start
 btxParser = do
     At.skipSpace
-    At.choice [ cryForHelp, versionRequest, btxScript ]
+    result <- At.choice [ cryForHelp, versionRequest, btxScript ]
+    At.endOfInput
+    pure result
 
 ---------------------------------------------------------------------
 -- Help and version parsing
@@ -69,19 +71,24 @@ versionRequest = do
 -- Script parsing
 
 btxScript :: At.Parser T.Start
-btxScript = At.many' aToken >>= pure . T.Script Nothing . toCommands
+btxScript = many aToken >>= pure . T.Script Nothing . toCommands
 
 toCommands :: [String] -> [T.ParsedCommand]
--- ^Read the individual commands in the formatted script, handle
--- 'with and' constructions, separate into command-argument pairs and
--- append a final <save> command.
+-- ^Format commands from the parsed script:
+-- 1. Remove any empty strings.
+-- 2. Remove ', +' (i.e., <and with>) and read through argements.
+-- 3. Remove isolated '+' (i.e., <with>) and read through arguments.
+-- 5. Parse individual commands on ',' (i.e., <and>).
+-- 6. Append a final <save> command.
 toCommands []       = [ ("save", []) ]
+toCommands ("":xs ) = toCommands xs
 toCommands (",":xs) = toCommands xs
 toCommands ("+":xs) = toCommands xs
-toCommands (x:xs)   = case break ( flip elem [",", "+"] ) xs of
-                           (ys, "+":zs)     -> toCommands $ x : (ys ++ zs)
+toCommands (x:xs  ) = case break ( flip elem [",", "+", ""] ) xs of
+                           (ys, "":zs     ) -> toCommands $ x : (ys ++ zs)
+                           (ys, "+":zs    ) -> toCommands $ x : (ys ++ zs)
                            (ys, ",":"+":zs) -> toCommands $ x : (ys ++ zs)
-                           (ys, zs)         -> (x, ys) : toCommands zs
+                           (ys, zs        ) -> (x, ys) : toCommands zs
 
 aToken :: At.Parser String
 aToken = do
@@ -101,19 +108,15 @@ andKey  = At.choice [ At.char   ','    *> pure ","
                     ]
 
 aWord :: At.Parser String
-aWord = At.many1' $ At.satisfy (At.notInClass "+, \n\r'\"")
+aWord = some $ At.satisfy (At.notInClass "+, \n\r'\"")
 
 quotedString :: At.Parser String
 quotedString = do
     open <- At.char '\"' <|> At.char '\''
-    unpack <$> quotedContent ( Tx.singleton open )
+    unpack <$> quotedContent (Tx.singleton open)
 
 quotedContent :: Text -> At.Parser Text
-quotedContent c = matches >>= go
-    where escaped = "\\" <> c
-          matches = At.choice [ At.string escaped
-                              , At.string c
-                              , Tx.singleton <$> At.anyChar ]
-          go n | n == c       = pure Tx.empty
-               | n == escaped = (c <>) <$> quotedContent c
-               | otherwise    = (n <>) <$> quotedContent c
+quotedContent c = escaped <|> closeQuote <|> moreContent
+    where escaped     = At.string ("\\" <> c) *> fmap (c <>) (quotedContent c)
+          closeQuote  = At.string c           *> pure Tx.empty
+          moreContent = liftA2 Tx.cons At.anyChar (quotedContent c)

@@ -7,17 +7,19 @@
 import qualified Model.Core.Types        as T
 import qualified Controller              as C
 import qualified Model.Core.ScriptParser as M
-import Test.Hspec                             ( Spec      (..)
-                                              , around_
-                                              , describe
-                                              , hspec
-                                              , it
-                                              , shouldBe        )
-import Control.Exception                      ( bracket_        )
-import Control.Monad.Except                   ( runExceptT      )
-import System.Directory                       ( copyFile
-                                              , listDirectory
-                                              , removeFile      )
+import qualified Data.Text               as Tx
+import Data.Text                                ( Text, pack      )
+import Test.Hspec                               ( Spec      (..)
+                                                , around_
+                                                , describe
+                                                , hspec
+                                                , it
+                                                , shouldBe        )
+import Control.Exception                        ( bracket_        )
+import Control.Monad.Except                     ( runExceptT      )
+import System.Directory                         ( copyFile
+                                                , listDirectory
+                                                , removeFile      )
 
 -- =============================================================== --
 -- Running the basic test-suite
