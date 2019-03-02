@@ -7,18 +7,9 @@ module Model.Core.Matcher
     ) where
 
 -- =============================================================== --
--- Very rudimentary implementation of regular expressions using an --
--- applicative parser over Text. This is used for implementing the --
--- <find> command.                                                 --
-
--- The behavior of the matcher is not strictly correct. For        --
--- example, "c.*s" will not match "cats" even though it should.    --
--- However, "c.*" will match "cats", as it should. To get this to  --
--- work correctly will require changing the matcher so that it     --
--- saves intermediate prefix matches in a list rather than using a --
--- Maybe in order to allow backtracking. In the end, this module   --
--- will probably be scrapped and the functionallity replace by     --
--- something written by somebody who knows what they are doing :)  --
+-- Very rudimentary implementation of a regular expression matcher --
+-- using an applicative parser over Text. This is used for         --
+-- implementing the <find> command.                                --
 -- =============================================================== --
 
 import qualified Data.Text as Tx
@@ -34,40 +25,25 @@ import Control.Applicative       ( (<|>)
                                  , some         )
 
 ---------------------------------------------------------------------
--- Types. These will eventually be moved to the Types module unless
--- this whole thing gets scrapped.
+-- Types
 
--- |Model for a very simple regular expression
-data Regex = Symbol Char
-           | Rule (Char -> Bool)
-           | KleenePlus Regex
+data Regex = Rule (Char -> Bool)
            | KleeneStar Regex
            | Epsilon
            | RegError
 
-instance Show Regex where
-    show ( Symbol x     ) = [x]
-    show ( Rule _       ) = "rule"
-    show ( KleenePlus r ) = show r ++ "+"
-    show ( KleeneStar r ) = show r ++ "*"
-    show ( Epsilon      ) = "@"
-    show ( RegError     ) = "Error"
-
--- |Regular expression matcher for Text that uses applicative parsing
-newtype Matcher a = Matcher { runMatcher :: Text -> Maybe (Text, a) }
+newtype Matcher a = Matcher { runMatcher :: Text -> [(Text, a)] }
 
 instance Functor Matcher where
-    fmap f (Matcher m) = Matcher $ \ t -> do (t1, x) <- m t
-                                             pure (t1, f x)
+    fmap f (Matcher m) = Matcher $ \ t -> [ (t1, f x) | (t1, x) <- m t ]
 
 instance Applicative Matcher where
-    pure x                    = Matcher $ \ t -> pure (t, x)
-    Matcher ml <*> Matcher mr = Matcher $ \ t -> do (t1, f) <- ml t
-                                                    (t2, x) <- mr t1
-                                                    pure (t2, f x)
+    pure x                    = Matcher $ \ t -> [ (t, x) ]
+    Matcher ml <*> Matcher mr = Matcher $ \ t ->
+        [ (t2, f x) | (t1, f) <- ml t, (t2, x) <- mr t1 ]
 
 instance Alternative Matcher where
-    empty                     = Matcher $ \ t -> Nothing
+    empty                     = Matcher $ \ t -> []
     Matcher ml <|> Matcher mr = Matcher $ \ t -> ml t <|> mr t
 
 ---------------------------------------------------------------------
@@ -80,7 +56,10 @@ hasMatch :: String -> Text -> Bool
 hasMatch r = any (r =~) . Tx.tails
 
 runRegex :: String -> Text -> Maybe (Text, String)
-runRegex r = runMatcher (makeMatcher r)
+runRegex r t
+    | null x = Nothing
+    | otherwise = Just . head $ x
+    where x = runMatcher (makeMatcher r) t
 
 ---------------------------------------------------------------------
 -- Parsers to convert a string to a matcher
@@ -89,9 +68,7 @@ makeMatcher :: String -> Matcher String
 makeMatcher = fmap concat <$> traverse regexToMatcher . makeRegex
 
 regexToMatcher :: Regex -> Matcher String
-regexToMatcher (Symbol c)     = (:[]) <$> char c
 regexToMatcher (Rule p)       = (:[]) <$> satisfy p
-regexToMatcher (KleenePlus r) = fmap concat . some . regexToMatcher $ r
 regexToMatcher (KleeneStar r) = fmap concat . many . regexToMatcher $ r
 regexToMatcher Epsilon        = pure []
 regexToMatcher RegError       = empty
@@ -109,9 +86,9 @@ makeRegex s        = reverse . go $ (s, Epsilon, [])
           go ('+':'*':xs,r, rs) = go ('*':xs, r, rs)
           go ('*':'*':xs,r, rs) = go ('*':xs, r, rs)
           go ('*':xs,    r, rs) = go (xs, Epsilon, KleeneStar r : rs)
-          go ('+':xs,    r, rs) = go (xs, Epsilon, KleenePlus r : rs)
-          go ('.':xs,    r, rs) = go (xs, Rule $ (/= '\n'), r : rs)
-          go (x:xs,      r, rs) = go (xs, Symbol x, r:rs)
+          go ('+':xs,    r, rs) = go (xs, Epsilon, r : KleeneStar r : rs)
+          go ('.':xs,    r, rs) = go (xs, Rule (/= '\n'), r : rs)
+          go (x:xs,      r, rs) = go (xs, Rule (== x), r:rs)
 
 parseEsc :: Char -> Regex
 parseEsc 'd' = Rule isDigit
@@ -126,8 +103,6 @@ parseEsc  x  = Rule (== x)
 -- Matchers
 
 satisfy :: (Char -> Bool) -> Matcher Char
-satisfy f = Matcher $ \ t -> do (x, xs) <- Tx.uncons t
-                                if f x then Just (xs, x) else Nothing
-
-char :: Char -> Matcher Char
-char c = satisfy (== c)
+satisfy f = Matcher $ \ t -> maybe [] go . Tx.uncons $ t
+    where go (x,xs) | f x       = [(xs, x)]
+                    | otherwise = []

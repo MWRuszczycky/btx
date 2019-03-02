@@ -78,8 +78,8 @@ toCommands :: [String] -> [T.ParsedCommand]
 -- 1. Remove any empty strings.
 -- 2. Remove ', +' (i.e., <and with>) and read through argements.
 -- 3. Remove isolated '+' (i.e., <with>) and read through arguments.
--- 5. Parse individual commands on ',' (i.e., <and>).
--- 6. Append a final <save> command.
+-- 4. Parse individual commands on ',' (i.e., <and>).
+-- 5. Append a final <save> command.
 toCommands []       = [ ("save", []) ]
 toCommands ("":xs ) = toCommands xs
 toCommands (",":xs) = toCommands xs

@@ -99,12 +99,14 @@ kleeneMatches = do
         "c    ts"   `shouldSatisfy` ("c *ts" =~)
         "caatts"    `shouldSatisfy` ("ca*t*s" =~)
         "cats"      `shouldSatisfy` ("*cats" =~)
+        "caatts"    `shouldSatisfy` ("c.*s" =~)
     it "identifies Kleene-Star prefix mismatches" $ do
         "caaaas"    `shouldNotSatisfy` ("ca*ts" =~)
         "cbbbts"    `shouldNotSatisfy` ("c\\d*ts" =~)
         ""          `shouldNotSatisfy` ("*" =~)
         "cc"        `shouldNotSatisfy` ("*" =~)
         "cc"        `shouldNotSatisfy` ("**" =~)
+        "caaaatss"  `shouldNotSatisfy` ("c.*x" =~)
     it "satisfies Kleene-Plus prefix matches" $ do
         "caaats"    `shouldSatisfy` ("ca+ts" =~)
         "caaats"    `shouldSatisfy` ("ca++ts" =~)
@@ -114,6 +116,7 @@ kleeneMatches = do
         "c    ts"   `shouldSatisfy` ("c +ts" =~)
         "caatts"    `shouldSatisfy` ("ca+t+s" =~)
         "cats"      `shouldSatisfy` ("+cats" =~)
+        "catacatc"  `shouldSatisfy` ("c.+tc" =~)
     it "identifies Kleene-Plus prefix mismatches" $ do
         "cts"       `shouldNotSatisfy` ("ca+ts" =~)
         "cts"       `shouldNotSatisfy` ("ca++ts" =~)
@@ -140,7 +143,7 @@ infixMatches = do
             `shouldSatisfy` (M.hasMatch "cats")
         "The are lots of cats in the basement where the elephant sleeps."
             `shouldSatisfy` (M.hasMatch "c\\w\\ws")
-    it "collectly fails to find infix matches that do not exist" $ do
+    it "correctly fails to find infix matches that do not exist" $ do
         "The are lots of cats in the basement where the elephant sleeps."
             `shouldNotSatisfy` (M.hasMatch "")
         "The are lots of cats in the basement where the elephant sleeps."
