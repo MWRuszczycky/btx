@@ -29,6 +29,7 @@ import Control.Monad.State.Lazy                  ( get
 import Model.Core.Core                           ( allKeysToArgs
                                                  , deleteRefs
                                                  , dropRefByKey
+                                                 , searchRefs
                                                  , getRef
                                                  , insertRefs
                                                  , isPresent           )
@@ -73,6 +74,7 @@ hub = [ -- Bibliography managers
       , T.Command "view" viewCmd viewCmdSHelp viewCmdLHelp
         -- Context constructors
       , T.Command "doi"  doiCmd  doiCmdSHelp  doiCmdLHelp
+      , T.Command "find" findCmd findCmdSHelp findCmdLHelp
       , T.Command "get"  getCmd  getCmdSHelp  getCmdLHelp
       , T.Command "new"  newCmd  newCmdSHelp  newCmdLHelp
       , T.Command "pull" pullCmd pullCmdSHelp pullCmdLHelp
@@ -328,6 +330,64 @@ doiCmd :: T.CommandMonad T.Context
 doiCmd xs rs = do
     updateIn rs
     lift . mapM getDoi $ xs
+
+-- find command -----------------------------------------------------
+
+findCmdSHelp :: String
+findCmdSHelp = "find [EXP..] : find entries that match EXP and move "
+               ++ "into the context"
+
+findCmdLHelp :: String
+findCmdLHelp = unlines hs
+    where hs = [ findCmdSHelp ++ "\n"
+               , "This command has the following effects:\n"
+               , "  1. Update the working bibilography with the current context"
+               , "     and clear the context."
+               , "  2. Search the working bibliography for all enteries that"
+               , "     contain matches to the input expressions."
+               , "  3. Move the matching entries into the current context."
+               , "  4. Delete the entries from the working bibliography making"
+               , "     this more like <pull> rather than <get>. If nothing is"
+               , "     done with the entries, then they are saved back"
+               , "     unchanged. This allows you to remove entries from the"
+               , "     working bibilography using a find/toss combination.\n"
+               , "The expressions take the form of strings that are case-"
+               , "sensitive and can use the following sub-subexpressions:\n"
+               , "  .  : any non-newline character"
+               , "  *  : zero or more of preceeding subexpression"
+               , "  \\d : any digit"
+               , "  \\D : any non-digit"
+               , "  \\w : any alpha-numeric"
+               , "  \\W : any non-alpha-numeric"
+               , "  \\s : any space including newlines and tabs"
+               , "  \\S : any non-space, non-tab or non-newline\n"
+               , "Matching with '*' is greedy. Note that when entering scripts"
+               , "via the command line, you may need to escape characters that"
+               , "would otherwise be expanded by the shell. This can be done"
+               , "using a backslash or single quotes, but keep in mind that"
+               , "the single quotes may also need to be escaped.\n"
+               , "For example:\n"
+               , "  Find all entries with the string 'cats are great':"
+               , "    find cats\\\\sare\\\\sgreat  (script at command line)"
+               , "    find cats\\sare\\sgreat    (script run from a file)"
+               , "    find \\'cats are great\\'  (script at command line)"
+               , "    find 'cats are great'    (script run from a file)\n"
+               , "  Find entries with strings like 'AB', 'A12B' or 'A1234B':"
+               , "    find A\\\\d\\*B   (script at command line)"
+               , "    find 'A\\d*B'   (script at command line)"
+               , "    find A\\d*B     (script run from a file)\n"
+               , "  Find all entries containing the string 'cats' or 'dogs':"
+               , "    find cats dogs"
+               ]
+
+findCmd :: T.CommandMonad T.Context
+findCmd xs rs = do
+    updateIn rs
+    btxState <- get
+    let bib = T.inBib btxState
+        rs' = searchRefs bib xs
+    put btxState { T.inBib = bib { T.refs = deleteRefs ( T.refs bib ) rs' } }
+    pure rs'
 
 -- get command ------------------------------------------------------
 

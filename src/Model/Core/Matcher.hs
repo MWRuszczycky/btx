@@ -76,28 +76,26 @@ regexToMatcher RegError       = empty
 makeRegex :: String -> [Regex]
 makeRegex [] = [RegError]
 makeRegex ('*':xs) = makeRegex xs
-makeRegex ('+':xs) = makeRegex xs
 makeRegex s        = reverse . go $ (s, Epsilon, [])
     where go ([],        r, rs) = r:rs
           go ('\\':x:xs, r, rs) = go (xs, parseEsc x, r:rs)
           go ('\\':[],   r, rs) = [RegError]
-          go ('+':'+':xs,r, rs) = go ('+':xs, r, rs)
-          go ('*':'+':xs,r, rs) = go ('*':xs, r, rs)
-          go ('+':'*':xs,r, rs) = go ('*':xs, r, rs)
           go ('*':'*':xs,r, rs) = go ('*':xs, r, rs)
           go ('*':xs,    r, rs) = go (xs, Epsilon, KleeneStar r : rs)
-          go ('+':xs,    r, rs) = go (xs, Epsilon, r : KleeneStar r : rs)
           go ('.':xs,    r, rs) = go (xs, Rule (/= '\n'), r : rs)
           go (x:xs,      r, rs) = go (xs, Rule (== x), r:rs)
 
 parseEsc :: Char -> Regex
-parseEsc 'd' = Rule isDigit
-parseEsc 'D' = Rule $ not . isDigit
-parseEsc 'w' = Rule isAlphaNum
-parseEsc 'W' = Rule $ not . isAlphaNum
-parseEsc 's' = Rule isSpace
-parseEsc 'S' = Rule $ not . isSpace
-parseEsc  x  = Rule (== x)
+parseEsc 'd'  = Rule isDigit
+parseEsc 'D'  = Rule $ not . isDigit
+parseEsc 'w'  = Rule isAlphaNum
+parseEsc 'W'  = Rule $ not . isAlphaNum
+parseEsc 's'  = Rule isSpace
+parseEsc 'S'  = Rule $ not . isSpace
+parseEsc '\\' = Rule $ (== '\\')
+parseEsc '*'  = Rule $ (== '*')
+parseEsc '.'  = Rule $ (== '.')
+parseEsc  _   = RegError
 
 ---------------------------------------------------------------------
 -- Matchers

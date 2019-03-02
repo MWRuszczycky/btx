@@ -65,6 +65,8 @@ constrainedMatches = do
         "ca@*ts "   `shouldSatisfy` ("ca\\W\\Wt\\w" =~)
         "ca@*ts "   `shouldSatisfy` ("ca\\S\\Wt\\w\\s" =~)
         "ca*s"      `shouldSatisfy` ("ca\\*s" =~)
+        "ca.s"      `shouldSatisfy` ("ca\\.s" =~)
+        "\\alpha"   `shouldSatisfy` ("\\\\alpha" =~)
 
 constrainedMismatches :: Spec
 constrainedMismatches = do
@@ -72,6 +74,9 @@ constrainedMismatches = do
         ""          `shouldNotSatisfy` ("\\" =~)
         " "         `shouldNotSatisfy` ("\\" =~)
         "a"         `shouldNotSatisfy` ("\\" =~)
+        "\\alpha"   `shouldNotSatisfy` ("alpha" =~)
+        "alpha"     `shouldNotSatisfy` ("\\alpha" =~)
+        "\\alpha"   `shouldNotSatisfy` ("\\alpha" =~)
         ""          `shouldNotSatisfy` ("." =~)
         "\n"        `shouldNotSatisfy` ("." =~)
         "cts"       `shouldNotSatisfy` ("c.ts" =~)
@@ -107,34 +112,6 @@ kleeneMatches = do
         "cc"        `shouldNotSatisfy` ("*" =~)
         "cc"        `shouldNotSatisfy` ("**" =~)
         "caaaatss"  `shouldNotSatisfy` ("c.*x" =~)
-    it "satisfies Kleene-Plus prefix matches" $ do
-        "caaats"    `shouldSatisfy` ("ca+ts" =~)
-        "caaats"    `shouldSatisfy` ("ca++ts" =~)
-        "caaats"    `shouldSatisfy` ("ca+++ts" =~)
-        "c333ts"    `shouldSatisfy` ("c\\d+" =~)
-        "c    ts"   `shouldSatisfy` ("c\\s+ts" =~)
-        "c    ts"   `shouldSatisfy` ("c +ts" =~)
-        "caatts"    `shouldSatisfy` ("ca+t+s" =~)
-        "cats"      `shouldSatisfy` ("+cats" =~)
-        "catacatc"  `shouldSatisfy` ("c.+tc" =~)
-    it "identifies Kleene-Plus prefix mismatches" $ do
-        "cts"       `shouldNotSatisfy` ("ca+ts" =~)
-        "cts"       `shouldNotSatisfy` ("ca++ts" =~)
-        "cts"       `shouldNotSatisfy` ("c\\d+" =~)
-        "caaaas"    `shouldNotSatisfy` ("ca+ts" =~)
-        "cbbbts"    `shouldNotSatisfy` ("c\\d+ts" =~)
-        ""          `shouldNotSatisfy` ("+" =~)
-        "cc"        `shouldNotSatisfy` ("+" =~)
-        "cc"        `shouldNotSatisfy` ("++" =~)
-    it "handles Kleene-Star/Plus prefix combinations" $ do
-        "caaats"    `shouldSatisfy`    ("ca+*ts" =~)
-        "caaats"    `shouldSatisfy`    ("ca*+ts" =~)
-        "cts"       `shouldSatisfy`    ("ca+*ts" =~)
-        "cts"       `shouldSatisfy`    ("ca*+ts" =~)
-        ""          `shouldNotSatisfy` ("*+" =~)
-        ""          `shouldNotSatisfy` ("+*" =~)
-        "cccc"      `shouldNotSatisfy` ("*+" =~)
-        "cccc"      `shouldNotSatisfy` ("+*" =~)
 
 infixMatches :: Spec
 infixMatches = do

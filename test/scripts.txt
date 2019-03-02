@@ -7,3 +7,7 @@ script-renaming:  in test/testBib.bib, pull Cats2016 Watson1953, and name Feline
 script-sendto:    in test/testBib.bib, get Cats2016 Watson1953, name Felines2016 DNA_Structure and send to test/testExportBib.bib
 
 script-tosend:    in test/testBib.bib, get Cats2016 Watson1953, to test/testExportBib.bib, name Felines2016 DNA_Structure and send
+
+script-find1:     in test/testBib.bib, find M.*r and toss all
+
+script-find2:     in test/testBib.bib, find net\srate\sconstants \\alpha and toss all

@@ -40,6 +40,12 @@ main = hspec $ around_ manageScriptTests $ do
         testOneBibScript "can download entries by doi and rename"
                          "script-doi"
                          "testBib-doi.bib"
+        testOneBibScript "can find entries with a single expression"
+                         "script-find1"
+                         "testBib-find1.bib"
+        testOneBibScript "can find entries with two expressions"
+                         "script-find2"
+                         "testBib-find2.bib"
     describe "btx working with an export bibliography" $ do
         testExportScript "'to export, send' syntax works"
                          "script-tosend"

@@ -72,8 +72,7 @@ stack test
 
 ## To do and known issues
 
-* Write more tests.
-* Implement a `find` command for searching a bibliography using regular expressions.
-* Make the "regular expression" matcher work more correctly (the behavior is not quite correct).
-* Include a test bibliography and short getting-started tutorial.
+* See if there is away to fix the script parser to work more cleanly with escaped characters entered at the command line.
+* Include a test bibliography and a short getting-started tutorial.
+* Remove the `list` command and add the functionality to `view` via arguments.
 * Fix/add a real REPL.

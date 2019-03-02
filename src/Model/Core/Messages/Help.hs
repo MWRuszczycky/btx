@@ -198,7 +198,7 @@ uniqueBibErr fp = unlines es
     where es = [ "Cannot find a unique default .bib file in the current"
                  ++ " directory:"
                , fp
-               , ". (Try: btx help in)"
+               , "(Try: btx help in)"
                ]
 
 -- =============================================================== --

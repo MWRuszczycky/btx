@@ -4,6 +4,7 @@ module Model.Core.Core
     ( allKeysToArgs
     , deleteRefs
     , dropRefByKey
+    , searchRefs
     , insertRefs
     , isPresent
     , getRef
@@ -15,12 +16,13 @@ module Model.Core.Core
 -- DSL for working with modeled bibliography information
 -- =============================================================== --
 
-import qualified Data.Map.Strict  as Map
-import qualified Data.Text        as Tx
-import qualified Model.Core.Types as T
-import Data.Text                         ( Text     )
-import Data.List                         ( foldl'   )
-import Data.Maybe                        ( mapMaybe )
+import qualified Data.Map.Strict    as Map
+import qualified Data.Text          as Tx
+import qualified Model.Core.Types   as T
+import Model.Core.Matcher                  ( hasMatch )
+import Data.Text                           ( Text     )
+import Data.List                           ( foldl'   )
+import Data.Maybe                          ( mapMaybe )
 
 refToPair :: T.Ref -> Maybe (Text, T.Entry)
 refToPair (T.Ref _ k v     ) = Just (k, v)
@@ -47,6 +49,24 @@ deleteRefs :: T.References -> T.Context -> T.References
 -- ^Update a reference map by deleting references in a list.
 deleteRefs refs = foldl' go refs . fst . unzip . mapMaybe refToPair
     where go = flip Map.delete
+
+searchRefs :: T.Bibliography -> [String] -> T.Context
+-- ^Search reference map for all entries containing strings that
+-- match any provided expression string.
+searchRefs bib xs = let refs = T.refs bib
+                        fp   = T.path bib
+                    in  map ( pairToRef fp )
+                        . Map.toList
+                        . Map.unions
+                        . map ( flip Map.filterWithKey refs . doesRefMatch )
+                        $ xs
+
+doesRefMatch :: String -> T.Key -> T.Entry -> Bool
+doesRefMatch x k r = keyMatch || typeMatch || fieldMatch || metaMatch
+    where keyMatch   = hasMatch x k
+          typeMatch  = hasMatch x . T.theType $ r
+          fieldMatch = any (hasMatch x) . snd . unzip . T.fields $ r
+          metaMatch  = any (hasMatch x) . T.metadata $ r
 
 getRef :: T.Bibliography -> String -> T.Ref
 -- ^Lookup a reference from a bibliography and package as a Ref.
