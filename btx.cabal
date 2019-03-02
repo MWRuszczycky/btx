@@ -51,15 +51,13 @@ library btx-internal
                       , text
                       , wreq
 
-test-suite basic
+test-suite parsing
   type:                 exitcode-stdio-1.0
-  main-is:              BasicScripts.hs
+  main-is:              ScriptParsing.hs
   hs-source-dirs:       test
   build-depends:        base >=4.7 && <5
                       , btx-internal
-                      , directory
                       , hspec
-                      , mtl
                       , text
   default-language:     Haskell2010
 
@@ -73,12 +71,15 @@ test-suite matcher
                       , text
   default-language:     Haskell2010
 
-test-suite parsing
+test-suite basic
   type:                 exitcode-stdio-1.0
-  main-is:              ScriptParsing.hs
+  main-is:              BasicScripts.hs
   hs-source-dirs:       test
   build-depends:        base >=4.7 && <5
                       , btx-internal
+                      , directory
                       , hspec
+                      , mtl
                       , text
   default-language:     Haskell2010
+

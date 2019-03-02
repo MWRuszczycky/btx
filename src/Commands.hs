@@ -46,7 +46,6 @@ import Model.BibTeX.Resources                    ( genericKey
                                                  , supported
                                                  , templates           )
 import Model.Core.Formatting                     ( bibToBibtex
-                                                 , formatHelp
                                                  , viewRef
                                                  , refToBibtex
                                                  , summarize

@@ -27,7 +27,6 @@ import Control.Monad.Except                         ( throwError
                                                     , liftEither          )
 import Model.BibTeX.Parser                          ( parseBib            )
 import Model.CoreIO.ErrMonad                        ( readOrMakeFile      )
-import Model.Core.Formatting                        ( formatHelp          )
 import Commands                                     ( hub, route,         )
 
 -- =============================================================== --
@@ -83,7 +82,7 @@ compile ( (c, args) : cs ) rs = applyCmd c args rs >>= compile cs
 -- Generating help and information strings for display
 
 runHelp :: [String] -> String
-runHelp []            = formatHelp . map T.cmdSHelp $ hub
+runHelp []            = H.displayHelp hub
 runHelp ("run":_)     = H.runHelpStr
 runHelp ("all":_)     = H.allHelpStr
 runHelp ("and":_)     = H.andHelpStr

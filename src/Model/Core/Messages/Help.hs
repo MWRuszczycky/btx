@@ -1,6 +1,7 @@
 module Model.Core.Messages.Help
     ( -- General help messages
-      directiveHelpStr
+      displayHelp
+    , directiveHelpStr
     , helpStrHeader
     , helpStrFooter
     , keywordHelpStr
@@ -26,12 +27,31 @@ module Model.Core.Messages.Help
 -- =============================================================== --
 
 import qualified Model.Core.Types as T
-import Data.List                        ( intercalate )
+import Data.List                        ( intercalate
+                                        , sort        )
 import Data.Version                     ( showVersion )
 import Paths_btx                        ( version     )
 
 -- =============================================================== --
 -- General help messages
+
+displayHelp :: [T.Command T.Context] -> String
+displayHelp xs = unlines hs
+    where ds = replicate 53 '-'
+          hs = [ helpStrHeader
+               , "\n-- usage -----------------" ++ ds
+               , "btx [run FILE-PATH | help [COMMAND] | version] [SCRIPT]"
+               , "\n-- btx directives --------" ++ ds, directiveHelpStr
+               , "\n-- btx keyword summaries -" ++ ds, keywordHelpStr
+               , "\n-- btx command summaries -" ++ ds, summarizeCommands xs
+               , "\n-- copying ---------------" ++ ds, helpStrFooter
+               ]
+
+summarizeCommands :: [T.Command T.Context] -> String
+summarizeCommands xs = intercalate "\n" . map go $ xs'
+    where xs'      = map ( break (== ':') ) . sort . map T.cmdSHelp $ xs
+          n        = maximum . map ( length . fst ) $ xs'
+          go (c,s) = padRightStr n c ++ s
 
 keywordHelpStr :: String
 keywordHelpStr = intercalate "\n" hs
@@ -43,7 +63,7 @@ keywordHelpStr = intercalate "\n" hs
 
 directiveHelpStr :: String
 directiveHelpStr = intercalate "\n" hs
-    where hs = [ "run [FILE-PATH] : run btx script from a file"
+    where hs = [ "run  FILE-PATH  : run btx script from a file"
                , "help [ARGUMENT] : show this help screen or more help for"
                  ++ " ARGUMENT"
                , "version         : display version information"
@@ -107,7 +127,7 @@ allHelpStr = unlines hs
 
 runHelpStr :: String
 runHelpStr = unlines hs
-    where hs = [ "run [FILE-PATH] : run btx script from a file\n"
+    where hs = [ "run FILE-PATH : run btx script from a file\n"
                , "Rather than run a script entered at the command line, you"
                , "can use the <run> directive to run a script from a text file."
                , "In this case you can take advantage of line breaks and the"
@@ -150,11 +170,11 @@ cmdInvalidErr c = "Invalid command: " ++ "<" ++ c ++ ">.\n"
 
 invalidUsageErr :: String -> T.ErrString
 invalidUsageErr c = unwords [ "Invalid usage for command <" ++ c ++ ">."
-                            , "(try help " ++ c ++ ")\n"
+                            , "(Try: btx help " ++ c ++ ")\n"
                             ]
 
 missingScriptErr :: T.ErrString
-missingScriptErr = "Script file required (no repl just yet).\n"
+missingScriptErr = "Script file required (Try: btx help in).\n"
 
 noCommandsErr :: T.ErrString
 noCommandsErr   = unwords [ "This won't do anything --"
@@ -178,5 +198,11 @@ uniqueBibErr fp = unlines es
     where es = [ "Cannot find a unique default .bib file in the current"
                  ++ " directory:"
                , fp
-               , "Try: btx help in"
+               , ". (Try: btx help in)"
                ]
+
+-- =============================================================== --
+-- General help formatting
+
+padRightStr :: Int -> String -> String
+padRightStr n x = x ++ replicate (n - length x) ' '
