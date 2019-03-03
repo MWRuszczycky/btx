@@ -30,9 +30,9 @@ import Data.List                                 ( foldl'
 
 summarize :: [String] -> T.Context -> T.BtxState -> Text
 summarize xs rs s
-    | null xs   = "\n" <> Tx.intercalate "\n" x
+    | null xs   = Tx.intercalate "\n" x
     | otherwise = h <> "\n" <> Tx.intercalate "\n" x
-    where h = Tx.pack . unwords $ "\nInfo:" : xs
+    where h = Tx.pack . unwords $ "Info:" : xs
           x = [ "Bibliographies:"
               , "  working: " <> summarizeBib ( Just . T.inBib $ s )
               , "  import:  " <> summarizeBib ( T.fromBib s)

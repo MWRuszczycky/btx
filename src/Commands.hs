@@ -26,7 +26,8 @@ import Control.Monad.State.Lazy                  ( get
                                                  , put
                                                  , lift
                                                  , liftIO           )
-import Model.Core.Core                           ( allKeysToArgs
+import Model.Core.Core                           ( addToLog
+                                                 , allKeysToArgs
                                                  , deleteRefs
                                                  , dropRefByKey
                                                  , searchRefs
@@ -243,7 +244,7 @@ infoCmdLHelp = unlines hs
                ]
 
 infoCmd :: T.CommandMonad T.Context
-infoCmd xs rs = get >>= liftIO . Tx.putStrLn . summarize xs rs >> pure rs
+infoCmd xs rs = get >>= put . (addToLog . summarize xs rs <*> id) >> pure rs
 
 -- view command -----------------------------------------------------
 
@@ -260,11 +261,11 @@ viewCmdLHelp = unlines hs
                ]
 
 viewCmd :: T.CommandMonad T.Context
-viewCmd _ []          = ( liftIO . putStrLn $ msg ) *> pure []
+viewCmd _ []          = get >>= put . addToLog msg >> pure []
     where msg = "\nNo entries to view.\n"
-viewCmd ("list":_) rs = ( liftIO . Tx.putStrLn $ refList ) *> pure rs
+viewCmd ("list":_) rs = get >>= put . addToLog refList >> pure rs
     where refList = Tx.intercalate "\n" . map summarizeEntry $ rs
-viewCmd _ rs          = ( liftIO . Tx.putStrLn $ refList ) *> pure rs
+viewCmd _ rs          = get >>= put . addToLog refList >> pure rs
     where refList = Tx.intercalate "\n\n" . map viewRef $ rs
 
 -- =============================================================== --
@@ -538,13 +539,14 @@ nameCmdLHelp = unlines hs
 nameCmd :: T.CommandMonad T.Context
 nameCmd ns rs
     | nn == nr  = pure . zipWith go ns $ rs
-    | otherwise = ( liftIO . putStrLn $ H.renameErr nn nr ) >> pure rs
+    | otherwise = get >>= put . addToLog cannotRenameMsg >> pure rs
     where nn                      = length ns
           nr                      = length rs
           go n (T.Ref fp k v)     = T.Ref (newFp fp k) (Tx.pack n) v
           go n (T.Missing fp k e) = T.Missing fp k (e ++ newName n)
           newFp fp k              = fp ++ " (originally " ++ Tx.unpack k ++ ")"
           newName n               = ", tried to rename " ++ n
+          cannotRenameMsg         = Tx.pack $ H.renameErr nn nr
 
 -- send command -----------------------------------------------------
 

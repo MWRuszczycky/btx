@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Model.Core.Core
-    ( allKeysToArgs
+    ( addToLog
+    , allKeysToArgs
     , deleteRefs
     , dropRefByKey
     , searchRefs
@@ -23,6 +24,12 @@ import Model.Core.Matcher                  ( hasMatch )
 import Data.Text                           ( Text     )
 import Data.List                           ( foldl'   )
 import Data.Maybe                          ( mapMaybe )
+
+addToLog :: Text -> T.BtxState -> T.BtxState
+addToLog t bs
+    | Tx.null btxLog = bs { T.logger = btxLog <> t }
+    | otherwise      = bs { T.logger = btxLog <> "\n\n" <> t }
+    where !btxLog = T.logger bs
 
 refToPair :: T.Ref -> Maybe (Text, T.Entry)
 refToPair (T.Ref _ k v     ) = Just (k, v)

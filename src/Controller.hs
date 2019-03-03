@@ -99,4 +99,7 @@ runHelp xs            = intercalate "\n" . map ( T.cmdLHelp . route ) $ xs
 finish :: Either String T.BtxState -> IO ()
 -- ^Cleanup after running a script.
 finish (Left msg) = putStr msg
-finish (Right _ ) = pure ()
+finish (Right bs)
+    | Tx.null lg = pure ()
+    | otherwise  = Tx.putStrLn lg
+    where lg = T.logger bs

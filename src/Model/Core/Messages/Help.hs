@@ -183,7 +183,7 @@ noCommandsErr   = unwords [ "This won't do anything --"
                           ]
 
 renameErr :: Int -> Int -> T.ErrString
-renameErr n r = unlines es
+renameErr n r = intercalate "\n" es
     where es = [ "The entries cannot be renamed, because the number of"
                , "entries currently in the context (" ++ show r
                   ++ ") does not match"

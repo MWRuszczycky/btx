@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -- Do not add a module declaration or it will fail to compile
 
 -- =============================================================== --
@@ -8,6 +10,7 @@ import qualified Model.Core.Types        as T
 import qualified Controller              as C
 import qualified Model.Core.ScriptParser as M
 import qualified Data.Text               as Tx
+import qualified Data.Text.IO            as Tx
 import Data.Text                                ( Text, pack      )
 import Test.Hspec                               ( Spec      (..)
                                                 , around_
@@ -30,7 +33,17 @@ import System.Directory                         ( copyFile
 
 main :: IO ()
 main = hspec $ around_ manageScriptTests $ do
-    describe "btx working with a single bibliography" $ do
+    describe "btx generates correct output logs" $ do
+        testScriptOutputLog "generates correct info log"
+                            "script-info"
+                            "testLog-info.log"
+        testScriptOutputLog "generates correct view log"
+                            "script-view"
+                            "testLog-view.log"
+        testScriptOutputLog "generates correct view list log"
+                            "script-list"
+                            "testLog-list.log"
+    describe "btx works with a single bibliography" $ do
         testOneBibScript "can read and format a badly formatted bibliography"
                          "script-formatted"
                          "testBib-formatted.bib"
@@ -46,7 +59,7 @@ main = hspec $ around_ manageScriptTests $ do
         testOneBibScript "can find entries with two expressions"
                          "script-find2"
                          "testBib-find2.bib"
-    describe "btx working with an export bibliography" $ do
+    describe "btx works with an export bibliography" $ do
         testExportScript "'to export, send' syntax works"
                          "script-tosend"
                          "testBib-formatted.bib"
@@ -59,15 +72,19 @@ main = hspec $ around_ manageScriptTests $ do
 -- =============================================================== --
 -- Mocking the executable
 
-mock :: [String] -> IO ()
+mock :: [String] -> IO Text
 -- ^Mocks the main function for executing scripts.
 mock args = do
     script <- C.getScript args
     case M.parse script of
-         T.Usage msg    -> pure ()
-         T.Help cs      -> pure ()
+         T.Usage msg      -> pure . pack $ msg
+         T.Help cs        -> pure . pack . unlines $ cs
          T.Script mbFp cs -> runExceptT ( C.initBtx mbFp >>= C.runBtx cs )
-                             >>= C.finish
+                             >>= mockFinish
+
+mockFinish :: Either String T.BtxState -> IO Text
+mockFinish (Left msg) = pure . pack $ msg ++ "\n"
+mockFinish (Right bs) = pure . (<> "\n") . T.logger $ bs
 
 -- =============================================================== --
 -- Utilities for preparing tests, running them and cleaning up after
@@ -79,6 +96,12 @@ manageScriptTests :: IO () -> IO ()
 -- ^Performs setup and teardown for a single-bibliography test.
 manageScriptTests = bracket_ setupBib tearDown
     where setupBib = copyFile "test/bib/testBib.bib" "test/testBib.bib"
+
+testScriptOutputLog :: String -> String -> FilePath -> Spec
+testScriptOutputLog cue name target = it (makeTitle cue name) action
+    where action = do actualLog   <- getTestScript name >>= mock . words
+                      expectedLog <- Tx.readFile $ "test/testLogs/" ++ target
+                      actualLog `shouldBe` expectedLog
 
 testOneBibScript :: String -> String -> FilePath -> Spec
 -- ^Run tests involving only a single bibliography.
