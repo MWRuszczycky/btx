@@ -14,7 +14,8 @@ import qualified Data.Text            as Tx
 import qualified Data.Map.Strict      as M
 import qualified Model.Core.Types     as T
 import Data.Bifunctor                       ( bimap       )
-import Control.Applicative                  ( (<|>)       )
+import Control.Applicative                  ( (<|>)
+                                            , many        )
 import Data.Text                            ( Text, pack  )
 import Data.Char                            ( isAlphaNum
                                             , isSpace     )
@@ -59,9 +60,9 @@ bibParser :: At.Parser (Text, T.References)
 -- ^Main file parser for reading each BibTeX reference.
 bibParser = do
     hdr <- Tx.strip <$> header
-    rs  <- At.many' reference
+    rs  <- many reference
     At.endOfInput
-    return ( hdr, M.fromList rs )
+    pure ( hdr, M.fromList rs )
 
 ---------------------------------------------------------------------
 -- Single reference parser
@@ -73,7 +74,7 @@ parseRef :: FilePath -> Text -> Either String T.Ref
 -- ^Parse a single BibTeX entry from a Text string.
 parseRef fp x = do
     (k, v) <- At.parseOnly oneRef x
-    return $ T.Ref fp k v
+    pure $ T.Ref fp k v
 
 -- unexported
 
@@ -83,7 +84,7 @@ oneRef = do
     At.skipWhile (/= '@')
     r <- reference
     At.endOfInput
-    return r
+    pure r
 
 -- =============================================================== --
 -- Unexported helper parsers
@@ -97,11 +98,11 @@ reference :: At.Parser KeyEntry
 reference = do
     (rt, rk) <- refHeader
     At.skipSpace
-    fields <- At.many' kvPair
+    fields <- many kvPair
     -- Entries can end with either a brace or comma-spaces-brace.
     ( At.char ',' >> At.skipSpace >> At.char '}' ) <|> At.char '}'
     md <- metadata
-    return ( rk, T.Entry rt fields md )
+    pure ( rk, T.Entry rt fields md )
 
 ---------------------------------------------------------------------
 -- Parsing reference headers
@@ -113,7 +114,7 @@ refHeader = do
     rt <- refType
     At.skipSpace
     rk <- refKey
-    return (rt, rk)
+    pure (rt, rk)
 
 refType :: At.Parser Text
 -- ^Parses the reference entry type.
@@ -123,7 +124,7 @@ refType = do
     rt <- At.takeWhile1 ( At.notInClass "{ \t\n\r\f\v" )
     At.skipSpace
     At.char '{'
-    return rt
+    pure rt
 
 refKey :: At.Parser Text
 -- ^Parses the reference entry key.
@@ -144,12 +145,12 @@ kvPair = do
     At.skipSpace
     v <- valParse
     At.skipSpace
-    return (k, v)
+    pure (k, v)
 
 keyParse :: At.Parser Text
 -- ^Parser for BibTeX reference field keys, which must be alphanumeric
 -- may only contain the alphanumeric '-' or '_' characters.
-keyParse = pack <$> At.many' ( At.satisfy good )
+keyParse = pack <$> many ( At.satisfy good )
     where good x = isAlphaNum x || x == '-' || x == '_'
 
 valParse :: At.Parser Text
@@ -158,7 +159,7 @@ valParse :: At.Parser Text
 valParse = do
     At.char '{'
     vs <- value
-    return vs
+    pure vs
 
 value :: At.Parser Text
 -- ^Recursive parser for BibTeX reference field values.
@@ -168,11 +169,11 @@ value = do
     case next of
          '\\' -> do escaped <- At.take 2
                     rest    <- value
-                    return $ start <> escaped <> rest
+                    pure $ start <> escaped <> rest
          '{'  -> do inBraces <- valParse
                     rest     <- value
-                    return $ start <> ( "{" <> inBraces <> "}" ) <> rest
-         _    -> At.char '}' >> return start
+                    pure $ start <> ( "{" <> inBraces <> "}" ) <> rest
+         _    -> At.char '}' >> pure start
 
 ---------------------------------------------------------------------
 -- Parsing metadata and headers
@@ -180,33 +181,33 @@ value = do
 metadata :: At.Parser [Text]
 metadata = do
     xs <- formatMeta <$> At.takeWhile ( /= '@' )
-    c  <- metaBibTeX "comment" <|> return Tx.empty
+    c  <- metaBibTeX "comment" <|> pure Tx.empty
     if Tx.null c
-       then return xs
+       then pure xs
        else do rest <- metadata
-               return $ xs ++ [c] ++ rest
+               pure $ xs ++ [c] ++ rest
 
 header :: At.Parser Text
 header = do
     xs <- At.takeWhile ( /= '@' )
     u  <- anyMetaBibTeX
     if Tx.null u
-       then return xs
+       then pure xs
        else do rest <- header
-               return $ xs <> u <> rest
+               pure $ xs <> u <> rest
 
 anyMetaBibTeX :: At.Parser Text
 anyMetaBibTeX = metaBibTeX "comment"
                 <|> metaBibTeX "string"
                 <|> metaBibTeX "preamble"
-                <|> return Tx.empty
+                <|> pure Tx.empty
 
 metaBibTeX :: Text -> At.Parser Text
 metaBibTeX t = do
     At.char '@'
     At.skipSpace
     At.asciiCI t
-    return $ Tx.cons '@' t
+    pure $ Tx.cons '@' t
 
 formatMeta :: Text -> [Text]
 formatMeta = filter (not . Tx.null) . map (Tx.dropWhile isSpace ) . Tx.lines

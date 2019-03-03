@@ -114,7 +114,7 @@ fromCmdLHelp = unlines hs
 
 fromCmd :: T.CommandMonad T.Context
 fromCmd xs rs
-    | null xs       = get >>= \ b -> put b { T.fromBib = Nothing } >> return rs
+    | null xs       = get >>= \ b -> put b { T.fromBib = Nothing } >> pure rs
     | length xs > 1 = throwError "Command <from> allows one or no argument.\n"
     | otherwise     = do btxState <- get
                          let fp = head xs
@@ -123,7 +123,7 @@ fromCmd xs rs
                             else do content <- lift . readFileExcept $ fp
                                     bib <- liftEither . parseBib fp $ content
                                     put btxState { T.fromBib = Just bib }
-                                    return rs
+                                    pure rs
 
 -- in command -------------------------------------------------------
 
@@ -157,7 +157,7 @@ inCmd (fp:_)  rs = do updateIn rs >>= bibToFile
                       content  <- lift . readOrMakeFile $ fp
                       bib      <- liftEither . parseBib fp $ content
                       put btxState { T.inBib = bib }
-                      return []
+                      pure []
 
 -- save command -----------------------------------------------------
 
@@ -182,8 +182,8 @@ saveCmdLHelp = unlines hs
 
 saveCmd :: T.CommandMonad T.Context
 saveCmd _ rs = do updateIn rs >>= bibToFile
-                  get >>= maybe (return ()) bibToFile . T.toBib
-                  return []
+                  get >>= maybe (pure ()) bibToFile . T.toBib
+                  pure []
 
 -- to command -------------------------------------------------------
 
@@ -213,14 +213,14 @@ toCmdLHelp = unlines hs
 toCmd :: T.CommandMonad T.Context
 toCmd (_:_:_) _  = throwError "Command <to> allows only one or no argument.\n"
 toCmd xs      rs = do btxState <- get
-                      maybe ( return () ) bibToFile $ T.toBib btxState
+                      maybe ( pure () ) bibToFile $ T.toBib btxState
                       let fp = head xs
                       if null xs || fp == (T.path . T.inBib) btxState
                          then put btxState { T.toBib = Nothing }
                          else do content <- lift . readOrMakeFile $ fp
                                  bib <- liftEither . parseBib fp $ content
                                  put btxState { T.toBib = Just bib }
-                      return rs
+                      pure rs
 
 -- =============================================================== --
 -- Queries
@@ -245,7 +245,7 @@ infoCmdLHelp = unlines hs
                ]
 
 infoCmd :: T.CommandMonad T.Context
-infoCmd xs rs = get >>= liftIO . Tx.putStrLn . summarize xs rs >> return rs
+infoCmd xs rs = get >>= liftIO . Tx.putStrLn . summarize xs rs >> pure rs
 
 -- list command -----------------------------------------------------
 
@@ -270,14 +270,14 @@ listCmdLHelp = unlines hs
                ]
 
 listCmd :: T.CommandMonad T.Context
-listCmd [] rs        = return rs
+listCmd [] rs        = pure rs
 listCmd ("all":_) rs = do bib <- T.inBib <$> get
                           liftIO . Tx.putStrLn . summarizeAllEntries $ bib
-                          return rs
+                          pure rs
 listCmd xs        rs = do bib <- T.inBib <$> get
                           let go = Tx.putStrLn . summarizeEntries bib . Tx.pack
                           liftIO . mapM_ go $ xs
-                          return rs
+                          pure rs
 
 -- view command -----------------------------------------------------
 
@@ -295,11 +295,11 @@ viewCmdLHelp = unlines hs
 viewCmd :: T.CommandMonad T.Context
 viewCmd _ [] = do
     liftIO . putStrLn $ "\nNo entries to view.\n"
-    return []
+    pure []
 viewCmd _ rs = do
     liftIO . Tx.putStrLn $ Tx.empty
     liftIO . Tx.putStrLn . Tx.intercalate "\n\n" . map viewRef $ rs
-    return rs
+    pure rs
 
 -- =============================================================== --
 -- Context constructors
@@ -417,7 +417,7 @@ getCmd :: T.CommandMonad T.Context
 getCmd ("all":_) rs = allKeysToArgs . T.inBib <$> get >>= flip getCmd rs
 getCmd xs        rs = do updateIn rs
                          bib <- T.inBib <$> get
-                         return . map (getRef bib) $ xs
+                         pure . map (getRef bib) $ xs
 
 -- new command ------------------------------------------------------
 
@@ -449,7 +449,7 @@ newCmd xs rs = do
     updateIn rs
     bib <- T.inBib <$> get
     let n = genKeyNumber bib
-    return . templates n $ xs
+    pure . templates n $ xs
 
 -- pull command -----------------------------------------------------
 
@@ -477,7 +477,7 @@ pullCmd xs rs = do
     btxState <- get
     let bib = T.inBib btxState
     put btxState { T.inBib = bib { T.refs = deleteRefs ( T.refs bib ) rs' } }
-    return rs'
+    pure rs'
 
 -- take command -----------------------------------------------------
 
@@ -507,8 +507,8 @@ takeCmd ("all":_) rs = do xs <- maybe [] allKeysToArgs . T.fromBib <$> get
 takeCmd xs        rs = do updateIn rs
                           btxState <- get
                           case T.fromBib btxState of
-                               Nothing  -> return []
-                               Just bib -> return . map ( getRef bib ) $ xs
+                               Nothing  -> pure []
+                               Just bib -> pure . map ( getRef bib ) $ xs
 
 -- =============================================================== --
 -- Context operators
@@ -538,8 +538,8 @@ editCmdLHelp = unlines hs
 
 editCmd :: T.CommandMonad T.Context
 editCmd []     _  = throwError "An editor program must be specified.\n"
-editCmd _      [] = return []
-editCmd (x:[]) rs = lift ( mapM (runExternal x) rs ) >>= return
+editCmd _      [] = pure []
+editCmd (x:[]) rs = lift ( mapM (runExternal x) rs ) >>= pure
 editCmd (x:xs) _  = throwError "Only one editor may be specified with <edit>.\n"
 
 -- name command -----------------------------------------------------
@@ -571,8 +571,8 @@ nameCmdLHelp = unlines hs
 
 nameCmd :: T.CommandMonad T.Context
 nameCmd ns rs
-    | nn == nr  = return . zipWith go ns $ rs
-    | otherwise = ( liftIO . putStrLn $ H.renameErr nn nr ) >> return rs
+    | nn == nr  = pure . zipWith go ns $ rs
+    | otherwise = ( liftIO . putStrLn $ H.renameErr nn nr ) >> pure rs
     where nn                      = length ns
           nr                      = length rs
           go n (T.Ref fp k v)     = T.Ref (newFp fp k) (Tx.pack n) v
@@ -606,7 +606,7 @@ sendCmdLHelp = unlines hs
 
 sendCmd :: T.CommandMonad T.Context
 sendCmd ("to":xs) rs = toCmd xs rs >>= sendCmd []
-sendCmd _         rs = updateTo rs >> return []
+sendCmd _         rs = updateTo rs >> pure []
 
 -- toss command -----------------------------------------------------
 
@@ -632,8 +632,8 @@ tossCmdLHelp = unlines hs
                ]
 
 tossCmd :: T.CommandMonad T.Context
-tossCmd ("all":_) rs = return []
-tossCmd xs        rs = return . foldl' dropRefByKey rs . map Tx.pack $ xs
+tossCmd ("all":_) rs = pure []
+tossCmd xs        rs = pure . foldl' dropRefByKey rs . map Tx.pack $ xs
 
 -- =============================================================== --
 -- Errors and help

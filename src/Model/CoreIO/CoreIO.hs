@@ -29,7 +29,7 @@ updateIn rs = do
         newRefs = insertRefs ( T.refs oldBib ) rs
         newBib  = oldBib { T.refs = newRefs }
     put btxState { T.inBib = newBib }
-    return newBib
+    pure newBib
 
 updateTo :: T.Context -> T.BtxStateMonad ( Maybe T.Bibliography )
 -- ^Save references in context to the to-bibliography and return the
@@ -37,6 +37,6 @@ updateTo :: T.Context -> T.BtxStateMonad ( Maybe T.Bibliography )
 updateTo rs = do
     btxState <- get
     let newBib = do oldBib <- T.toBib btxState    -- Maybe monad here
-                    return oldBib { T.refs = insertRefs ( T.refs oldBib ) rs }
+                    pure oldBib { T.refs = insertRefs ( T.refs oldBib ) rs }
     put btxState { T.toBib = newBib }
-    return newBib
+    pure newBib

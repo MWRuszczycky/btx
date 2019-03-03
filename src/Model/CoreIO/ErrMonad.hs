@@ -33,20 +33,20 @@ readOrMakeFile :: FilePath -> T.ErrMonad Text
 readOrMakeFile fp = ExceptT $ do
     liftIO . catch ( Right <$> Tx.readFile fp ) $ hndlErr
     where hndlErr :: IOException -> IO ( Either T.ErrString Text )
-          hndlErr e | isDoesNotExistError e = return . Right $ Tx.empty
-                    | otherwise             = return . Left . show $ e
+          hndlErr e | isDoesNotExistError e = pure . Right $ Tx.empty
+                    | otherwise             = pure . Left . show $ e
 
 readFileExcept :: FilePath -> T.ErrMonad Text
 readFileExcept fp = ExceptT $ do
     liftIO . catch ( Right <$> Tx.readFile fp ) $ hndlErr
     where hndlErr :: IOException -> IO ( Either T.ErrString Text )
-          hndlErr = return . Left . show
+          hndlErr = pure . Left . show
 
 writeFileExcept :: FilePath -> Text -> T.ErrMonad ()
 writeFileExcept fp x = ExceptT $ do
     liftIO . catch ( Right <$> Tx.writeFile fp x ) $ hndlErr
     where hndlErr :: IOException -> IO ( Either T.ErrString () )
-          hndlErr = return . Left . show
+          hndlErr = pure . Left . show
 
 -- =============================================================== --
 -- Working with external processes
@@ -56,4 +56,4 @@ callProcExcept :: FilePath -> [String] -> T.ErrMonad ()
 callProcExcept p args = ExceptT $ do
     liftIO . catch ( Right <$> callProcess p args ) $ hndlErr
     where hndlErr :: IOException -> IO ( Either T.ErrString () )
-          hndlErr = return . Left . displayException
+          hndlErr = pure . Left . displayException

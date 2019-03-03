@@ -52,13 +52,13 @@ runExternal :: String -> T.Ref -> T.ErrMonad T.Ref
 -- process p on the file to get a new BibTeX entry, which is parsed
 -- in as new a new, modified btx entry and returned. Do not return
 -- until either parsing succeeds or the user aborts.
-runExternal p (T.Missing fp k e)  = return $ T.Missing fp k e
+runExternal p (T.Missing fp k e)  = pure $ T.Missing fp k e
 runExternal p r@(T.Ref fp k v   ) = do
     let bibtexString = Tx.append editIntro . refToBibtex k $ v
     temp   <- liftIO . emptyTempFile "." . Tx.unpack $ k <> ".bib"
     result <- catchError ( parseLoop p fp temp bibtexString ) ( cleanUp p temp )
     liftIO . removeFile $ temp
-    return . maybe r id $ result
+    pure . maybe r id $ result
 
 parseLoop :: String -> FilePath -> FilePath -> Text -> T.ErrMonad (Maybe T.Ref)
 -- ^Continue calling the external process p on a single-reference
@@ -70,10 +70,10 @@ parseLoop p fp temp xs = do
     E.callProcExcept p [temp]
     content <- E.readFileExcept temp
     if wantsToAbort content
-       then return Nothing
+       then pure Nothing
        else case parseRef fp content of
                  Left _  -> parseLoop p fp temp ( addErrMsg content )
-                 Right r -> return . Just $ r
+                 Right r -> pure . Just $ r
 
 editIntro :: Text
 -- ^Instruction to user added as a leading comment when editing.
@@ -111,13 +111,13 @@ getDoi doi = do
         os = Wreq.defaults & Wreq.header "Accept" .~ ps
         ad = "https://doi.org/" ++ doi
     catchError ( tryToConnectWithGet os ad >>= readResponse ad )
-               ( return . T.Missing doi "no-key"               )
+               ( pure . T.Missing doi "no-key"                 )
 
 tryToConnectWithGet :: Wreq.Options -> String -> T.ErrMonad WreqResponse
 tryToConnectWithGet ops address = ExceptT $ do
     liftIO . catch ( Right <$> Wreq.getWith ops address ) $ hndlErr
     where hndlErr :: SomeException -> IO ( Either T.ErrString WreqResponse )
-          hndlErr _ = return . Left $ "Unable to connect to " ++ address
+          hndlErr _ = pure . Left $ "Unable to connect to " ++ address
 
 readResponse :: String -> WreqResponse -> T.ErrMonad T.Ref
 -- ^Helper function for reading the response to a get request.
