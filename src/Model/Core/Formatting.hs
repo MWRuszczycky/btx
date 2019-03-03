@@ -6,8 +6,7 @@ module Model.Core.Formatting
     , bibToBibtex
     , viewRef
     , summarize
-    , summarizeAllEntries
-    , summarizeEntries
+    , summarizeEntry
     ) where
 
 -- =============================================================== --
@@ -58,22 +57,9 @@ summarizeRef (T.Ref fp k v     ) = k <> " from " <> Tx.pack fp
 summarizeRef (T.Missing fp k e ) = "Missing: " <> k <> " from " <> Tx.pack fp
                                    <> " (" <> Tx.pack e <> ")"
 
-summarizeAllEntries :: T.Bibliography -> Text
-summarizeAllEntries bib
-    | null xs   = "No entries to list."
-    | otherwise = Tx.intercalate "\n" xs
-    where xs = map summarizeEntry . Map.toList . T.refs $ bib
-
-summarizeEntries :: T.Bibliography -> Text -> Text
-summarizeEntries bib x
-    | null xs   = "No entries matching " <> x <> "..."
-    | otherwise = Tx.intercalate "\n" xs
-    where rs     = T.refs bib
-          xs     = map summarizeEntry . Map.toList . Map.filterWithKey go $ rs
-          go k v = Tx.take (Tx.length x) k == x
-
-summarizeEntry :: (Text, T.Entry) -> Text
-summarizeEntry (k, v) = kt <> title
+summarizeEntry :: T.Ref -> Text
+summarizeEntry (T.Missing fp k e) = viewMissing fp k e
+summarizeEntry (T.Ref fp k v)     = kt <> title
     where pars x = " (" <> x <> ") "
           kt     = k <> ": " <> T.theType v <> ", "
           room   = 80 - Tx.length kt

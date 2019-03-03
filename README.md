@@ -74,5 +74,4 @@ stack test
 
 * See if there is away to fix the script parser to work more cleanly with escaped characters entered at the command line.
 * Include a test bibliography and a short getting-started tutorial.
-* Remove the `list` command and add the functionality to `view` via arguments.
 * Fix/add a real REPL.

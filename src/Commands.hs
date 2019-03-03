@@ -15,43 +15,42 @@ import qualified Data.Text                as Tx
 import qualified Data.Map.Strict          as Map
 import qualified Model.Core.Types         as T
 import qualified Model.Core.Messages.Help as H
-import Data.Text                                 ( Text                )
+import Data.Text                                 ( Text             )
 import Data.List                                 ( find
                                                  , foldl'
-                                                 , intercalate         )
-import Control.Monad                             ( unless              )
+                                                 , intercalate      )
+import Control.Monad                             ( unless           )
 import Control.Monad.Except                      ( throwError
-                                                 , liftEither          )
+                                                 , liftEither       )
 import Control.Monad.State.Lazy                  ( get
                                                  , put
                                                  , lift
-                                                 , liftIO              )
+                                                 , liftIO           )
 import Model.Core.Core                           ( allKeysToArgs
                                                  , deleteRefs
                                                  , dropRefByKey
                                                  , searchRefs
                                                  , getRef
                                                  , insertRefs
-                                                 , isPresent           )
+                                                 , isPresent        )
 import Model.CoreIO.CoreIO                       ( bibToFile
                                                  , updateIn
-                                                 , updateTo            )
+                                                 , updateTo         )
 import Model.CoreIO.External                     ( getDoi
-                                                 , runExternal         )
+                                                 , runExternal      )
 import Model.CoreIO.ErrMonad                     ( readOrMakeFile
                                                  , readFileExcept
-                                                 , writeFileExcept     )
-import Model.BibTeX.Parser                       ( parseBib            )
+                                                 , writeFileExcept  )
+import Model.BibTeX.Parser                       ( parseBib         )
 import Model.BibTeX.Resources                    ( genericKey
                                                  , genKeyNumber
                                                  , supported
-                                                 , templates           )
+                                                 , templates        )
 import Model.Core.Formatting                     ( bibToBibtex
                                                  , viewRef
                                                  , refToBibtex
                                                  , summarize
-                                                 , summarizeAllEntries
-                                                 , summarizeEntries    )
+                                                 , summarizeEntry   )
 
 -- =============================================================== --
 -- Hub and router
@@ -70,7 +69,6 @@ hub = [ -- Bibliography managers
       , T.Command "to"   toCmd   toCmdSHelp   toCmdLHelp
         -- Queries
       , T.Command "info" infoCmd infoCmdSHelp infoCmdLHelp
-      , T.Command "list" listCmd listCmdSHelp listCmdLHelp
       , T.Command "view" viewCmd viewCmdSHelp viewCmdLHelp
         -- Context constructors
       , T.Command "doi"  doiCmd  doiCmdSHelp  doiCmdLHelp
@@ -241,65 +239,33 @@ infoCmdLHelp = unlines hs
                , "  4. Display what is currently in context."
                , "  5. List the working, import and export bibliographies with"
                , "     summary information.\n"
-               , "See also <list> and <view>."
+               , "See also <view>."
                ]
 
 infoCmd :: T.CommandMonad T.Context
 infoCmd xs rs = get >>= liftIO . Tx.putStrLn . summarize xs rs >> pure rs
 
--- list command -----------------------------------------------------
-
-listCmdSHelp :: String
-listCmdSHelp = "list [ARG..] : display a summary of the entries "
-               ++ "in the working bibliography"
-
-listCmdLHelp :: String
-listCmdLHelp = unlines hs
-    where hs = [ listCmdSHelp ++ "\n"
-               , "This command leaves the current context unchanged. It can be"
-               , "used to query whether the working bibliography contains a"
-               , "specific entry. To list a summary of all entries in the"
-               , "working bibilography, use:\n"
-               , "    list all\n"
-               , "To query all entries with specific key-prefixes, supply the"
-               , "prefixes to the <list> command. For example, the command,\n"
-               , "    list Cats Dogs\n"
-               , "will return summary information for entries with keys such as"
-               , "Cats, Cats1964, CatsAndSquirrels, Dogs, Dogs2016, etc., but"
-               , "not ChipmunksAndDogs. See also <view> and <info>."
-               ]
-
-listCmd :: T.CommandMonad T.Context
-listCmd [] rs        = pure rs
-listCmd ("all":_) rs = do bib <- T.inBib <$> get
-                          liftIO . Tx.putStrLn . summarizeAllEntries $ bib
-                          pure rs
-listCmd xs        rs = do bib <- T.inBib <$> get
-                          let go = Tx.putStrLn . summarizeEntries bib . Tx.pack
-                          liftIO . mapM_ go $ xs
-                          pure rs
-
 -- view command -----------------------------------------------------
 
 viewCmdSHelp :: String
-viewCmdSHelp = "view : view the details of all entries in the context"
+viewCmdSHelp = "view [list] : view the details of all entries in the context"
 
 viewCmdLHelp :: String
 viewCmdLHelp = unlines hs
     where hs = [ viewCmdSHelp ++ "\n"
                , "This command has no other effect besides displaying the"
-               , "entires in the context in a nicely formatted way. See also"
-               , "the <list> and <info> commands."
+               , "entires in the context in a nicely formatted way. You can"
+               , "also abbreviate the output by supplying the argument <list>."
+               , "See also the <info> command."
                ]
 
 viewCmd :: T.CommandMonad T.Context
-viewCmd _ [] = do
-    liftIO . putStrLn $ "\nNo entries to view.\n"
-    pure []
-viewCmd _ rs = do
-    liftIO . Tx.putStrLn $ Tx.empty
-    liftIO . Tx.putStrLn . Tx.intercalate "\n\n" . map viewRef $ rs
-    pure rs
+viewCmd _ []          = ( liftIO . putStrLn $ msg ) *> pure []
+    where msg = "\nNo entries to view.\n"
+viewCmd ("list":_) rs = ( liftIO . Tx.putStrLn $ refList ) *> pure rs
+    where refList = Tx.intercalate "\n" . map summarizeEntry $ rs
+viewCmd _ rs          = ( liftIO . Tx.putStrLn $ refList ) *> pure rs
+    where refList = Tx.intercalate "\n\n" . map viewRef $ rs
 
 -- =============================================================== --
 -- Context constructors
