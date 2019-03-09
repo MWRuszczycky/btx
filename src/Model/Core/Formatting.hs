@@ -5,6 +5,7 @@ module Model.Core.Formatting
       refToBibtex
     , bibToBibtex
     , viewRef
+    , viewRefTex
     , summarize
     , summarizeEntry
     ) where
@@ -79,15 +80,14 @@ bibToBibtex :: T.Bibliography -> Text
 bibToBibtex b
     | Tx.null h = rs
     | otherwise = h <> "\n\n" <> rs
-    where h  = T.header b
-          rs = Tx.intercalate "\n"
-               . Map.elems
-               . Map.mapWithKey refToBibtex
-               . T.refs $ b
+    where h         = T.header b
+          rs        = Tx.concat . Map.foldrWithKey go [] . T.refs $ b
+          go k v [] = [ refToBibtex k v <> "\n" ]
+          go k v xs = ( refToBibtex k v <> "\n\n" ) : xs
 
 refToBibtex :: Text -> T.Entry -> Text
 -- ^Generates a text representation of a bibliography reference.
-refToBibtex k v  = Tx.concat [ key, fields, close, coms <> "\n" ]
+refToBibtex k v  = Tx.concat [ key, fields, close, coms ]
     where key    = Tx.concat [ "@", T.theType v, "{", k, ",\n" ]
           fields = Tx.intercalate ",\n" . map fieldToBibtex $ T.fields v
           coms   = Tx.intercalate "\n" . T.metadata $ v
@@ -102,9 +102,14 @@ fieldToBibtex (k, v) = Tx.concat [ "    ", k, " = ", "{", v, "}" ]
 
 viewRef :: T.Ref -> Text
 -- ^Represent a Ref value as pretty-printed text.
-viewRef (T.Missing fp k e ) = viewMissing fp k e
-viewRef (T.Ref     fp k v ) = hdr <> viewEntry v
+viewRef (T.Missing fp k e) = viewMissing fp k e
+viewRef (T.Ref     fp k v) = hdr <> viewEntry v
     where hdr = k <> " in " <> Tx.pack fp <> "\n"
+
+viewRefTex :: T.Ref -> Text
+-- ^Represent a Ref value in BibTeX format.
+viewRefTex (T.Missing fp k e) = viewMissing fp k e
+viewRefTex (T.Ref     fp k v) = refToBibtex k v
 
 viewMissing :: FilePath -> T.Key -> T.ErrString -> Text
 -- ^Formats a missing entry as Text for viewing.

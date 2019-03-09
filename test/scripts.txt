@@ -17,3 +17,5 @@ script-info:      in test/testBib.bib, get all, info and info
 script-view:      in test/testBib.bib, get Cats2016 Dogs1986 Cleland1975, view and info
 
 script-list:      in test/testBib.bib, get Cats2016 Dogs1986 Cleland1975, view list and info
+
+script-view-tex:  in test/testBib.bib, get Cats2016 Dogs1986 Cleland1975, view tex and info

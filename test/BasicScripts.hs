@@ -43,6 +43,9 @@ main = hspec $ around_ manageScriptTests $ do
         testScriptOutputLog "generates correct view list log"
                             "script-list"
                             "testLog-list.log"
+        testScriptOutputLog "generates correct view tex log"
+                            "script-view-tex"
+                            "testLog-view-tex.log"
     describe "btx works with a single bibliography" $ do
         testOneBibScript "can read and format a badly formatted bibliography"
                          "script-formatted"

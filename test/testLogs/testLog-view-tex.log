@@ -1,0 +1,32 @@
+@article{Cats2016,
+    author = {Katze, Felix and Fischer, Norman and Hilbert, Penelope},
+    title = {Synthesis of 4a$\alpha$,7$\alpha$,7a$\alpha$-Nepetalactone},
+    year = {2016},
+    journal = {Journal of Important Research},
+    volume = {10},
+    number = {},
+    pages = {1-2},
+    month = {},
+    note = {}
+}
+
+Missing: Dogs1986 from test/testBib.bib (no such entry)
+
+@article{Cleland1975,
+    author = {Cleland, W. W.},
+    title = {Partition analysis and concept of net rate constants as tools in enzyme kinetics},
+    journal = {Biochemistry},
+    volume = {14},
+    year = {1975},
+    pages = {3220-3224}
+}
+file = Cleland_1965_Biochemistry.pdf
+
+Bibliographies:
+  working: test/testBib.bib has 5 entries
+  import:  unset
+  export:  unset
+Context:
+  Cats2016 from test/testBib.bib
+  Missing: Dogs1986 from test/testBib.bib (no such entry)
+  Cleland1975 from test/testBib.bib

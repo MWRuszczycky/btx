@@ -49,7 +49,7 @@ import Model.BibTeX.Resources                    ( genericKey
                                                  , templates        )
 import Model.Core.Formatting                     ( bibToBibtex
                                                  , viewRef
-                                                 , refToBibtex
+                                                 , viewRefTex
                                                  , summarize
                                                  , summarizeEntry   )
 
@@ -249,14 +249,18 @@ infoCmd xs rs = get >>= put . (addToLog . summarize xs rs <*> id) >> pure rs
 -- view command -----------------------------------------------------
 
 viewCmdSHelp :: String
-viewCmdSHelp = "view [list] : view the details of all entries in the context"
+viewCmdSHelp = "view [ARG] : view the details of all entries in the context"
 
 viewCmdLHelp :: String
 viewCmdLHelp = unlines hs
     where hs = [ viewCmdSHelp ++ "\n"
                , "This command has no other effect besides displaying the"
-               , "entires in the context in a nicely formatted way. You can"
-               , "also abbreviate the output by supplying the argument <list>."
+               , "entries in the context in a nicely formatted way. Arguments"
+               , "can be supplied to <view> to determine how the references"
+               , "will be displayed:\n"
+               , "  view      : Pretty-print each entry."
+               , "  view list : Print abbreviated entry."
+               , "  view tex  : Print entries in BibTeX format.\n"
                , "See also the <info> command."
                ]
 
@@ -265,6 +269,8 @@ viewCmd _ []          = get >>= put . addToLog msg >> pure []
     where msg = "\nNo entries to view.\n"
 viewCmd ("list":_) rs = get >>= put . addToLog refList >> pure rs
     where refList = Tx.intercalate "\n" . map summarizeEntry $ rs
+viewCmd ("tex":_)  rs = get >>= put . addToLog refTex  >> pure rs
+    where refTex  = Tx.intercalate "\n\n" . map viewRefTex $ rs
 viewCmd _ rs          = get >>= put . addToLog refList >> pure rs
     where refList = Tx.intercalate "\n\n" . map viewRef $ rs
 
