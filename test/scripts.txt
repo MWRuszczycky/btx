@@ -8,9 +8,11 @@ script-sendto:    in test/testBib.bib, get Cats2016 Watson1953, name Felines2016
 
 script-tosend:    in test/testBib.bib, get Cats2016 Watson1953, to test/testExportBib.bib, name Felines2016 DNA_Structure and send
 
-script-find1:     in test/testBib.bib, find M.*r and toss all
+script-send-toss: in test/testBib.bib, get all, toss Cats2016 and send to test/testExportBib.bib
 
-script-find2:     in test/testBib.bib, find net\srate\sconstants \\alpha and toss all
+script-find1:     in test/testBib.bib, find M.*r and toss
+
+script-find2:     in test/testBib.bib, find net\srate\sconstants \\alpha and toss
 
 script-info:      in test/testBib.bib, get all, info and info
 

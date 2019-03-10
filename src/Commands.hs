@@ -591,23 +591,23 @@ tossCmdLHelp :: String
 tossCmdLHelp = unlines hs
     where hs = [ tossCmdSHelp ++ "\n"
                , "This command removes those entries with the specified keys"
-               , "from the current context. This can be used to selectively"
-               , "mask the export of entries between bibliographies or to"
-               , "simply delete an entry from the working bibliography."
-               , "For example, to export all entries but Cats2016 from file"
-               , "Working.bib to Export.bib, you could use\n"
+               , "from the current context. If no keys are specified, then all"
+               , "all entries are cleared from the current context. The <toss>"
+               , "command can thus be used to mask the export of entries"
+               , "between bibliographies or to simply delete an entry from the"
+               , "working bibliography. For example, to export all entries but"
+               , "Cats2016 from file Working.bib to Export.bib, you could use\n"
                , "    btx in Working.bib, get all, toss Cats2016 and send to"
                       ++ " Export.bib \n"
-               , "The <all> keyword can be used to clear all entries in the"
-               , "context. Used with <pull>, this can be used to delete entries"
-               , "from the working bibliography. For example,\n"
-               , "    btx in Working.bib, pull Cats2016 Dogs1984 and toss all\n"
+               , "Used with <pull>, the <toss> command can be used to delete"
+               , "entries from the working bibliography. For example,\n"
+               , "    btx in Working.bib, pull Cats2016 Dogs1984 and toss\n"
                , "deletes Cats2016 and Dogs1984 from the working bibliography."
                ]
 
 tossCmd :: T.CommandMonad T.Context
-tossCmd ("all":_) rs = pure []
-tossCmd xs        rs = pure . foldl' dropRefByKey rs . map Tx.pack $ xs
+tossCmd [] rs = pure []
+tossCmd xs rs = pure . foldl' dropRefByKey rs . map Tx.pack $ xs
 
 -- =============================================================== --
 -- Errors and help

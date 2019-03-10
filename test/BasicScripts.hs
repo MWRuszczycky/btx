@@ -71,6 +71,10 @@ main = hspec $ around_ manageScriptTests $ do
                          "script-sendto"
                          "testBib-formatted.bib"
                          "testExportBib-renaming.bib"
+        testExportScript "masked exports work"
+                         "script-send-toss"
+                         "testBib-formatted.bib"
+                         "testExportBib-masked.bib"
 
 -- =============================================================== --
 -- Mocking the executable
