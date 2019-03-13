@@ -21,7 +21,8 @@ import Data.Text                                    ( Text, pack          )
 import Data.List                                    ( intercalate         )
 import System.Directory                             ( listDirectory
                                                     , getCurrentDirectory )
-import Control.Monad.State.Lazy                     ( execStateT, get
+import Control.Monad.State.Lazy                     ( execStateT
+                                                    , foldM, get
                                                     , liftIO              )
 import Control.Monad.Except                         ( throwError
                                                     , liftEither          )
@@ -68,15 +69,9 @@ findUniqueBibFile = do
 -- Compiling and running a btx script
 
 runBtx :: [T.ParsedCommand] -> T.BtxState -> T.ErrMonad T.BtxState
--- ^Compile and run the commands an the initial state.
-runBtx cs = execStateT $ compile cs []
-
-compile :: [T.ParsedCommand] -> T.Context -> T.BtxStateMonad T.Context
--- ^Compile parsed commands (i.e., String-String list pairs) into a
--- runnable BtxStateMonad.
-compile []                 rs = pure rs
-compile ( (c, args) : cs ) rs = applyCmd c args rs >>= compile cs
-    where applyCmd = T.cmdCmd . route
+-- ^Compile and run the commands on the initial state.
+runBtx = execStateT . foldM runCmd []
+    where runCmd = flip . uncurry $ T.cmdCmd . route
 
 ---------------------------------------------------------------------
 -- Generating help and information strings for display
