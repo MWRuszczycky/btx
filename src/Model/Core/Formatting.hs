@@ -17,11 +17,8 @@ module Model.Core.Formatting
 import qualified Data.Text                as Tx
 import qualified Data.Map.Strict          as Map
 import qualified Model.Core.Types         as T
-import qualified Model.Core.Messages.Help as H
 import Data.Text                                 ( Text          )
-import Data.List                                 ( foldl'
-                                                 , intercalate
-                                                 , sort          )
+import Data.List                                 ( foldl'        )
 
 -- =============================================================== --
 -- Bibliography formatting
@@ -54,15 +51,14 @@ summarizeContext rs = "Context:\n" <> Tx.intercalate "\n" x
     where x = map ( Tx.append "  " . summarizeRef ) $ rs
 
 summarizeRef :: T.Ref -> Text
-summarizeRef (T.Ref fp k v     ) = k <> " from " <> Tx.pack fp
+summarizeRef (T.Ref     fp k _ ) = k <> " from " <> Tx.pack fp
 summarizeRef (T.Missing fp k e ) = "Missing: " <> k <> " from " <> Tx.pack fp
                                    <> " (" <> Tx.pack e <> ")"
 
 summarizeEntry :: T.Ref -> Text
 summarizeEntry (T.Missing fp k e) = viewMissing fp k e
-summarizeEntry (T.Ref fp k v)     = kt <> title
-    where pars x = " (" <> x <> ") "
-          kt     = k <> ": " <> T.theType v <> ", "
+summarizeEntry (T.Ref     _  k v) = kt <> title
+    where kt     = k <> ": " <> T.theType v <> ", "
           room   = 80 - Tx.length kt
           go x   | room < Tx.length x = Tx.take (room - 2) x <> ".."
                  | otherwise          = x
@@ -109,7 +105,7 @@ viewRef (T.Ref     fp k v) = hdr <> viewEntry v
 viewRefTex :: T.Ref -> Text
 -- ^Represent a Ref value in BibTeX format.
 viewRefTex (T.Missing fp k e) = viewMissing fp k e
-viewRefTex (T.Ref     fp k v) = refToBibtex k v
+viewRefTex (T.Ref     _  k v) = refToBibtex k v
 
 viewMissing :: FilePath -> T.Key -> T.ErrString -> Text
 -- ^Formats a missing entry as Text for viewing.

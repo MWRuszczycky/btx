@@ -9,13 +9,11 @@ module Model.CoreIO.External
 -- IO DSL for commands involving the internet and external processes
 -- =============================================================== --
 
-import qualified Data.Text.IO          as Tx
 import qualified Data.Text             as Tx
 import qualified Data.Text.Encoding    as Tx
 import qualified Network.Wreq          as Wreq
 import qualified Model.Core.Types      as T
 import qualified Model.CoreIO.ErrMonad as E
-import Data.Char                               ( isSpace          )
 import Data.ByteString.Lazy.Internal           ( ByteString       )
 import Data.ByteString.Lazy                    ( toStrict         )
 import Data.Bifunctor                          ( bimap            )
@@ -29,7 +27,6 @@ import Control.Monad.Except                    ( ExceptT (..)
                                                , catchError
                                                , liftEither       )
 import Control.Exception                       ( SomeException
-                                               , try
                                                , catch            )
 import Model.Core.Formatting                   ( refToBibtex      )
 import Model.BibTeX.Parser                     ( parseRef         )
@@ -52,7 +49,7 @@ runExternal :: String -> T.Ref -> T.ErrMonad T.Ref
 -- process p on the file to get a new BibTeX entry, which is parsed
 -- in as new a new, modified btx entry and returned. Do not return
 -- until either parsing succeeds or the user aborts.
-runExternal p (T.Missing fp k e)  = pure $ T.Missing fp k e
+runExternal _ (T.Missing fp k e)  = pure $ T.Missing fp k e
 runExternal p r@(T.Ref fp k v   ) = do
     let bibtexString = Tx.append editIntro . refToBibtex k $ v
     temp   <- liftIO . emptyTempFile "." . Tx.unpack $ k <> ".bib"

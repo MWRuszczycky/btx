@@ -20,9 +20,7 @@ import Data.Char                 ( isDigit
 import Control.Applicative       ( (<|>)
                                  , Alternative
                                  , empty
-                                 , liftA2
-                                 , many
-                                 , some         )
+                                 , many         )
 
 ---------------------------------------------------------------------
 -- Types
@@ -43,7 +41,7 @@ instance Applicative Matcher where
         [ (t2, f x) | (t1, f) <- ml t, (t2, x) <- mr t1 ]
 
 instance Alternative Matcher where
-    empty                     = Matcher $ \ t -> []
+    empty                     = Matcher $ \ _ -> []
     Matcher ml <|> Matcher mr = Matcher $ \ t -> ml t <|> mr t
 
 ---------------------------------------------------------------------
@@ -79,7 +77,7 @@ makeRegex ('*':xs) = makeRegex xs
 makeRegex s        = reverse . go $ (s, Epsilon, [])
     where go ([],        r, rs) = r:rs
           go ('\\':x:xs, r, rs) = go (xs, parseEsc x, r:rs)
-          go ('\\':[],   r, rs) = [RegError]
+          go ('\\':[],   _, _ ) = [RegError]
           go ('*':'*':xs,r, rs) = go ('*':xs, r, rs)
           go ('*':xs,    r, rs) = go (xs, Epsilon, KleeneStar r : rs)
           go ('.':xs,    r, rs) = go (xs, Rule (/= '\n'), r : rs)

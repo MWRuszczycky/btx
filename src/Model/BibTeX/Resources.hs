@@ -51,7 +51,7 @@ genKeyNumber (T.Bibliography _ rs _) = go 0
 templates :: Int -> [String] -> T.Context
 -- ^Create blank templates based on a list of BibTeX entry types.
 templates n = foldr go [] . zip [n .. ]
-    where go (n,x) = (:) ( T.Ref "new-entry" (numGenKey n) (getTemplate x) )
+    where go (m,x) = (:) ( T.Ref "new-entry" (numGenKey m) (getTemplate x) )
 
 -- Helpers
 

@@ -3,22 +3,22 @@
 module Model.Core.Types
     ( -- State
       BtxState          (..)
-    , BtxStateMonad     (..)
-    , ErrMonad          (..)
-    , ErrString         (..)
+    , BtxStateMonad
+    , ErrMonad
+    , ErrString
     , Start             (..)
     -- Bibliographies
     , Bibliography      (..)
-    , Context           (..)
+    , Context
     , Entry             (..)
-    , Field             (..)
-    , Key               (..)
+    , Field
+    , Key
     , Ref               (..)
-    , References        (..)
+    , References
     -- Commands
     , Command           (..)
-    , CommandMonad      (..)
-    , ParsedCommand     (..)
+    , CommandMonad
+    , ParsedCommand
     ) where
 
 -- =============================================================== --
@@ -26,8 +26,7 @@ module Model.Core.Types
 -- =============================================================== --
 
 import qualified Data.Map.Strict as Map
-import Data.Text                        ( Text, unpack  )
-import Data.List                        ( intercalate   )
+import Data.Text                        ( Text          )
 import Control.Monad.State.Lazy         ( StateT        )
 import Control.Monad.Except             ( ExceptT       )
 

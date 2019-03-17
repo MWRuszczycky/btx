@@ -13,11 +13,7 @@ import qualified Data.Text              as Tx
 import qualified Model.Core.Types       as T
 import Control.Applicative                    ( (<|>), liftA2
                                               , many, some       )
-import Control.Monad                          ( guard            )
-import Data.Char                              ( isSpace          )
-import Data.Text                              ( Text
-                                              , pack
-                                              , unpack           )
+import Data.Text                              ( Text, unpack     )
 import Model.Core.Messages.Help               ( invalidUsageErr
                                               , noCommandsErr
                                               , unableToParseErr
@@ -42,7 +38,7 @@ check (T.Script _ (x:xs)) = case x of
                                  ("in",[])    -> T.Usage $ invalidUsageErr "in"
                                  ("in",_:_:_) -> T.Usage $ invalidUsageErr "in"
                                  ("in",p:_)   -> T.Script (Just p) xs
-                                 otherwise    -> T.Script Nothing (x:xs)
+                                 _            -> T.Script Nothing (x:xs)
 
 ---------------------------------------------------------------------
 -- Parser entry

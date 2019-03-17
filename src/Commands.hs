@@ -10,45 +10,32 @@ module Commands
 -- Commands are documented using their help strings.
 -- =============================================================== --
 
-import qualified Data.Text.IO             as Tx
 import qualified Data.Text                as Tx
-import qualified Data.Map.Strict          as Map
 import qualified Model.Core.Types         as T
 import qualified Model.Core.Messages.Help as H
-import Data.Text                                 ( Text             )
-import Data.List                                 ( find
-                                                 , foldl'
-                                                 , intercalate      )
-import Control.Monad                             ( unless           )
+import Data.List                                 ( find, foldl'     )
 import Control.Monad.Except                      ( throwError
                                                  , liftEither       )
-import Control.Monad.State.Lazy                  ( get
-                                                 , put
-                                                 , lift
-                                                 , liftIO           )
+import Control.Monad.State.Lazy                  ( get, put, lift   )
 import Model.Core.Core                           ( addToLog
                                                  , allKeysToArgs
                                                  , deleteRefs
                                                  , dropRefByKey
                                                  , searchRefs
-                                                 , getRef
-                                                 , insertRefs
-                                                 , isPresent        )
+                                                 , getRef           )
 import Model.CoreIO.CoreIO                       ( bibToFile
                                                  , updateIn
                                                  , updateTo         )
 import Model.CoreIO.External                     ( getDoi
                                                  , runExternal      )
 import Model.CoreIO.ErrMonad                     ( readOrMakeFile
-                                                 , readFileExcept
-                                                 , writeFileExcept  )
+                                                 , readFileExcept   )
 import Model.BibTeX.Parser                       ( parseBib         )
 import Model.BibTeX.Resources                    ( genericKey
                                                  , genKeyNumber
                                                  , supported
                                                  , templates        )
-import Model.Core.Formatting                     ( bibToBibtex
-                                                 , viewRef
+import Model.Core.Formatting                     ( viewRef
                                                  , viewRefTex
                                                  , summarize
                                                  , summarizeEntry   )
@@ -149,8 +136,8 @@ inCmdLHelp = unlines hs
                ]
 
 inCmd :: T.CommandMonad T.Context
-inCmd []      rs = throwError "Command <in> requires a file path.\n"
-inCmd (_:_:_) rs = throwError "Command <in> allows only one argument.\n"
+inCmd []      _  = throwError "Command <in> requires a file path.\n"
+inCmd (_:_:_) _  = throwError "Command <in> allows only one argument.\n"
 inCmd (fp:_)  rs = do updateIn rs >>= bibToFile
                       btxState <- get
                       content  <- lift . readOrMakeFile $ fp
@@ -285,8 +272,7 @@ doiCmdSHelp = "doi  [DOI..] : download an entry using the doi of its"
 
 doiCmdLHelp :: String
 doiCmdLHelp = unlines hs
-    where sp = map ( \ x -> replicate 9 ' ' <> fst x ) supported
-          hs = [ doiCmdSHelp ++ "\n"
+    where hs = [ doiCmdSHelp ++ "\n"
                , "This command populates the context with entries downloaded"
                , "using the digital-object-identifiers of the corresponding"
                , "publications. It has the following effects:\n"
@@ -513,7 +499,7 @@ editCmd :: T.CommandMonad T.Context
 editCmd []     _  = throwError "An editor program must be specified.\n"
 editCmd _      [] = pure []
 editCmd (x:[]) rs = lift ( mapM (runExternal x) rs ) >>= pure
-editCmd (x:xs) _  = throwError "Only one editor may be specified with <edit>.\n"
+editCmd _      _  = throwError "Only one editor may be specified with <edit>.\n"
 
 -- name command -----------------------------------------------------
 
@@ -606,7 +592,7 @@ tossCmdLHelp = unlines hs
                ]
 
 tossCmd :: T.CommandMonad T.Context
-tossCmd [] rs = pure []
+tossCmd [] _  = pure []
 tossCmd xs rs = pure . foldl' dropRefByKey rs . map Tx.pack $ xs
 
 -- =============================================================== --

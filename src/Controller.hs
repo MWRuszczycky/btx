@@ -21,8 +21,7 @@ import Data.Text                                    ( Text, pack          )
 import Data.List                                    ( intercalate         )
 import System.Directory                             ( listDirectory
                                                     , getCurrentDirectory )
-import Control.Monad.State.Lazy                     ( execStateT, get
-                                                    , liftIO              )
+import Control.Monad.State.Lazy                     ( execStateT, liftIO  )
 import Control.Monad.Except                         ( throwError
                                                     , liftEither          )
 import Model.BibTeX.Parser                          ( parseBib            )
@@ -58,8 +57,8 @@ findUniqueBibFile = do
     cwd <- liftIO getCurrentDirectory
     fps <- liftIO . listDirectory $ cwd
     case filter ( (== "bib.") . take 4 . reverse ) fps of
-         (fp:[])   -> pure fp
-         otherwise -> throwError . H.uniqueBibErr $ cwd
+         (fp:[]) -> pure fp
+         _       -> throwError . H.uniqueBibErr $ cwd
 
 -- =============================================================== --
 -- Managers for program execution
