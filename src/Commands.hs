@@ -16,7 +16,8 @@ import qualified Model.Core.Messages.Help as H
 import Data.List                                 ( find, foldl'     )
 import Control.Monad.Except                      ( throwError
                                                  , liftEither       )
-import Control.Monad.State.Lazy                  ( get, put, lift   )
+import Control.Monad.State.Lazy                  ( get, gets, put
+                                                 , modify, lift     )
 import Model.Core.Core                           ( addToLog
                                                  , allKeysToArgs
                                                  , deleteRefs
@@ -38,7 +39,7 @@ import Model.BibTeX.Resources                    ( genericKey
 import Model.Core.Formatting                     ( viewRef
                                                  , viewRefTex
                                                  , summarize
-                                                 , summarizeEntry   )
+                                                 , listEntry        )
 
 -- =============================================================== --
 -- Hub and router
@@ -252,14 +253,11 @@ viewCmdLHelp = unlines hs
                ]
 
 viewCmd :: T.CommandMonad T.Context
-viewCmd _ []          = get >>= put . addToLog msg >> pure []
-    where msg = "\nNo entries to view.\n"
-viewCmd ("list":_) rs = get >>= put . addToLog refList >> pure rs
-    where refList = Tx.intercalate "\n" . map summarizeEntry $ rs
-viewCmd ("tex":_)  rs = get >>= put . addToLog refTex  >> pure rs
-    where refTex  = Tx.intercalate "\n\n" . map viewRefTex $ rs
-viewCmd _ rs          = get >>= put . addToLog refList >> pure rs
-    where refList = Tx.intercalate "\n\n" . map viewRef $ rs
+viewCmd _  [] = modify ( addToLog "\nNo entries to view.\n" ) >> pure []
+viewCmd xs rs = gets T.styles >>= pure . go xs >>= modify . addToLog >> pure rs
+    where go ("list":_) sm = Tx.intercalate "\n" . map (listEntry sm) $ rs
+          go ("tex":_)  sm = Tx.intercalate "\n\n" . map (viewRefTex sm) $ rs
+          go _          sm = Tx.intercalate "\n\n" . map (viewRef sm) $ rs
 
 -- =============================================================== --
 -- Context constructors
