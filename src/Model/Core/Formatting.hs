@@ -43,7 +43,7 @@ summarize xs rs s
                , "  working: " <> summarizeBib sm ( Just . T.inBib $ s )
                , "  import:  " <> summarizeBib sm ( T.fromBib s)
                , "  export:  " <> summarizeBib sm ( T.toBib s )
-               , summarizeContext rs
+               , summarizeContext sm rs
                ]
 
 summarizeBib :: T.StyleMap -> Maybe T.Bibliography -> Text
@@ -54,15 +54,16 @@ summarizeBib sm (Just b) = let n     = Map.size . T.refs $ b
                            in  name <> " has " <> count
                                <> if n == 1 then " entry" else " entries"
 
-summarizeContext :: T.Context -> Text
-summarizeContext [] = "The context is currently empty."
-summarizeContext rs = "Context:\n" <> Tx.intercalate "\n" x
-    where x = map ( Tx.append "  " . summarizeRef ) $ rs
+summarizeContext :: T.StyleMap -> T.Context -> Text
+summarizeContext _ []  = "The context is currently empty."
+summarizeContext sm rs = style sm "header" "Context:\n" <> Tx.intercalate "\n" x
+    where x = map ( Tx.append "  " . summarizeRef sm ) $ rs
 
-summarizeRef :: T.Ref -> Text
-summarizeRef (T.Ref     fp k _ ) = k <> " from " <> Tx.pack fp
-summarizeRef (T.Missing fp k e ) = "Missing: " <> k <> " from " <> Tx.pack fp
-                                   <> " (" <> Tx.pack e <> ")"
+summarizeRef :: T.StyleMap -> T.Ref -> Text
+summarizeRef sm (T.Ref     fp k _ ) = style sm "key" k <> " from " <> Tx.pack fp
+summarizeRef sm (T.Missing fp k e ) = style sm "warn" ( k <> " is missing" )
+                                          <> " from " <> Tx.pack fp
+                                          <> " (" <> Tx.pack e <> ")"
 
 summarizeEntry :: T.Ref -> Text
 summarizeEntry (T.Missing fp k e) = viewMissing fp k e
@@ -191,6 +192,7 @@ defaultStyles = Map.fromList cs
     where cs = [ ( "header", styleString True  Dull Blue   )
                , ( "emph",   styleString False Dull Yellow )
                , ( "key",    styleString True  Dull Green  )
+               , ( "warn",   styleString True  Dull Red    )
                ]
 
 ---------------------------------------------------------------------
