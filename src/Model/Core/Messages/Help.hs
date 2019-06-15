@@ -20,6 +20,9 @@ module Model.Core.Messages.Help
     , renameErr
     , unableToParseErr
     , uniqueBibErr
+    -- Help formatting
+    , shortHelpStr
+    , longHelpStr
     ) where
 
 -- =============================================================== --
@@ -50,7 +53,7 @@ displayHelp xs = unlines hs
                ]
 
 summarizeCommands :: [T.Command T.Context] -> String
-summarizeCommands xs = intercalate "\n" . map (formatShortHelp nLen aLen) $ xs
+summarizeCommands xs = intercalate "\n" . map (shortHelpStr nLen aLen) $ xs
     where nLen = maximum . map ( length . T.cmdName ) $ xs
           aLen = maximum . map ( length . T.cmdArgs ) $ xs
 
@@ -208,11 +211,14 @@ uniqueBibErr fp = unlines es
 padRightStr :: Int -> String -> String
 padRightStr n x = x ++ replicate (n - length x) ' '
 
-formatShortHelp :: Int -> Int -> T.Command T.Context -> String
-formatShortHelp namePad argPad (T.Command name _ args helpStr _) =
+shortHelpStr :: Int -> Int -> T.Command T.Context -> String
+shortHelpStr namePad argPad (T.Command name _ args helpStr _) =
     let nCode = Ans.setSGRCode [ Ans.SetColor Ans.Foreground Dull Yellow ]
         hCode = Ans.setSGRCode [ Ans.SetColor Ans.Foreground Dull Green  ]
         reset = Ans.setSGRCode [ Ans.Reset ]
     in  nCode ++ padRightStr namePad name ++ reset
         ++ " " ++ padRightStr argPad args ++ " : "
         ++ hCode ++ helpStr ++ reset
+
+longHelpStr :: T.Command T.Context -> String
+longHelpStr c = shortHelpStr 0 0 c ++ "\n\n" ++ T.cmdLHelp c

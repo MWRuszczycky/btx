@@ -559,14 +559,6 @@ tossCmd xs rs = pure . foldl' dropRefByKey rs . map Tx.pack $ xs
 -- This is the command for non-commands. It just throws an exception
 -- and provides help strings for invalid commands.
 
-errCmdArgs, errCmdSHelp :: String
-errCmdArgs  = ""
-errCmdSHelp = ""
-
-errCmdLHelp :: String -> String
--- ^Used as an error message for help regarding an invalid command.
-errCmdLHelp c = "<" ++ c ++ ">" ++ " is not a valid btx scripting command.\n"
-
 errCmd :: String -> T.Command T.Context
-errCmd c = T.Command "err" (\ _ _ -> throwError . H.cmdInvalidErr $ c)
-                     errCmdArgs errCmdSHelp (errCmdLHelp c)
+errCmd c = T.Command c (\ _ _ -> throwError . H.cmdInvalidErr $ c) "" s ""
+    where s = "This is not a valid command. You can't use it."

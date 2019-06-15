@@ -85,7 +85,7 @@ runHelp ("with":_)    = H.withHelpStr
 runHelp ("+":_)       = H.withHelpStr
 runHelp ("copying":_) = H.copyingStr
 runHelp ("version":_) = H.versionHelpStr
-runHelp xs            = intercalate "\n" . map ( T.cmdLHelp . route ) $ xs
+runHelp xs            = intercalate "\n" . map ( H.longHelpStr . route ) $ xs
 
 -- =============================================================== --
 -- Finalization
