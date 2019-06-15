@@ -197,11 +197,12 @@ noStyles = Map.empty
 
 defaultStyles :: T.StyleMap
 defaultStyles = Map.fromList cs
-    where cs = [ ( "header", styleString True  Dull Blue   )
-               , ( "emph",   styleString False Dull Yellow )
-               , ( "key",    styleString True  Dull Green  )
-               , ( "warn",   styleString True  Dull Red    )
-               , ( "field",  styleString False Dull Cyan   )
+    where cs = [ ( "header",  styleText True  Dull  Blue   )
+               , ( "emph",    styleText False Dull  Yellow )
+               , ( "key",     styleText True  Dull  Green  )
+               , ( "warn",    styleText True  Dull  Red    )
+               , ( "field",   styleText False Dull  Cyan   )
+               , ( "command", styleText True  Vivid Green )
                ]
 
 ---------------------------------------------------------------------
@@ -210,8 +211,8 @@ defaultStyles = Map.fromList cs
 style :: T.StyleMap -> Text -> Text -> Text
 style sm = maybe id id . flip Map.lookup sm
 
-styleString :: Bool -> Ans.ColorIntensity -> Ans.Color -> Text -> Text
-styleString b i c s = start <> s <> stop
+styleText :: Bool -> Ans.ColorIntensity -> Ans.Color -> Text -> Text
+styleText b i c s = start <> s <> stop
     where stop  = Tx.pack . Ans.setSGRCode $ [ Ans.Reset ]
           start = Tx.pack . Ans.setSGRCode $ code
           code  | not b     = [ Ans.SetColor Ans.Foreground i c ]

@@ -113,6 +113,7 @@ type ParsedCommand = (String, [String])
 data Command a = Command {
       cmdName  :: String         -- User interface to the command
     , cmdCmd   :: CommandMonad a -- Monadic Btx command
+    , cmdArgs  :: String         -- Help string for allowed arguments
     , cmdSHelp :: String         -- Short help information
     , cmdLHelp :: String         -- Long help information
     }

@@ -26,11 +26,13 @@ module Model.Core.Messages.Help
 -- Help, errors and other information messages
 -- =============================================================== --
 
-import qualified Model.Core.Types as T
-import Data.List                        ( intercalate
-                                        , sort        )
-import Data.Version                     ( showVersion )
-import Paths_btx                        ( version     )
+import qualified System.Console.ANSI   as Ans
+import qualified Model.Core.Types      as T
+import System.Console.ANSI.Types             ( Color (..)
+                                             , ColorIntensity (..) )
+import Data.List                             ( intercalate         )
+import Data.Version                          ( showVersion         )
+import Paths_btx                             ( version             )
 
 -- =============================================================== --
 -- General help messages
@@ -48,10 +50,9 @@ displayHelp xs = unlines hs
                ]
 
 summarizeCommands :: [T.Command T.Context] -> String
-summarizeCommands xs = intercalate "\n" . map go $ xs'
-    where xs'      = map ( break (== ':') ) . sort . map T.cmdSHelp $ xs
-          n        = maximum . map ( length . fst ) $ xs'
-          go (c,s) = padRightStr n c ++ s
+summarizeCommands xs = intercalate "\n" . map (formatShortHelp nLen aLen) $ xs
+    where nLen = maximum . map ( length . T.cmdName ) $ xs
+          aLen = maximum . map ( length . T.cmdArgs ) $ xs
 
 keywordHelpStr :: String
 keywordHelpStr = intercalate "\n" hs
@@ -206,3 +207,12 @@ uniqueBibErr fp = unlines es
 
 padRightStr :: Int -> String -> String
 padRightStr n x = x ++ replicate (n - length x) ' '
+
+formatShortHelp :: Int -> Int -> T.Command T.Context -> String
+formatShortHelp namePad argPad (T.Command name _ args helpStr _) =
+    let nCode = Ans.setSGRCode [ Ans.SetColor Ans.Foreground Dull Yellow ]
+        hCode = Ans.setSGRCode [ Ans.SetColor Ans.Foreground Dull Green  ]
+        reset = Ans.setSGRCode [ Ans.Reset ]
+    in  nCode ++ padRightStr namePad name ++ reset
+        ++ " " ++ padRightStr argPad args ++ " : "
+        ++ hCode ++ helpStr ++ reset

@@ -52,25 +52,25 @@ hub :: [ T.Command T.Context ]
 -- ^Organizes all the command functions, command strings and both the
 -- long and short help strings.
 hub = [ -- Bibliography managers
-        T.Command "from" fromCmd fromCmdSHelp fromCmdLHelp
-      , T.Command "in"   inCmd   inCmdSHelp   inCmdLHelp
-      , T.Command "save" saveCmd saveCmdSHelp saveCmdLHelp
-      , T.Command "to"   toCmd   toCmdSHelp   toCmdLHelp
+        T.Command "from" fromCmd fromCmdArgs fromCmdSHelp fromCmdLHelp
+      , T.Command "in"   inCmd   inCmdArgs   inCmdSHelp   inCmdLHelp
+      , T.Command "to"   toCmd   toCmdArgs   toCmdSHelp   toCmdLHelp
+      , T.Command "save" saveCmd saveCmdArgs saveCmdSHelp saveCmdLHelp
         -- Queries
-      , T.Command "info" infoCmd infoCmdSHelp infoCmdLHelp
-      , T.Command "view" viewCmd viewCmdSHelp viewCmdLHelp
+      , T.Command "info" infoCmd infoCmdArgs infoCmdSHelp infoCmdLHelp
+      , T.Command "view" viewCmd viewCmdArgs viewCmdSHelp viewCmdLHelp
         -- Context constructors
-      , T.Command "doi"  doiCmd  doiCmdSHelp  doiCmdLHelp
-      , T.Command "find" findCmd findCmdSHelp findCmdLHelp
-      , T.Command "get"  getCmd  getCmdSHelp  getCmdLHelp
-      , T.Command "new"  newCmd  newCmdSHelp  newCmdLHelp
-      , T.Command "pull" pullCmd pullCmdSHelp pullCmdLHelp
-      , T.Command "take" takeCmd takeCmdSHelp takeCmdLHelp
+      , T.Command "doi"  doiCmd  doiCmdArgs  doiCmdSHelp  doiCmdLHelp
+      , T.Command "find" findCmd findCmdArgs findCmdSHelp findCmdLHelp
+      , T.Command "get"  getCmd  getCmdArgs  getCmdSHelp  getCmdLHelp
+      , T.Command "new"  newCmd  newCmdArgs  newCmdSHelp  newCmdLHelp
+      , T.Command "pull" pullCmd pullCmdArgs pullCmdSHelp pullCmdLHelp
+      , T.Command "take" takeCmd takeCmdArgs takeCmdSHelp takeCmdLHelp
         -- Context operators
-      , T.Command "edit" editCmd editCmdSHelp editCmdLHelp
-      , T.Command "name" nameCmd nameCmdSHelp nameCmdLHelp
-      , T.Command "send" sendCmd sendCmdSHelp sendCmdLHelp
-      , T.Command "toss" tossCmd tossCmdSHelp tossCmdLHelp
+      , T.Command "edit" editCmd editCmdArgs editCmdSHelp editCmdLHelp
+      , T.Command "name" nameCmd nameCmdArgs nameCmdSHelp nameCmdLHelp
+      , T.Command "send" sendCmd sendCmdArgs sendCmdSHelp sendCmdLHelp
+      , T.Command "toss" tossCmd tossCmdArgs tossCmdSHelp tossCmdLHelp
       ]
 
 -- =============================================================== --
@@ -78,13 +78,11 @@ hub = [ -- Bibliography managers
 
 -- from command -----------------------------------------------------
 
-fromCmdSHelp :: String
-fromCmdSHelp = "from [FILE-PATH] : reset the import bibliography"
-
-fromCmdLHelp :: String
+fromCmdArgs, fromCmdSHelp, fromCmdLHelp :: String
+fromCmdArgs  = "[FILE-PATH]"
+fromCmdSHelp = "reset the import bibliography"
 fromCmdLHelp = unlines hs
-    where hs = [ fromCmdSHelp ++ "\n"
-               , "The import bibliography is a bibliography separate from the"
+    where hs = [ "The import bibliography is a bibliography separate from the"
                , "working bibliography (set with <in>) that you can use to"
                , "populate the context with references using the <take>"
                , "command. This is useful for building new bibliographies from"
@@ -114,14 +112,11 @@ fromCmd xs rs
 
 -- in command -------------------------------------------------------
 
-inCmdSHelp :: String
-inCmdSHelp = "in    FILE-PATH : initialize, reset or create the working"
-             ++ " bibliography"
-
-inCmdLHelp :: String
+inCmdArgs, inCmdSHelp, inCmdLHelp :: String
+inCmdArgs  = "FILE-PATH"
+inCmdSHelp = "initialize, reset or create the working bibliography"
 inCmdLHelp = unlines hs
-    where hs = [ inCmdSHelp ++ "\n"
-               , "This command has the following effects:\n"
+    where hs = [ "This command has the following effects:\n"
                , "  1. Update working bibliography with the current context."
                , "  2. Save the updated working bibliography to disk."
                , "  3. Clear the current context."
@@ -148,13 +143,11 @@ inCmd (fp:_)  rs = do updateIn rs >>= bibToFile
 
 -- save command -----------------------------------------------------
 
-saveCmdSHelp :: String
-saveCmdSHelp = "save : update working bibliography and write everything to file"
-
-saveCmdLHelp :: String
+saveCmdArgs, saveCmdSHelp, saveCmdLHelp :: String
+saveCmdArgs  = ""
+saveCmdSHelp = "update working bibliography and write everything to file"
 saveCmdLHelp = unlines hs
-    where hs = [ saveCmdSHelp ++ "\n"
-               , "This command is only necessary when working interactively"
+    where hs = [ "This command is only necessary when working interactively"
                , "from standard input. Otherwise it is automatically added to"
                , "the end of any script read from the command line or file."
                , "<save> ignores all arguments and does the following:\n"
@@ -174,13 +167,11 @@ saveCmd _ rs = do updateIn rs >>= bibToFile
 
 -- to command -------------------------------------------------------
 
-toCmdSHelp :: String
-toCmdSHelp = "to   [FILE-PATH] : reset or create new export bibliography"
-
-toCmdLHelp :: String
+toCmdArgs, toCmdSHelp, toCmdLHelp :: String
+toCmdArgs  = "[FILE-PATH]"
+toCmdSHelp = "reset or create new export bibliography"
 toCmdLHelp = unlines hs
-    where hs = [ toCmdSHelp ++ "\n"
-               , "The export bibliography is separate from the working"
+    where hs = [ "The export bibliography is separate from the working"
                , "bibliography (set with <in>) and represents a target where"
                , "references can be exported using the <send> command. This"
                , "command has the following effects:\n"
@@ -214,14 +205,11 @@ toCmd xs      rs = do btxState <- get
 
 -- info command -----------------------------------------------------
 
-infoCmdSHelp :: String
-infoCmdSHelp = "info [ARG..] : display summary of all bibliographies "
-               ++ "and the current context"
-
-infoCmdLHelp :: String
+infoCmdArgs, infoCmdSHelp, infoCmdLHelp :: String
+infoCmdArgs  = "[ARG..]"
+infoCmdSHelp = "display summary of all bibliographies and the current context"
 infoCmdLHelp = unlines hs
-    where hs = [ infoCmdSHelp ++ "\n"
-               , "This command has the following effects:\n"
+    where hs = [ "This command has the following effects:\n"
                , "  1. Leave the current context unchanged."
                , "  2. Display any arguments supplied. You can use this to more"
                , "     easily track the context as the script runs."
@@ -236,13 +224,11 @@ infoCmd xs rs = get >>= put . (addToLog . summarize xs rs <*> id) >> pure rs
 
 -- view command -----------------------------------------------------
 
-viewCmdSHelp :: String
-viewCmdSHelp = "view [ARG] : view the details of all entries in the context"
-
-viewCmdLHelp :: String
+viewCmdArgs, viewCmdSHelp, viewCmdLHelp :: String
+viewCmdArgs  = "[ARG]"
+viewCmdSHelp = "view the details of all entries in the context"
 viewCmdLHelp = unlines hs
-    where hs = [ viewCmdSHelp ++ "\n"
-               , "This command has no other effect besides displaying the"
+    where hs = [ "This command has no other effect besides displaying the"
                , "entries in the context in a nicely formatted way. Arguments"
                , "can be supplied to <view> to determine how the references"
                , "will be displayed:\n"
@@ -264,14 +250,11 @@ viewCmd xs rs = gets T.styles >>= pure . go xs >>= modify . addToLog >> pure rs
 
 -- doi command ------------------------------------------------------
 
-doiCmdSHelp :: String
-doiCmdSHelp = "doi  [DOI..] : download an entry using the doi of its"
-              ++ " publication"
-
-doiCmdLHelp :: String
+doiCmdArgs, doiCmdSHelp, doiCmdLHelp :: String
+doiCmdArgs  = "[DOI..]"
+doiCmdSHelp = "download an entry using the doi of its publication"
 doiCmdLHelp = unlines hs
-    where hs = [ doiCmdSHelp ++ "\n"
-               , "This command populates the context with entries downloaded"
+    where hs = [ "This command populates the context with entries downloaded"
                , "using the digital-object-identifiers of the corresponding"
                , "publications. It has the following effects:\n"
                , "  1. Update working bibliography with the current context."
@@ -290,14 +273,11 @@ doiCmd xs rs = do
 
 -- find command -----------------------------------------------------
 
-findCmdSHelp :: String
-findCmdSHelp = "find [EXP..] : find entries that match EXP and move "
-               ++ "into the context"
-
-findCmdLHelp :: String
+findCmdArgs, findCmdSHelp, findCmdLHelp :: String
+findCmdArgs  = "[EXP..]"
+findCmdSHelp = "find entries that match EXP and add to the context"
 findCmdLHelp = unlines hs
-    where hs = [ findCmdSHelp ++ "\n"
-               , "This command has the following effects:\n"
+    where hs = [ "This command has the following effects:\n"
                , "  1. Update the working bibilography with the current context"
                , "     and clear the context."
                , "  2. Search the working bibliography for all enteries that"
@@ -348,14 +328,11 @@ findCmd xs rs = do
 
 -- get command ------------------------------------------------------
 
-getCmdSHelp :: String
-getCmdSHelp = "get  [KEY..] : copy entries from "
-              ++ "working bibliography to context"
-
-getCmdLHelp :: String
+getCmdArgs, getCmdSHelp, getCmdLHelp :: String
+getCmdArgs  = "[KEY..]"
+getCmdSHelp = "copy entries from working bibliography to context"
 getCmdLHelp = unlines hs
-    where hs = [ getCmdSHelp ++ "\n"
-               , "This command has the following effects:\n"
+    where hs = [ "This command has the following effects:\n"
                , "  1. Update the working bibliography with the current context"
                , "     and then clear the context."
                , "  2. Repopulate the context with the entries in the working"
@@ -378,15 +355,12 @@ getCmd xs        rs = do updateIn rs
 
 -- new command ------------------------------------------------------
 
-newCmdSHelp :: String
-newCmdSHelp = "new  [TYPE..] : populate context with template entries "
-              ++ "of specified TYPEs"
-
-newCmdLHelp :: String
+newCmdArgs, newCmdSHelp, newCmdLHelp :: String
+newCmdArgs  = "[TYPE..]"
+newCmdSHelp = "populate context with template entries of specified TYPEs"
 newCmdLHelp = unlines hs
     where sp = unlines . map ( \ x -> replicate 9 ' ' <> fst x ) $ supported
-          hs = [ newCmdSHelp ++ "\n"
-               , "The command has the following effects:\n"
+          hs = [ "The command has the following effects:\n"
                , "  1. Update the working bibliography with the current context"
                , "     and then clear the context."
                , "  2. Add new entry templates to the context with the"
@@ -410,14 +384,11 @@ newCmd xs rs = do
 
 -- pull command -----------------------------------------------------
 
-pullCmdSHelp :: String
-pullCmdSHelp = "pull [KEY..] : move entries from "
-              ++ "working bibliography to context"
-
-pullCmdLHelp :: String
+pullCmdArgs, pullCmdSHelp, pullCmdLHelp :: String
+pullCmdArgs  = "[KEY..]"
+pullCmdSHelp = "move entries from working bibliography to context"
 pullCmdLHelp = unlines hs
-    where hs = [ pullCmdSHelp ++ "\n"
-               , "This command is the same as <get>; however the entries are"
+    where hs = [ "This command is the same as <get>; however the entries are"
                , "moved from the working bibliography to the context and thus"
                , "deleted from the working bibliography. Therefore, this"
                , "command can be used to remove entries from the working"
@@ -438,14 +409,11 @@ pullCmd xs rs = do
 
 -- take command -----------------------------------------------------
 
-takeCmdSHelp :: String
-takeCmdSHelp = "take [KEY..] : copy entries from "
-               ++ "import bibliography to context"
-
-takeCmdLHelp :: String
+takeCmdArgs, takeCmdSHelp, takeCmdLHelp :: String
+takeCmdArgs  = "[KEY..]"
+takeCmdSHelp = "copy entries from import bibliography to context"
 takeCmdLHelp = unlines hs
-    where hs = [ takeCmdSHelp ++ "\n"
-               , "This command is the same as <get>; however the entries are"
+    where hs = [ "This command is the same as <get>; however the entries are"
                , "copied to the context from the import bibliography rather"
                , "than the working bibliography. If the import bibliography is"
                , "unset, then the context is just cleared after updating the"
@@ -472,14 +440,11 @@ takeCmd xs        rs = do updateIn rs
 
 -- edit command -----------------------------------------------------
 
-editCmdSHelp :: String
-editCmdSHelp = "edit  EDITOR : edit entries in the context "
-               ++ "using the external EDITOR"
-
-editCmdLHelp :: String
+editCmdArgs, editCmdSHelp, editCmdLHelp :: String
+editCmdArgs  = "EDITOR"
+editCmdSHelp = "edit entries in the context using the external EDITOR"
 editCmdLHelp = unlines hs
-    where hs = [ editCmdSHelp ++ "\n"
-               , "This command allows you to run an editor program on all the"
+    where hs = [ "This command allows you to run an editor program on all the"
                , "bibliography entries currently in the context. The edited"
                , "entries remain in the context. You can use this to edit"
                , "fields, delete fields, add fields, change the key (as an"
@@ -501,13 +466,11 @@ editCmd _      _  = throwError "Only one editor may be specified with <edit>.\n"
 
 -- name command -----------------------------------------------------
 
-nameCmdSHelp :: String
-nameCmdSHelp = "name [KEY..] : change key names for entries in the context"
-
-nameCmdLHelp :: String
+nameCmdArgs, nameCmdSHelp, nameCmdLHelp :: String
+nameCmdArgs  = "[KEY..]"
+nameCmdSHelp = "change key names for entries in the context"
 nameCmdLHelp = unlines hs
-    where hs = [ nameCmdSHelp ++ "\n"
-               , "For example, if you have the following bibliography entries"
+    where hs = [ "For example, if you have the following bibliography entries"
                , "in context:"
                , "    Dogs1964"
                , "    Cats1981\n"
@@ -540,13 +503,11 @@ nameCmd ns rs
 
 -- send command -----------------------------------------------------
 
-sendCmdSHelp :: String
-sendCmdSHelp = "send : update export bibliography with the current context"
-
-sendCmdLHelp :: String
+sendCmdArgs, sendCmdSHelp, sendCmdLHelp :: String
+sendCmdArgs  = ""
+sendCmdSHelp = "update export bibliography with the current context"
 sendCmdLHelp = unlines hs
-    where hs = [ sendCmdSHelp ++ "\n"
-               , "This command has the following effects:\n"
+    where hs = [ "This command has the following effects:\n"
                , "  1. Update the export bibliography with the current context"
                , "     overwritting any references that have the same keys."
                , "  2. Depopulate the context."
@@ -568,13 +529,11 @@ sendCmd _         rs = updateTo rs >> pure []
 
 -- toss command -----------------------------------------------------
 
-tossCmdSHelp :: String
-tossCmdSHelp = "toss [KEY..] : remove some or all entries from the context"
-
-tossCmdLHelp :: String
+tossCmdArgs, tossCmdSHelp, tossCmdLHelp :: String
+tossCmdArgs  = "[KEY..]"
+tossCmdSHelp = "remove some or all entries from the context"
 tossCmdLHelp = unlines hs
-    where hs = [ tossCmdSHelp ++ "\n"
-               , "This command removes those entries with the specified keys"
+    where hs = [ "This command removes those entries with the specified keys"
                , "from the current context. If no keys are specified, then all"
                , "all entries are cleared from the current context. The <toss>"
                , "command can thus be used to mask the export of entries"
@@ -600,10 +559,14 @@ tossCmd xs rs = pure . foldl' dropRefByKey rs . map Tx.pack $ xs
 -- This is the command for non-commands. It just throws an exception
 -- and provides help strings for invalid commands.
 
+errCmdArgs, errCmdSHelp :: String
+errCmdArgs  = ""
+errCmdSHelp = ""
+
 errCmdLHelp :: String -> String
 -- ^Used as an error message for help regarding an invalid command.
 errCmdLHelp c = "<" ++ c ++ ">" ++ " is not a valid btx scripting command.\n"
 
 errCmd :: String -> T.Command T.Context
 errCmd c = T.Command "err" (\ _ _ -> throwError . H.cmdInvalidErr $ c)
-                     [] (errCmdLHelp c)
+                     errCmdArgs errCmdSHelp (errCmdLHelp c)
