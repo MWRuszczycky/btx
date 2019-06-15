@@ -5,14 +5,15 @@ module Main where
 -- =============================================================== --
 
 import qualified Model.Core.Types as T
-import System.Environment               ( getArgs    )
-import Control.Monad.Except             ( runExceptT )
-import Model.Core.ScriptParser          ( parse      )
+import System.Environment               ( getArgs       )
+import Control.Monad.Except             ( runExceptT    )
+import Model.Core.Formatting            ( defaultStyles )
+import Model.Core.ScriptParser          ( parse         )
 import Controller                       ( finish
                                         , getScript
                                         , initBtx
                                         , runBtx
-                                        , runHelp    )
+                                        , runHelp       )
 
 main :: IO ()
 main = do
@@ -20,4 +21,5 @@ main = do
     case parse script of
          T.Usage msg      -> finish . Left $ msg
          T.Help cs        -> finish . Left . runHelp $ cs
-         T.Script mbFp cs -> runExceptT (initBtx mbFp >>= runBtx cs) >>= finish
+         T.Script mbFp cs -> let startUp = initBtx defaultStyles mbFp
+                             in  runExceptT (startUp >>= runBtx cs) >>= finish

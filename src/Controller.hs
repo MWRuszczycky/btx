@@ -44,13 +44,13 @@ getScript xs           = pure . Right . pack . unwords $ xs
 -- Finding the working BibTeX bibliography that the user wants to use
 -- and initializing the btx state with it
 
-initBtx :: Maybe FilePath -> T.ErrMonad T.BtxState
+initBtx :: T.StyleMap -> Maybe FilePath -> T.ErrMonad T.BtxState
 -- ^Generate the initial state given a file path.
-initBtx Nothing   = findUniqueBibFile >>= initBtx . Just
-initBtx (Just fp) = do
+initBtx sm Nothing   = findUniqueBibFile >>= initBtx sm . Just
+initBtx sm (Just fp) = do
     content <- readOrMakeFile fp
     bib     <- liftEither . parseBib fp $ content
-    pure $ T.BtxState bib Nothing Nothing Tx.empty
+    pure $ T.BtxState bib Nothing Nothing Tx.empty sm
 
 findUniqueBibFile :: T.ErrMonad FilePath
 -- ^Look in current working directory for a unique .bib file.

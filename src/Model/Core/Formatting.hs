@@ -8,17 +8,24 @@ module Model.Core.Formatting
     , viewRefTex
     , summarize
     , summarizeEntry
+      -- Styling text and style maps
+    , noStyles
+    , defaultStyles
+    , style
     ) where
 
 -- =============================================================== --
 -- DSL for converting bibliography information to readable output
 -- =============================================================== --
 
-import qualified Data.Text                as Tx
-import qualified Data.Map.Strict          as Map
-import qualified Model.Core.Types         as T
-import Data.Text                                 ( Text          )
-import Data.List                                 ( foldl'        )
+import qualified System.Console.ANSI as Ans
+import qualified Data.Text           as Tx
+import qualified Data.Map.Strict     as Map
+import qualified Model.Core.Types    as T
+import Data.Text                            ( Text                )
+import Data.List                            ( foldl'              )
+import System.Console.ANSI.Types            ( Color (..)
+                                            , ColorIntensity (..) )
 
 -- =============================================================== --
 -- Bibliography formatting
@@ -30,20 +37,22 @@ summarize :: [String] -> T.Context -> T.BtxState -> Text
 summarize xs rs s
     | null xs   = Tx.intercalate "\n" x
     | otherwise = h <> "\n" <> Tx.intercalate "\n" x
-    where h = Tx.pack . unwords $ "Info:" : xs
-          x = [ "Bibliographies:"
-              , "  working: " <> summarizeBib ( Just . T.inBib $ s )
-              , "  import:  " <> summarizeBib ( T.fromBib s)
-              , "  export:  " <> summarizeBib ( T.toBib s )
-              , summarizeContext rs
-              ]
+    where h  = Tx.pack . unwords $ "Info:" : xs
+          sm = T.styles s
+          x  = [ style sm "header" "Bibliographies:"
+               , "  working: " <> summarizeBib sm ( Just . T.inBib $ s )
+               , "  import:  " <> summarizeBib sm ( T.fromBib s)
+               , "  export:  " <> summarizeBib sm ( T.toBib s )
+               , summarizeContext rs
+               ]
 
-summarizeBib :: Maybe T.Bibliography -> Text
-summarizeBib Nothing  = "unset"
-summarizeBib (Just b) = let n = Map.size . T.refs $ b
-                        in  Tx.pack (T.path b)
-                            <> " has " <> Tx.pack (show n)
-                            <> if n == 1 then " entry" else " entries"
+summarizeBib :: T.StyleMap -> Maybe T.Bibliography -> Text
+summarizeBib _  Nothing  = "unset"
+summarizeBib sm (Just b) = let n     = Map.size . T.refs $ b
+                               name  = style sm "key" ( Tx.pack (T.path b) )
+                               count = style sm "emph" (Tx.pack (show n))
+                           in  name <> " has " <> count
+                               <> if n == 1 then " entry" else " entries"
 
 summarizeContext :: T.Context -> Text
 summarizeContext [] = "The context is currently empty."
@@ -167,3 +176,33 @@ breakToFit n x
                       | Tx.null w2 = (t <> " " <> w1) : ts -- everthing fits
                       | otherwise  = go [] w ++ (t : ts)   -- doesn't fit
                       where (w1,w2) = Tx.splitAt ( n - Tx.length t - 1 ) w
+
+-- =============================================================== --
+-- Styling text for terminal display
+
+---------------------------------------------------------------------
+-- Style maps
+
+noStyles :: T.StyleMap
+noStyles = Map.empty
+
+defaultStyles :: T.StyleMap
+defaultStyles = Map.fromList cs
+    where cs = [ ( "header", styleString True  Dull Blue   )
+               , ( "emph",   styleString False Dull Yellow )
+               , ( "key",    styleString True  Dull Green  )
+               ]
+
+---------------------------------------------------------------------
+-- Styling helper functions
+
+style :: T.StyleMap -> Text -> Text -> Text
+style sm = maybe id id . flip Map.lookup sm
+
+styleString :: Bool -> Ans.ColorIntensity -> Ans.Color -> Text -> Text
+styleString b i c s = start <> s <> stop
+    where stop  = Tx.pack . Ans.setSGRCode $ [ Ans.Reset ]
+          start = Tx.pack . Ans.setSGRCode $ code
+          code  | not b     = [ Ans.SetColor Ans.Foreground i c ]
+                | otherwise = [ Ans.SetColor Ans.Foreground i c
+                              , Ans.SetConsoleIntensity Ans.BoldIntensity]

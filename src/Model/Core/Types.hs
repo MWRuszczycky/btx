@@ -7,6 +7,8 @@ module Model.Core.Types
     , ErrMonad
     , ErrString
     , Start             (..)
+    -- StyleMaps
+    , StyleMap
     -- Bibliographies
     , Bibliography      (..)
     , Context
@@ -49,6 +51,7 @@ data BtxState = BtxState {
     , toBib   :: Maybe Bibliography -- Target bibliography
     , fromBib :: Maybe Bibliography -- Source bibliography
     , logger  :: Text               -- Log of action performed
+    , styles  :: StyleMap           -- Functions for styling text
     }
 
 -- |Starting state
@@ -56,6 +59,11 @@ data Start = Help [String]
            | Usage String
            | Script (Maybe FilePath) [ParsedCommand]
            deriving ( Eq, Show )
+
+---------------------------------------------------------------------
+-- Style maps for holding color/display preferences
+
+type StyleMap = Map.Map Text (Text -> Text)
 
 ---------------------------------------------------------------------
 -- Bibliographies
