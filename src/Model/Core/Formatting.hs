@@ -4,10 +4,10 @@ module Model.Core.Formatting
     ( -- Bibliography formatting
       refToBibtex
     , bibToBibtex
+    , listEntry
     , viewRef
     , viewRefTex
     , summarize
-    , summarizeEntry
       -- Styling text and style maps
     , noStyles
     , defaultStyles
@@ -65,19 +65,6 @@ summarizeRef sm (T.Missing fp k e ) = style sm "warn" ( k <> " is missing" )
                                           <> " from " <> Tx.pack fp
                                           <> " (" <> Tx.pack e <> ")"
 
-summarizeEntry :: T.Ref -> Text
-summarizeEntry (T.Missing fp k e) = viewMissing fp k e
-summarizeEntry (T.Ref     _  k v) = kt <> title
-    where kt     = k <> ": " <> T.theType v <> ", "
-          room   = 80 - Tx.length kt
-          go x   | room < Tx.length x = Tx.take (room - 2) x <> ".."
-                 | otherwise          = x
-          title  = case lookup "title" . T.fields $ v of
-                        Nothing -> " <no title field>"
-                        Just t  -> if Tx.null t
-                                      then " <empty title field>"
-                                      else go t
-
 ---------------------------------------------------------------------
 -- Conversion to BibTeX format
 
@@ -106,48 +93,67 @@ fieldToBibtex (k, v) = Tx.concat [ "    ", k, " = ", "{", v, "}" ]
 ---------------------------------------------------------------------
 -- Pretty print references for use with <view> command
 
-viewRef :: T.Ref -> Text
+listEntry :: T.StyleMap -> T.Ref -> Text
+-- ^View an entry in abbreviated, list format.
+listEntry sm (T.Missing fp k e) = viewMissing sm fp k e
+listEntry sm (T.Ref     _  k v) = style sm "key" k <> meta
+                                  <> style sm "emph" title
+    where meta  = ": " <> T.theType v <> ", "
+          room  = 80 - Tx.length k - Tx.length meta
+          go x  | room < Tx.length x = Tx.take (room - 2) x <> ".."
+                | otherwise          = x
+          title = case lookup "title" . T.fields $ v of
+                       Nothing -> " <no title field>"
+                       Just t  -> if Tx.null t
+                                     then " <empty title field>"
+                                     else go t
+
+viewRef :: T.StyleMap -> T.Ref -> Text
 -- ^Represent a Ref value as pretty-printed text.
-viewRef (T.Missing fp k e) = viewMissing fp k e
-viewRef (T.Ref     fp k v) = hdr <> viewEntry v
-    where hdr = k <> " in " <> Tx.pack fp <> "\n"
+viewRef sm (T.Missing fp k e) = viewMissing sm fp k e
+viewRef sm (T.Ref     fp k v) = hdr <> viewEntry sm v
+    where hdr = style sm "key" k <> " in " <> Tx.pack fp <> "\n"
 
-viewRefTex :: T.Ref -> Text
+viewRefTex :: T.StyleMap -> T.Ref -> Text
 -- ^Represent a Ref value in BibTeX format.
-viewRefTex (T.Missing fp k e) = viewMissing fp k e
-viewRefTex (T.Ref     _  k v) = refToBibtex k v
+viewRefTex sm (T.Missing fp k e) = viewMissing sm fp k e
+viewRefTex _  (T.Ref     _  k v) = refToBibtex k v
 
-viewMissing :: FilePath -> T.Key -> T.ErrString -> Text
+viewMissing :: T.StyleMap -> FilePath -> T.Key -> T.ErrString -> Text
 -- ^Formats a missing entry as Text for viewing.
-viewMissing fp k e = Tx.concat [ "Missing: " <> k
-                               , " from " <> Tx.pack fp
-                               , " (" <> Tx.pack e <> ")"
-                               ]
+viewMissing sm fp k e = Tx.concat [ style sm "warn" $ "Missing: " <> k
+                                  , " from " <> Tx.pack fp
+                                  , " (" <> Tx.pack e <> ")"
+                                  ]
 
-viewEntry :: T.Entry -> Text
+viewEntry :: T.StyleMap -> T.Entry -> Text
 -- ^Formats a non-missing entry as Text for view.
-viewEntry (T.Entry t fs cs) = viewPairs $ ("type", t) : fs' ++ ms
+viewEntry sm (T.Entry t fs cs) = viewPairs sm $ ("type", t) : fs' ++ ms
     where fs' = filter ( not . Tx.null . snd ) fs
           ms  = zip (repeat "metadata") cs
 
-viewPairs :: [(Text, Text)] -> Text
+viewPairs :: T.StyleMap -> [(Text, Text)] -> Text
 -- ^Format the field key-value pairs for pretty-printing.
-viewPairs fs
-    | length fs' < 2 = Tx.intercalate "\n" $ map ( formatPair 0 ) fs' ++ msg
-    | otherwise      = Tx.intercalate "\n" . map ( formatPair n ) $ fs'
+viewPairs sm fs
+    | length fs' < 2 = Tx.intercalate "\n" $ map ( formatPair sm 0 ) fs' ++ msg
+    | otherwise      = Tx.intercalate "\n" . map ( formatPair sm n ) $ fs'
     where fs' = filter ( not . Tx.null . snd ) fs
           n   = maximum . map Tx.length . fst . unzip $ fs'
           msg = ["  No non-empty fields or metadata"]
 
-formatPair :: Int -> (Text, Text) -> Text
+formatPair :: T.StyleMap -> Int -> (Text, Text) -> Text
 -- ^Take a key value pair, and pretty print reserving n characters
 -- for the key preceded by 2 spaces and followed by a colon and a
 -- space and then the field. Field lines then all line up using a
 -- fixed indent of 2 + n + 2 spaces.
-formatPair n (x,y) = let lineLength = 80 -- characters
-                         keyTxt     = "  " <> padRight (n+2) (x <> ": ")
-                         fieldTxt   = overHang (lineLength - n - 4) (n+4) y
-                     in  keyTxt <> fieldTxt
+formatPair sm n (x,y) =
+    let lineLen  = 80 -- characters
+        keyTxt   = "  " <> padRight (n+2) (x <> ": ")
+        fieldTxt = overHang (lineLen - n - 4) (n+4) y
+        toEmph   = [ "type", "title", "booktitle", "chapter", "journal" ]
+    in  style sm "field" keyTxt <> if elem x toEmph
+                                      then style sm "emph" fieldTxt
+                                      else fieldTxt
 
 padRight :: Int -> Text -> Text
 -- ^Add padding spaces after a text so the total length is n.
@@ -193,6 +199,7 @@ defaultStyles = Map.fromList cs
                , ( "emph",   styleString False Dull Yellow )
                , ( "key",    styleString True  Dull Green  )
                , ( "warn",   styleString True  Dull Red    )
+               , ( "field",  styleString False Dull Cyan   )
                ]
 
 ---------------------------------------------------------------------
