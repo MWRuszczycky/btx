@@ -9,6 +9,7 @@
 import qualified Model.Core.Types        as T
 import qualified Controller              as C
 import qualified Model.Core.ScriptParser as M
+import qualified Model.Core.Formatting   as F
 import qualified Data.Text               as Tx
 import qualified Data.Text.IO            as Tx
 import Data.Text                                ( Text, pack      )
@@ -86,8 +87,9 @@ mock args = do
     case M.parse script of
          T.Usage msg      -> pure . pack $ msg
          T.Help cs        -> pure . pack . unlines $ cs
-         T.Script mbFp cs -> runExceptT ( C.initBtx mbFp >>= C.runBtx cs )
-                             >>= mockFinish
+         T.Script mbFp cs -> let startUp = C.initBtx F.noStyles mbFp
+                             in  runExceptT ( startUp >>= C.runBtx cs )
+                                 >>= mockFinish
 
 mockFinish :: Either String T.BtxState -> IO Text
 mockFinish (Left msg) = pure . pack $ msg ++ "\n"

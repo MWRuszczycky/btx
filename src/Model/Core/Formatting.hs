@@ -67,6 +67,8 @@ summarizeRef sm (T.Missing fp k e ) = style sm "warn" ( k <> " is missing" )
 
 ---------------------------------------------------------------------
 -- Conversion to BibTeX format
+-- There should be no text-styling in these functions, because they
+-- are used to write the .bib files.
 
 bibToBibtex :: T.Bibliography -> Text
 -- ^Generates a text representation of the bibliography.

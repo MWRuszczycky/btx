@@ -26,5 +26,5 @@ Bibliographies:
   export:  unset
 Context:
   Cats2016 from test/testBib.bib
-  Missing: Dogs1986 from test/testBib.bib (no such entry)
+  Dogs1986 is missing from test/testBib.bib (no such entry)
   Cleland1975 from test/testBib.bib
