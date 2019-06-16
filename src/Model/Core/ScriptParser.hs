@@ -25,21 +25,8 @@ import Model.Core.Messages.Help               ( invalidUsageErr
 
 parse :: Either String Text -> T.Start
 parse (Left  x) = T.Usage x
-parse (Right x) = either err check . At.parseOnly btxParser $ x
+parse (Right x) = either err id . At.parseOnly btxParser $ x
     where err = const $ T.Usage unableToParseErr
-
-check :: T.Start -> T.Start
--- ^Check result of btx input parsing. In particular, make sure the
--- first <in> command, if used, is used correctly. This is necessary
--- to ensure proper loading of the *initial* working bibliography.
-check (T.Usage xs)        = T.Usage xs
-check (T.Help  xs)        = T.Help xs
-check (T.Script _ [])     = T.Usage noCommandsErr
-check (T.Script _ (x:xs)) = case x of
-                                 ("in",[])    -> T.Usage $ invalidUsageErr "in"
-                                 ("in",_:_:_) -> T.Usage $ invalidUsageErr "in"
-                                 ("in",p:_)   -> T.Script (Just p) xs
-                                 _            -> T.Script Nothing (x:xs)
 
 ---------------------------------------------------------------------
 -- Parser entry
@@ -68,24 +55,32 @@ versionRequest = do
 -- Script parsing
 
 btxScript :: At.Parser T.Start
-btxScript = many aToken >>= pure . T.Script Nothing . toCommands
+btxScript = many aToken >>= pure . finalize . format
 
-toCommands :: [String] -> [T.ParsedCommand]
+finalize :: [T.ParsedCommand] -> T.Start
+-- ^Finalize the parse by identifying the initial bibliography file.
+finalize []                = T.Usage   noCommandsErr
+finalize (("in",[])   :_)  = T.Usage $ invalidUsageErr "in"
+finalize (("in",_:_:_):_)  = T.Usage $ invalidUsageErr "in"
+finalize (("in",p:_)  :xs) = T.Script (Just p) xs
+finalize xs                = T.Script Nothing  xs
+
+format :: [String] -> [T.ParsedCommand]
 -- ^Format commands from the parsed script:
 -- 1. Remove any empty strings.
 -- 2. Remove ', +' (i.e., <and with>) and read through argements.
 -- 3. Remove isolated '+' (i.e., <with>) and read through arguments.
 -- 4. Parse individual commands on ',' (i.e., <and>).
 -- 5. Append a final <save> command.
-toCommands []       = [ ("save", []) ]
-toCommands ("":xs ) = toCommands xs
-toCommands (",":xs) = toCommands xs
-toCommands ("+":xs) = toCommands xs
-toCommands (x:xs  ) = case break ( flip elem [",", "+", ""] ) xs of
-                           (ys, "":zs     ) -> toCommands $ x : (ys ++ zs)
-                           (ys, "+":zs    ) -> toCommands $ x : (ys ++ zs)
-                           (ys, ",":"+":zs) -> toCommands $ x : (ys ++ zs)
-                           (ys, zs        ) -> (x, ys) : toCommands zs
+format []       = [ ("save", []) ]
+format ("" :xs) = format xs
+format (",":xs) = format xs
+format ("+":xs) = format xs
+format (x  :xs) = case break ( flip elem [",", "+", ""] ) xs of
+                             (ys, "":zs     ) -> format $ x : (ys ++ zs)
+                             (ys, "+":zs    ) -> format $ x : (ys ++ zs)
+                             (ys, ",":"+":zs) -> format $ x : (ys ++ zs)
+                             (ys, zs        ) -> (x, ys) : format zs
 
 aToken :: At.Parser String
 aToken = do
