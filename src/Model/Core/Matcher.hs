@@ -13,36 +13,25 @@ module Model.Core.Matcher
 -- =============================================================== --
 
 import qualified Data.Text as Tx
-import Data.Text                 ( Text         )
-import Data.Char                 ( isDigit
-                                 , isAlphaNum
-                                 , isSpace      )
-import Control.Applicative       ( (<|>)
-                                 , Alternative
-                                 , empty
-                                 , many         )
+import Data.Text                   ( Text         )
+import Data.Char                   ( isDigit
+                                   , isAlphaNum
+                                   , isSpace      )
+import Control.Monad.State.Lazy    ( StateT
+                                   , StateT (..)
+                                   , runStateT    )
+import Control.Applicative         ( many, empty  )
 
 ---------------------------------------------------------------------
 -- Types
 
-data Regex = Rule (Char -> Bool)
-           | KleeneStar Regex
-           | Epsilon
-           | RegError
+data Regex
+    = Rule (Char -> Bool)
+    | KleeneStar Regex
+    | Epsilon
+    | RegError
 
-newtype Matcher a = Matcher { runMatcher :: Text -> [(Text, a)] }
-
-instance Functor Matcher where
-    fmap f (Matcher m) = Matcher $ \ t -> [ (t1, f x) | (t1, x) <- m t ]
-
-instance Applicative Matcher where
-    pure x                    = Matcher $ \ t -> [ (t, x) ]
-    Matcher ml <*> Matcher mr = Matcher $ \ t ->
-        [ (t2, f x) | (t1, f) <- ml t, (t2, x) <- mr t1 ]
-
-instance Alternative Matcher where
-    empty                     = Matcher $ \ _ -> []
-    Matcher ml <|> Matcher mr = Matcher $ \ t -> ml t <|> mr t
+type Matcher a = StateT Text [] a
 
 ---------------------------------------------------------------------
 -- Exported matching functions
@@ -53,11 +42,11 @@ r =~ t = maybe False ( const True ) $ runRegex r t
 hasMatch :: String -> Text -> Bool
 hasMatch r = any (r =~) . Tx.tails
 
-runRegex :: String -> Text -> Maybe (Text, String)
+runRegex :: String -> Text -> Maybe (String, Text)
 runRegex r t
-    | null x = Nothing
+    | null x    = Nothing
     | otherwise = Just . head $ x
-    where x = runMatcher (makeMatcher r) t
+    where x = runStateT ( makeMatcher r ) t
 
 ---------------------------------------------------------------------
 -- Parsers to convert a string to a matcher
@@ -99,6 +88,6 @@ parseEsc  _   = RegError
 -- Matchers
 
 satisfy :: (Char -> Bool) -> Matcher Char
-satisfy f = Matcher $ \ t -> maybe [] go . Tx.uncons $ t
-    where go (x,xs) | f x       = [(xs, x)]
+satisfy f = StateT $ \ t -> maybe [] go . Tx.uncons $ t
+    where go (x,xs) | f x       = [(x,xs)]
                     | otherwise = []
