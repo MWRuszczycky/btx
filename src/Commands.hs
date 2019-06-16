@@ -147,17 +147,16 @@ saveCmdArgs, saveCmdSHelp, saveCmdLHelp :: String
 saveCmdArgs  = ""
 saveCmdSHelp = "update working bibliography and write everything to file"
 saveCmdLHelp = unlines hs
-    where hs = [ "This command is only necessary when working interactively"
-               , "from standard input. Otherwise it is automatically added to"
-               , "the end of any script read from the command line or file."
-               , "<save> ignores all arguments and does the following:\n"
+    where hs = [ "This command is currently redundant, and you should never"
+               , "need it, because it is automatically added to the end of any"
+               , "script read from the command line or file. <save> ignores all"
+               , "arguments and does the following:\n"
                , "  1. Update working bibliography with the current context."
                , "  2. Write the updated working bibliography to file."
                , "  3. Write the export bibliography to file."
                , "  4. Clear the context.\n"
-               , "The normal usage of <save> would be at the end of a script"
-               , "entered interactively via standard input and before inputting"
-               , "ctrl-C to terminate standard input."
+               , "In the future, this command may be used with scripts that"
+               , "are written interactively at the command line."
                ]
 
 saveCmd :: T.CommandMonad T.Context
