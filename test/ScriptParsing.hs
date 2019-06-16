@@ -61,7 +61,7 @@ parseFailure _           = False
 ---------------------------------------------------------------------
 -- Simple scripts
 
-script101 = Right "in animals.bib, pull Cats2016, name Felines2018 and view"
+script101 = "in animals.bib, pull Cats2016, name Felines2018 and view"
 result101 = T.Script (Just "animals.bib")
                      [ ( "pull", ["Cats2016"]    )
                      , ( "name", ["Felines2018"] )
@@ -69,7 +69,7 @@ result101 = T.Script (Just "animals.bib")
                      , ( "save", []              )
                      ]
 
-script102 = Right "in animals.bib, pull Cats2016 Dogs1977, name Felines2018 Canines1981, and view"
+script102 = "in animals.bib, pull Cats2016 Dogs1977, name Felines2018 Canines1981, and view"
 result102 = T.Script (Just "animals.bib")
                      [ ( "pull", ["Cats2016", "Dogs1977"]    )
                      , ( "name", ["Felines2018", "Canines1981"] )
@@ -77,7 +77,7 @@ result102 = T.Script (Just "animals.bib")
                      , ( "save", []                         )
                      ]
 
-script103 = Right "pull Cats2016 Dogs1977, name Felines2018 Canines1981, and view"
+script103 = "pull Cats2016 Dogs1977, name Felines2018 Canines1981, and view"
 result103 = T.Script Nothing
                      [ ( "pull", ["Cats2016", "Dogs1977"]    )
                      , ( "name", ["Felines2018", "Canines1981"] )
@@ -85,7 +85,7 @@ result103 = T.Script Nothing
                      , ( "save", []                         )
                      ]
 
-script104 = Right "in plants.bib, in animals.bib, pull Cats2016 Dogs1977, name Felines2018 Canines1981, and view"
+script104 = "in plants.bib, in animals.bib, pull Cats2016 Dogs1977, name Felines2018 Canines1981, and view"
 result104 = T.Script (Just "plants.bib")
                      [ ( "in",   ["animals.bib"]                )
                      , ( "pull", ["Cats2016", "Dogs1977"]       )
@@ -97,7 +97,7 @@ result104 = T.Script (Just "plants.bib")
 ---------------------------------------------------------------------
 -- Variations with special tokens
 
-script201 = Right "in animals.bib, and and pull Cats2016 \n name Felines2018 and \n view"
+script201 = "in animals.bib, and and pull Cats2016 \n name Felines2018 and \n view"
 result201 = T.Script (Just "animals.bib")
                      [ ( "pull", ["Cats2016"]    )
                      , ( "name", ["Felines2018"] )
@@ -105,7 +105,7 @@ result201 = T.Script (Just "animals.bib")
                      , ( "save", []              )
                      ]
 
-script202 = Right "and in animals.bib,,,, and,and pull Cats2016 and\n\n name Felines2018 and \n view and and"
+script202 = "and in animals.bib,,,, and,and pull Cats2016 and\n\n name Felines2018 and \n view and and"
 result202 = T.Script (Just "animals.bib")
                      [ ( "pull", ["Cats2016"]    )
                      , ( "name", ["Felines2018"] )
@@ -113,7 +113,7 @@ result202 = T.Script (Just "animals.bib")
                      , ( "save", []              )
                      ]
 
-script203 = Right "in animals.bib, and and pull Cats2016 and with Dogs1977 \n name Felines2018 \n + Canines1981 and \n view"
+script203 = "in animals.bib, and and pull Cats2016 and with Dogs1977 \n name Felines2018 \n + Canines1981 and \n view"
 result203 = T.Script (Just "animals.bib")
                      [ ( "pull", ["Cats2016", "Dogs1977"]       )
                      , ( "name", ["Felines2018", "Canines1981"] )
@@ -121,19 +121,19 @@ result203 = T.Script (Just "animals.bib")
                      , ( "save", []                             )
                      ]
 
-script204 = Right ", with in animals.bib, and with and pull Cats2016 + and with Dogs1977 \n name Felines2018 \n + Canines1981 and \n view"
+script204 = ", with in animals.bib, and with and pull Cats2016 + and with Dogs1977 \n name Felines2018 \n + Canines1981 and \n view"
 result204 = T.Script (Just "animals.bib")
                      [ ( "pull", ["Cats2016", "Dogs1977"]       )
                      , ( "name", ["Felines2018", "Canines1981"] )
                      , ( "view", []                             )
                      , ( "save", []                             )
                      ]
-script205 = Right ", with and with \n and and + ,,,,and with \n\n with and and, and"
+script205 = ", with and with \n and and + ,,,,and with \n\n with and and, and"
 result205 = T.Script Nothing
                      [ ( "save", [] )
                      ]
 
-script206 = Right . Tx.unlines $
+script206 = Tx.unlines $
     [ "in animals.bib"
     , "    doi 10.1021/bi00685a029"
     , "        with 10.1021/j150544a010"
@@ -163,7 +163,7 @@ result206 = T.Script (Just "animals.bib")
 ---------------------------------------------------------------------
 -- These scripts test quoted strings
 
-script301 = Right "get Cats2016, find \"Synthesis of 4a$\\alpha\" and view"
+script301 = "get Cats2016, find \"Synthesis of 4a$\\alpha\" and view"
 result301 = T.Script Nothing
                      [ ( "get",  ["Cats2016"]                )
                      , ( "find", ["Synthesis of 4a$\\alpha"] )
@@ -171,7 +171,7 @@ result301 = T.Script Nothing
                      , ( "save", []                          )
                      ]
 
-script302 = Right "get Cats2016, find \"Synthesis of 4'a$\\alpha\" and view"
+script302 = "get Cats2016, find \"Synthesis of 4'a$\\alpha\" and view"
 result302 = T.Script Nothing
                      [ ( "get",  ["Cats2016"]                )
                      , ( "find", ["Synthesis of 4'a$\\alpha"] )
@@ -179,7 +179,7 @@ result302 = T.Script Nothing
                      , ( "save", []                          )
                      ]
 
-script303 = Right "get Cats2016, find \"Synthesis of 4\\\"a$\\alpha\" and view"
+script303 = "get Cats2016, find \"Synthesis of 4\\\"a$\\alpha\" and view"
 result303 = T.Script Nothing
                      [ ( "get",  ["Cats2016"]                )
                      , ( "find", ["Synthesis of 4\"a$\\alpha"] )
@@ -187,7 +187,7 @@ result303 = T.Script Nothing
                      , ( "save", []                          )
                      ]
 
-script304 = Right "get Cats2016, find 'Synthesis of 4a$\\alpha' and view"
+script304 = "get Cats2016, find 'Synthesis of 4a$\\alpha' and view"
 result304 = T.Script Nothing
                      [ ( "get", ["Cats2016"]                 )
                      , ( "find", ["Synthesis of 4a$\\alpha"] )
@@ -195,7 +195,7 @@ result304 = T.Script Nothing
                      , ( "save", []                          )
                      ]
 
-script305 = Right "get Cats2016, find 'Synthesis \"of\" 4a$\\alpha' and view"
+script305 = "get Cats2016, find 'Synthesis \"of\" 4a$\\alpha' and view"
 result305 = T.Script Nothing
                      [ ( "get", ["Cats2016"]                     )
                      , ( "find", ["Synthesis \"of\" 4a$\\alpha"] )
@@ -203,7 +203,7 @@ result305 = T.Script Nothing
                      , ( "save", []                              )
                      ]
 
-script306 = Right "get Cats2016, find 'Synthesis \\\'of\\\' 4a$\\alpha' and view"
+script306 = "get Cats2016, find 'Synthesis \\\'of\\\' 4a$\\alpha' and view"
 result306 = T.Script Nothing
                      [ ( "get", ["Cats2016"]                     )
                      , ( "find", ["Synthesis 'of' 4a$\\alpha"] )
@@ -211,7 +211,7 @@ result306 = T.Script Nothing
                      , ( "save", []                              )
                      ]
 
-script307 = Right "get Cats2016, find 'Synthesis of 4a$\\alpha' 'cats like fish' and view"
+script307 = "get Cats2016, find 'Synthesis of 4a$\\alpha' 'cats like fish' and view"
 result307 = T.Script Nothing
                      [ ( "get", ["Cats2016"]                     )
                      , ( "find", [ "Synthesis of 4a$\\alpha"
@@ -220,7 +220,7 @@ result307 = T.Script Nothing
                      , ( "save", []                              )
                      ]
 
-script308 = Right "\"\" ''get Cats2016 '  ', find '' 'cats like fish' and'''' view '' ''"
+script308 = "\"\" ''get Cats2016 '  ', find '' 'cats like fish' and'''' view '' ''"
 result308 = T.Script Nothing
                      [ ( "get",  [ "Cats2016", "  " ]            )
                      , ( "find", [ "cats like fish" ]            )
@@ -234,10 +234,10 @@ result308 = T.Script Nothing
 -- initial <in> command.
 
 -- No argument for <in>
-script401 = Right "in, pull Cats2016, name Felines2018 and view"
+script401 = "in, pull Cats2016, name Felines2018 and view"
 -- Too many arguments for <in>
-script402 = Right "in animals.bib plants.bib, pull Cats2016, name Felines2018 and view"
+script402 = "in animals.bib plants.bib, pull Cats2016, name Felines2018 and view"
 -- Doubling of <in> handled the same as too many arguments for <in>
-script403 = Right "in in animals.bib, pull Cats2016, name Felines2018 and view"
+script403 = "in in animals.bib, pull Cats2016, name Felines2018 and view"
 -- Quotes are not all closed
-script404 = Right "get Cats2016, find 'Synthesis of 4a$\\alpha' 'cats like fish and view"
+script404 = "get Cats2016, find 'Synthesis of 4a$\\alpha' 'cats like fish and view"

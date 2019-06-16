@@ -83,8 +83,8 @@ main = hspec $ around_ manageScriptTests $ do
 mock :: [String] -> IO Text
 -- ^Mocks the main function for executing scripts.
 mock args = do
-    script <- C.getScript args
-    case M.parse script of
+    input <- C.getInput args
+    case either T.Usage M.parse input of
          T.Usage msg      -> pure . pack $ msg
          T.Help cs        -> pure . pack . unlines $ cs
          T.Script mbFp cs -> let startUp = C.initBtx F.noStyles mbFp

@@ -23,9 +23,8 @@ import Model.Core.Messages.Help               ( invalidUsageErr
 ---------------------------------------------------------------------
 -- Exported btx parser interface
 
-parse :: Either String Text -> T.Start
-parse (Left  x) = T.Usage x
-parse (Right x) = either err id . At.parseOnly btxParser $ x
+parse :: Text -> T.Start
+parse = either err id . At.parseOnly btxParser
     where err = const $ T.Usage unableToParseErr
 
 ---------------------------------------------------------------------

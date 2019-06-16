@@ -10,15 +10,15 @@ import Control.Monad.Except             ( runExceptT    )
 import Model.Core.Formatting            ( defaultStyles )
 import Model.Core.ScriptParser          ( parse         )
 import Controller                       ( finish
-                                        , getScript
+                                        , getInput
                                         , initBtx
                                         , runBtx
                                         , runHelp       )
 
 main :: IO ()
 main = do
-    script <- getScript =<< getArgs
-    case parse script of
+    input <- getInput =<< getArgs
+    case either T.Usage parse input of
          T.Usage msg      -> finish . Left $ msg
          T.Help cs        -> finish . Left . runHelp $ cs
          T.Script mbFp cs -> let startUp = initBtx defaultStyles mbFp

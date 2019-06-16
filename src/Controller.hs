@@ -2,7 +2,7 @@
 
 module Controller
     ( finish
-    , getScript
+    , getInput
     , initBtx
     , runHelp
     , runBtx
@@ -33,12 +33,12 @@ import Commands                                     ( hub, route,         )
 -- Initialization
 
 ---------------------------------------------------------------------
--- Finding the script that the user wants to run
+-- Finding the script or directive that the user wants to run
 
-getScript :: [String] -> IO (Either String Text)
-getScript ("run":fp:_) = Right <$> Tx.readFile fp
-getScript ("run":[])   = pure . Left $ H.missingScriptErr
-getScript xs           = pure . Right . pack . unwords $ xs
+getInput :: [String] -> IO (Either String Text)
+getInput ("run":fp:_) = Right <$> Tx.readFile fp
+getInput ("run":[])   = pure . Left $ H.missingScriptErr
+getInput xs           = pure . Right . pack . unwords $ xs
 
 ---------------------------------------------------------------------
 -- Finding the working BibTeX bibliography that the user wants to use
