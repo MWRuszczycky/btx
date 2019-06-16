@@ -17,7 +17,8 @@ import Data.Text                   ( Text         )
 import Data.Char                   ( isDigit
                                    , isAlphaNum
                                    , isSpace      )
-import Control.Monad.State.Lazy    ( StateT
+import Control.Monad.State.Lazy    ( (<=<)
+                                   , StateT
                                    , StateT (..)
                                    , runStateT    )
 import Control.Applicative         ( many, empty  )
@@ -25,11 +26,7 @@ import Control.Applicative         ( many, empty  )
 ---------------------------------------------------------------------
 -- Types
 
-data Regex
-    = Rule (Char -> Bool)
-    | KleeneStar Regex
-    | Epsilon
-    | RegError
+data Regex = Rule (Char -> Bool) | KleeneStar Regex
 
 type Matcher a = StateT Text [] a
 
@@ -52,37 +49,42 @@ runRegex r t
 -- Parsers to convert a string to a matcher
 
 buildMatcher :: String -> Matcher String
-buildMatcher = fmap concat <$> traverse compileRegex . parseRegex
+buildMatcher = maybe empty go . parseRegex
+    where go = fmap concat <$> traverse compileRegex
 
 compileRegex :: Regex -> Matcher String
 compileRegex (Rule p)       = (:[]) <$> satisfy p
 compileRegex (KleeneStar r) = fmap concat . many . compileRegex $ r
-compileRegex Epsilon        = pure []
-compileRegex RegError       = empty
 
-parseRegex :: String -> [Regex]
-parseRegex [] = [RegError]
-parseRegex ('*':xs) = parseRegex xs
-parseRegex s        = reverse . go $ (s, Epsilon, [])
-    where go ([],        r, rs) = r:rs
-          go ('\\':x:xs, r, rs) = go (xs, parseEsc x, r:rs)
-          go ('\\':[],   _, _ ) = [RegError]
-          go ('*':'*':xs,r, rs) = go ('*':xs, r, rs)
-          go ('*':xs,    r, rs) = go (xs, Epsilon, KleeneStar r : rs)
-          go ('.':xs,    r, rs) = go (xs, Rule (/= '\n'), r : rs)
-          go (x:xs,      r, rs) = go (xs, Rule (== x), r:rs)
+parseRegex :: String -> Maybe [Regex]
+parseRegex = go <=< nextRegex
+    where go (r,[]) = Just [r]
+          go (r,xs) = fmap (r:) . parseRegex $ xs
 
-parseEsc :: Char -> Regex
-parseEsc 'd'  = Rule isDigit
-parseEsc 'D'  = Rule $ not . isDigit
-parseEsc 'w'  = Rule isAlphaNum
-parseEsc 'W'  = Rule $ not . isAlphaNum
-parseEsc 's'  = Rule isSpace
-parseEsc 'S'  = Rule $ not . isSpace
-parseEsc '\\' = Rule $ (== '\\')
-parseEsc '*'  = Rule $ (== '*')
-parseEsc '.'  = Rule $ (== '.')
-parseEsc  _   = RegError
+nextRegex :: String -> Maybe (Regex, String)
+nextRegex []          = Nothing
+nextRegex ('*':xs)    = nextRegex xs
+nextRegex ('\\':x:xs) = readStars . ( \ y -> (y, xs) ) <$> parseEsc x
+nextRegex ('.':xs)    = Just . readStars $ ( Rule (/= '\n'), xs )
+nextRegex (x:xs)      = Just . readStars $ ( Rule (== x),    xs )
+
+readStars :: (Regex, String) -> (Regex, String)
+readStars (r, s)
+    | null xs   = (r, s)
+    | otherwise = (KleeneStar r, ys)
+    where (xs,ys) = span (== '*') s
+
+parseEsc :: Char -> Maybe Regex
+parseEsc 'd'  = Just . Rule $ isDigit
+parseEsc 'D'  = Just . Rule $ not . isDigit
+parseEsc 'w'  = Just . Rule $ isAlphaNum
+parseEsc 'W'  = Just . Rule $ not . isAlphaNum
+parseEsc 's'  = Just . Rule $ isSpace
+parseEsc 'S'  = Just . Rule $ not . isSpace
+parseEsc '\\' = Just . Rule $ (== '\\')
+parseEsc '*'  = Just . Rule $ (== '*')
+parseEsc '.'  = Just . Rule $ (== '.')
+parseEsc  _   = Nothing
 
 ---------------------------------------------------------------------
 -- Matchers
