@@ -1,8 +1,7 @@
 module Model.Core.Messages.Help
     ( -- General help messages
       displayHelp
-    , versionStr
-    -- Keyword help strings 
+    -- Keyword help strings
     , keywordHelp
     -- Directive help strings
     , directiveHelp
@@ -26,11 +25,9 @@ module Model.Core.Messages.Help
 
 import qualified System.Console.ANSI   as Ans
 import qualified Model.Core.Types      as T
+import Data.List                             ( intercalate, find   )
 import System.Console.ANSI.Types             ( Color (..)
                                              , ColorIntensity (..) )
-import Data.List                             ( intercalate, find   )
-import Data.Version                          ( showVersion         )
-import Paths_btx                             ( version             )
 
 -- =============================================================== --
 -- Local helper types
@@ -91,9 +88,6 @@ keywordSummaries :: String
 keywordSummaries =
     let nLen = maximum . map ( length . kwName ) $ keywords
     in  intercalate "\n" . map ( shortKwHelpStr nLen ) $ keywords
-
-versionStr :: String
-versionStr = "btx version " ++ showVersion version ++ "\n"
 
 -- =============================================================== --
 -- Keyword help strings

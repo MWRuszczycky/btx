@@ -11,13 +11,14 @@ module Model.Core.ScriptParser
 import qualified Data.Attoparsec.Text   as At
 import qualified Data.Text              as Tx
 import qualified Model.Core.Types       as T
+import Data.Version                           ( showVersion      )
+import Paths_btx                              ( version          )
 import Control.Applicative                    ( (<|>), liftA2
                                               , many, some       )
 import Data.Text                              ( Text, unpack     )
 import Model.Core.Messages.Help               ( invalidUsageErr
                                               , noCommandsErr
-                                              , unableToParseErr
-                                              , versionStr       )
+                                              , unableToParseErr )
 
 ---------------------------------------------------------------------
 -- Exported btx parser interface
@@ -61,7 +62,7 @@ cryForHelp = do
 versionRequest :: At.Parser T.Start
 versionRequest = do
     At.choice [ At.string "version", At.string "--version", At.string "-v" ]
-    pure . T.Usage $ versionStr
+    pure . T.Usage $ "btx version " ++ showVersion version ++ "\n"
 
 ---------------------------------------------------------------------
 -- Script parsing
