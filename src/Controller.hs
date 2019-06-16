@@ -77,15 +77,18 @@ runBtx = execStateT . foldM runCmd []
 
 runHelp :: [String] -> String
 runHelp []            = H.displayHelp hub
-runHelp ("run":_)     = H.runHelpStr
-runHelp ("all":_)     = H.allHelpStr
-runHelp ("and":_)     = H.andHelpStr
-runHelp (",":_)       = H.andHelpStr
-runHelp ("with":_)    = H.withHelpStr
-runHelp ("+":_)       = H.withHelpStr
+runHelp ("run":_)     = H.directiveHelp "run"
+runHelp ("help":_)    = H.directiveHelp "help"
+runHelp ("version":_) = H.directiveHelp "version"
+runHelp ("all":_)     = H.keywordHelp "all"
+runHelp ("and":_)     = H.keywordHelp "and"
+runHelp (",":_)       = H.keywordHelp "and"
+runHelp ("with":_)    = H.keywordHelp "with"
+runHelp ("+":_)       = H.keywordHelp "with"
 runHelp ("copying":_) = H.copyingStr
-runHelp ("version":_) = H.versionHelpStr
-runHelp xs            = intercalate "\n" . map ( H.longHelpStr . route ) $ xs
+runHelp xs            = intercalate "\n"
+                        . map ( H.longCmdHelpStr . route )
+                        $ xs
 
 -- =============================================================== --
 -- Finalization
