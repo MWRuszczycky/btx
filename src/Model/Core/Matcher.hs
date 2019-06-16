@@ -46,24 +46,24 @@ runRegex :: String -> Text -> Maybe (String, Text)
 runRegex r t
     | null x    = Nothing
     | otherwise = Just . head $ x
-    where x = runStateT ( makeMatcher r ) t
+    where x = runStateT ( buildMatcher r ) t
 
 ---------------------------------------------------------------------
 -- Parsers to convert a string to a matcher
 
-makeMatcher :: String -> Matcher String
-makeMatcher = fmap concat <$> traverse regexToMatcher . makeRegex
+buildMatcher :: String -> Matcher String
+buildMatcher = fmap concat <$> traverse compileRegex . parseRegex
 
-regexToMatcher :: Regex -> Matcher String
-regexToMatcher (Rule p)       = (:[]) <$> satisfy p
-regexToMatcher (KleeneStar r) = fmap concat . many . regexToMatcher $ r
-regexToMatcher Epsilon        = pure []
-regexToMatcher RegError       = empty
+compileRegex :: Regex -> Matcher String
+compileRegex (Rule p)       = (:[]) <$> satisfy p
+compileRegex (KleeneStar r) = fmap concat . many . compileRegex $ r
+compileRegex Epsilon        = pure []
+compileRegex RegError       = empty
 
-makeRegex :: String -> [Regex]
-makeRegex [] = [RegError]
-makeRegex ('*':xs) = makeRegex xs
-makeRegex s        = reverse . go $ (s, Epsilon, [])
+parseRegex :: String -> [Regex]
+parseRegex [] = [RegError]
+parseRegex ('*':xs) = parseRegex xs
+parseRegex s        = reverse . go $ (s, Epsilon, [])
     where go ([],        r, rs) = r:rs
           go ('\\':x:xs, r, rs) = go (xs, parseEsc x, r:rs)
           go ('\\':[],   _, _ ) = [RegError]
