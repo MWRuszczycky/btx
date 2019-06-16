@@ -50,19 +50,22 @@ data KeywordHelp = KeywordHelp {
 
 displayHelp :: [T.Command T.Context] -> String
 displayHelp xs = unlines hs
-    where ds = replicate 53 '-'
-          hs = [ helpStrHeader
-               , "\n-- usage -----------------" ++ ds
-               , "btx [run FILE-PATH | help [COMMAND] | version] [SCRIPT]"
-               , "\n-- btx directives --------" ++ ds, directiveSummaries
-               , "\n-- btx keyword summaries -" ++ ds, keywordSummaries
-               , "\n-- btx command summaries -" ++ ds, summarizeCommands xs
-               , "\n-- copying ---------------" ++ ds, helpStrFooter
+    where hs = [ helpStrHeader
+               , section "usage"
+               , "btx DIRECTIVE | SCRIPT"
+               , section "directives"              , directiveSummaries
+               , section "script keyword summaries", keywordSummaries
+               , section "script command summaries", summarizeCommands xs
+               , section "copying"                 , helpStrFooter
                ]
 
 helpStrHeader :: String
-helpStrHeader = "Welcome to btx! btx is a light-weight, command-line interface"
-                 ++ " for working with\nBibTeX bibliography files."
+helpStrHeader =
+    let bold  = Ans.setSGRCode [ Ans.SetConsoleIntensity Ans.BoldIntensity ]
+        reset = Ans.setSGRCode [ Ans.Reset ]
+    in  bold ++ "Welcome to btx!" ++ reset
+        ++ " btx is a light-weight, command-line interface"
+        ++ " for working with\nBibTeX bibliography files."
 
 helpStrFooter :: String
 helpStrFooter = intercalate "\n" hs
@@ -71,6 +74,15 @@ helpStrFooter = intercalate "\n" hs
                  ++ " https://github.com/MWRuszczycky/btx\n"
                , "For binary copyright information, try: btx help copying"
                ]
+
+section :: String -> String
+section name =
+    let bold  = Ans.setSGRCode [ Ans.SetConsoleIntensity Ans.BoldIntensity ]
+        color = Ans.setSGRCode [ Ans.SetColor Ans.Foreground Dull Blue     ]
+        reset = Ans.setSGRCode [ Ans.Reset ]
+        n     = length name
+        ds    = replicate (80 - n - 5) '-'
+     in "\n-- " ++ bold ++ color ++ name ++ reset ++ " " ++ ds
 
 summarizeCommands :: [T.Command T.Context] -> String
 summarizeCommands xs =
