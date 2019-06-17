@@ -3,6 +3,7 @@
 module Controller
     ( finish
     , getInput
+    , getStyleMap
     , initBtx
     , runHelp
     , runBtx
@@ -21,12 +22,16 @@ import Data.Text                                    ( Text, pack          )
 import Data.List                                    ( intercalate         )
 import System.Directory                             ( listDirectory
                                                     , getCurrentDirectory )
+import System.IO                                    ( stdout
+                                                    , hIsTerminalDevice   )
 import Control.Monad.State.Lazy                     ( execStateT
                                                     , foldM, liftIO       )
 import Control.Monad.Except                         ( throwError
                                                     , liftEither          )
 import Model.BibTeX.Parser                          ( parseBib            )
 import Model.CoreIO.ErrMonad                        ( readOrMakeFile      )
+import Model.Core.Formatting                        ( noStyles
+                                                    , defaultStyles       )
 import Commands                                     ( hub, route,         )
 
 -- =============================================================== --
@@ -39,6 +44,18 @@ getInput :: [String] -> IO (Either String Text)
 getInput ("run":fp:_) = Right <$> Tx.readFile fp
 getInput ("run":[])   = pure . Left $ H.missingScriptErr
 getInput xs           = pure . Right . pack . unwords $ xs
+
+---------------------------------------------------------------------
+-- Determine which style map should be used. If stdout is a terminal
+-- then a colored style map should be used. Otherwise, a plain style
+-- map should be used so that escape sequences are not inserted.
+
+getStyleMap :: IO T.StyleMap
+getStyleMap = do
+    useStyles <- hIsTerminalDevice stdout
+    if useStyles
+       then pure defaultStyles
+       else pure noStyles
 
 ---------------------------------------------------------------------
 -- Finding the working BibTeX bibliography that the user wants to use
