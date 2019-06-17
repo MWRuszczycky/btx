@@ -2,9 +2,9 @@
 
 module Model.BibTeX.Resources
     ( genericKey
-    , genKeyNumber
     , supported
     , templates
+    , uniqueKeys
     ) where
 
 -- =============================================================== --
@@ -14,7 +14,6 @@ module Model.BibTeX.Resources
 import qualified Data.Text        as Tx
 import qualified Data.Map.Strict  as Map
 import qualified Model.Core.Types as T
-import Data.Text                         ( Text )
 
 -- =============================================================== --
 -- Standard references
@@ -37,31 +36,23 @@ supported = [ ( "article",       article       )
             , ( "unpublished",   unpublished   )
             ]
 
-genericKey :: Text
--- ^Generic key for new templates.
+templates :: [(T.Key, String)] -> T.Context
+-- ^Create blank templates based on a list of BibTeX entry types and
+-- corresponding keys to name them with.
+templates = map ( \ (k,x) -> T.Ref "new-entry" k (go x) )
+    where go t = maybe misc id . lookup t $ supported
+
+uniqueKeys :: T.Bibliography -> [T.Key]
+-- ^List of key names that are not already in the bibliogrphy.
+uniqueKeys (T.Bibliography _ rs _) = filter (not . flip Map.member rs) keys
+    where keys = map ((genericKey <>) . Tx.pack . show) [0..]
+
+genericKey :: Tx.Text
+-- ^This is defined separately so it fits into help information.
+-- The idea is that if the user creates a new reference, they will
+-- be able to find it more easily if the help tells them how it will
+-- be named (in case they forget to rename it).
 genericKey = "new_key_"
-
-genKeyNumber :: T.Bibliography -> Int
--- ^Generate a number n so that n appended to genericKey is not a key
--- already used in the bibliography.
-genKeyNumber (T.Bibliography _ rs _) = go 0
-    where go n | Map.member (numGenKey n) rs = go $ n + 1
-               | otherwise                   = n
-
-templates :: Int -> [String] -> T.Context
--- ^Create blank templates based on a list of BibTeX entry types.
-templates n = foldr go [] . zip [n .. ]
-    where go (m,x) = (:) ( T.Ref "new-entry" (numGenKey m) (getTemplate x) )
-
--- Helpers
-
-getTemplate :: String -> T.Entry
--- ^Create an unkeyed BibTeX entry template with the specified type.
-getTemplate x = maybe misc id . lookup x $ supported
-
-numGenKey :: Int -> Text
--- ^Helper function for numbering generic keys.
-numGenKey n = genericKey <>  ( Tx.pack . show ) n
 
 ---------------------------------------------------------------------
 -- Entry templates

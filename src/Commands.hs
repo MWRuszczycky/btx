@@ -33,7 +33,7 @@ import Model.CoreIO.ErrMonad                     ( readOrMakeFile
                                                  , readFileExcept   )
 import Model.BibTeX.Parser                       ( parseBib         )
 import Model.BibTeX.Resources                    ( genericKey
-                                                 , genKeyNumber
+                                                 , uniqueKeys
                                                  , supported
                                                  , templates        )
 import Model.Core.Formatting                     ( viewRef
@@ -377,9 +377,8 @@ newCmdLHelp = unlines hs
 newCmd :: T.CommandMonad T.Context
 newCmd xs rs = do
     updateIn rs
-    bib <- T.inBib <$> get
-    let n = genKeyNumber bib
-    pure . templates n $ xs
+    bib <- gets T.inBib
+    pure . templates $ zip (uniqueKeys bib) xs
 
 -- pull command -----------------------------------------------------
 
