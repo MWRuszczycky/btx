@@ -197,12 +197,12 @@ noStyles = Map.empty
 
 defaultStyles :: T.StyleMap
 defaultStyles = Map.fromList cs
-    where cs = [ ( "header",  styleText True  Dull  Blue   )
-               , ( "emph",    styleText False Dull  Yellow )
-               , ( "key",     styleText True  Dull  Green  )
-               , ( "warn",    styleText True  Dull  Red    )
-               , ( "field",   styleText False Dull  Cyan   )
-               , ( "command", styleText True  Vivid Green )
+    where cs = [ ( "header",  styleText True  Dull Blue   )
+               , ( "emph",    styleText False Dull Yellow )
+               , ( "key",     styleText True  Dull Green  )
+               , ( "warn",    styleText True  Dull Red    )
+               , ( "field",   styleText False Dull Cyan   )
+               , ( "command", styleText True  Dull Cyan   )
                ]
 
 ---------------------------------------------------------------------

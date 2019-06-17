@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Model.Core.Messages.Help
     ( -- General help messages
       displayHelp
@@ -23,11 +25,10 @@ module Model.Core.Messages.Help
 -- Help, errors and other information messages
 -- =============================================================== --
 
-import qualified System.Console.ANSI   as Ans
 import qualified Model.Core.Types      as T
+import Data.Text                             ( pack, unpack        )
 import Data.List                             ( intercalate, find   )
-import System.Console.ANSI.Types             ( Color (..)
-                                             , ColorIntensity (..) )
+import Model.Core.Formatting                 ( style               )
 
 -- =============================================================== --
 -- Local helper types
@@ -48,24 +49,21 @@ data KeywordHelp = KeywordHelp {
 -- =============================================================== --
 -- General help messages
 
-displayHelp :: [T.Command T.Context] -> String
-displayHelp xs = unlines hs
-    where hs = [ helpStrHeader
-               , section "usage"
+displayHelp :: T.StyleMap -> [T.Command T.Context] -> String
+displayHelp sm xs = unlines hs
+    where hs = [ helpStrHeader sm
+               , section sm "usage"
                , "btx DIRECTIVE | SCRIPT"
-               , section "directives"              , directiveSummaries
-               , section "script keyword summaries", keywordSummaries
-               , section "script command summaries", summarizeCommands xs
-               , section "copying"                 , helpStrFooter
+               , section sm "directives"              , directiveSummaries sm
+               , section sm "script keyword summaries", keywordSummaries sm
+               , section sm "script command summaries", summarizeCommands sm xs
+               , section sm "copying"                 , helpStrFooter
                ]
 
-helpStrHeader :: String
-helpStrHeader =
-    let bold  = Ans.setSGRCode [ Ans.SetConsoleIntensity Ans.BoldIntensity ]
-        reset = Ans.setSGRCode [ Ans.Reset ]
-    in  bold ++ "Welcome to btx!" ++ reset
-        ++ " btx is a light-weight, command-line interface"
-        ++ " for working with\nBibTeX bibliography files."
+helpStrHeader :: T.StyleMap -> String
+helpStrHeader sm = unpack (style sm "emph" "Welcome to btx!")
+                   ++ " btx is a light-weight, command-line interface"
+                   ++ " for working with\nBibTeX bibliography files."
 
 helpStrFooter :: String
 helpStrFooter = intercalate "\n" hs
@@ -75,31 +73,29 @@ helpStrFooter = intercalate "\n" hs
                , "For binary copyright information, try: btx help copying"
                ]
 
-section :: String -> String
-section name =
-    let bold  = Ans.setSGRCode [ Ans.SetConsoleIntensity Ans.BoldIntensity ]
-        color = Ans.setSGRCode [ Ans.SetColor Ans.Foreground Dull Blue     ]
-        reset = Ans.setSGRCode [ Ans.Reset ]
-        n     = length name
-        ds    = replicate (80 - n - 5) '-'
-     in "\n-- " ++ bold ++ color ++ name ++ reset ++ " " ++ ds
+section :: T.StyleMap -> String -> String
+section sm name =
+     let n  = length name
+         ds = replicate (80 - n - 5) '-'
+         nm = pack name
+     in  "\n-- " ++ unpack (style sm "header" nm) ++ " " ++ ds
 
-summarizeCommands :: [T.Command T.Context] -> String
-summarizeCommands xs =
+summarizeCommands :: T.StyleMap -> [T.Command T.Context] -> String
+summarizeCommands sm xs =
     let nLen = maximum . map ( length . T.cmdName ) $ xs
         aLen = maximum . map ( length . T.cmdArgs ) $ xs
-    in  intercalate "\n" . map (shortCmdHelpStr nLen aLen) $ xs
+    in  intercalate "\n" . map (shortCmdHelpStr sm nLen aLen) $ xs
 
-directiveSummaries :: String
-directiveSummaries =
+directiveSummaries :: T.StyleMap -> String
+directiveSummaries sm =
     let nLen = maximum . map ( length . dirName ) $ directives
         aLen = maximum . map ( length . dirArgs ) $ directives
-    in  intercalate "\n" . map (shortDirHelpStr nLen aLen) $ directives
+    in  intercalate "\n" . map (shortDirHelpStr sm nLen aLen) $ directives
 
-keywordSummaries :: String
-keywordSummaries =
+keywordSummaries :: T.StyleMap -> String
+keywordSummaries sm =
     let nLen = maximum . map ( length . kwName ) $ keywords
-    in  intercalate "\n" . map ( shortKwHelpStr nLen ) $ keywords
+    in  intercalate "\n" . map ( shortKwHelpStr sm nLen ) $ keywords
 
 -- =============================================================== --
 -- Keyword help strings
@@ -107,20 +103,20 @@ keywordSummaries =
 ---------------------------------------------------------------------
 -- Formatting
 
-keywordHelp :: String -> String
-keywordHelp x = maybe ("No such keyword " ++ x) longKwHelpStr
-                . find ( (== x) . kwName )
-                $ keywords
+keywordHelp :: T.StyleMap -> String -> String
+keywordHelp sm x = maybe ("No such keyword " ++ x) (longKwHelpStr sm)
+                   . find ( (== x) . kwName )
+                   $ keywords
 
-shortKwHelpStr :: Int -> KeywordHelp -> String
-shortKwHelpStr padName (KeywordHelp name helpStr _) =
-    shortHelpStr (padName, name) (0, "") helpStr
+shortKwHelpStr :: T.StyleMap -> Int -> KeywordHelp -> String
+shortKwHelpStr sm padName (KeywordHelp name helpStr _) =
+    shortHelpStr sm (padName, name) (0, "") helpStr
 
-longKwHelpStr :: KeywordHelp -> String
-longKwHelpStr kw
+longKwHelpStr :: T.StyleMap -> KeywordHelp -> String
+longKwHelpStr sm kw
     | null $ kwLong kw = hdr ++ "\n"
     | otherwise        = hdr ++ bdy
-    where hdr = shortKwHelpStr 0 kw
+    where hdr = shortKwHelpStr sm 0 kw
           bdy = "\n\n" ++ kwLong kw
 
 ---------------------------------------------------------------------
@@ -195,20 +191,20 @@ allHelp = KeywordHelp n s (unlines l)
 ---------------------------------------------------------------------
 -- Formatting
 
-directiveHelp :: String -> String
-directiveHelp x = maybe ("No such directive " ++ x) longDirHelpStr
-                  . find ( (== x) . dirName )
-                  $ directives
+directiveHelp :: T.StyleMap -> String -> String
+directiveHelp sm x = maybe ("No such directive " ++ x) (longDirHelpStr sm)
+                     . find ( (== x) . dirName )
+                     $ directives
 
-shortDirHelpStr :: Int -> Int -> DirectiveHelp -> String
-shortDirHelpStr padName padArgs (DirectiveHelp name args helpStr _) =
-    shortHelpStr (padName, name) (padArgs, args) helpStr
+shortDirHelpStr :: T.StyleMap -> Int -> Int -> DirectiveHelp -> String
+shortDirHelpStr sm padName padArgs (DirectiveHelp name args helpStr _) =
+    shortHelpStr sm (padName, name) (padArgs, args) helpStr
 
-longDirHelpStr :: DirectiveHelp -> String
-longDirHelpStr d
+longDirHelpStr :: T.StyleMap -> DirectiveHelp -> String
+longDirHelpStr sm d
     | null $ dirLong d = hdr ++ "\n"
     | otherwise        = hdr ++ bdy
-    where hdr = shortDirHelpStr 0 0 d
+    where hdr = shortDirHelpStr sm 0 0 d
           bdy = "\n\n" ++ dirLong d
 
 ---------------------------------------------------------------------
@@ -297,18 +293,16 @@ uniqueBibErr fp = unlines es
 padRightStr :: Int -> String -> String
 padRightStr n x = x ++ replicate (n - length x) ' '
 
-shortHelpStr :: (Int, String) -> (Int, String) -> String -> String
-shortHelpStr (padName, name) (padArgs, args) helpStr =
-    let nCode = Ans.setSGRCode [ Ans.SetColor Ans.Foreground Dull Yellow ]
-        hCode = Ans.setSGRCode [ Ans.SetColor Ans.Foreground Dull Green  ]
-        reset = Ans.setSGRCode [ Ans.Reset ]
-    in  nCode ++ padRightStr padName name ++ reset
-        ++ " " ++ padRightStr padArgs args ++ " : "
-        ++ hCode ++ helpStr ++ reset
+shortHelpStr :: T.StyleMap -> (Int,String) -> (Int,String) -> String -> String
+shortHelpStr sm (padName, name) (padArgs, args) helpStr =
+    let nm = style sm "emph"    . pack . padRightStr padName $ name
+        hs = style sm "command" . pack $ helpStr
+        as = padRightStr padArgs args
+    in  unpack nm ++ " " ++ as ++ " : " ++ unpack hs
 
-shortCmdHelpStr :: Int -> Int -> T.Command T.Context -> String
-shortCmdHelpStr namePad argPad (T.Command name _ args helpStr _) =
-    shortHelpStr (namePad, name) (argPad, args) helpStr
+shortCmdHelpStr :: T.StyleMap -> Int -> Int -> T.Command T.Context -> String
+shortCmdHelpStr sm namePad argPad (T.Command name _ args helpStr _) =
+    shortHelpStr sm (namePad, name) (argPad, args) helpStr
 
-longCmdHelpStr :: T.Command T.Context -> String
-longCmdHelpStr c = shortCmdHelpStr 0 0 c ++ "\n\n" ++ T.cmdLHelp c
+longCmdHelpStr :: T.StyleMap -> T.Command T.Context -> String
+longCmdHelpStr sm c = shortCmdHelpStr sm 0 0 c ++ "\n\n" ++ T.cmdLHelp c

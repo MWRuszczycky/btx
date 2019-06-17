@@ -92,20 +92,20 @@ runBtx = execStateT . foldM runCmd []
 ---------------------------------------------------------------------
 -- Generating help and information strings for display
 
-runHelp :: [String] -> String
-runHelp []            = H.displayHelp hub
-runHelp ("run":_)     = H.directiveHelp "run"
-runHelp ("help":_)    = H.directiveHelp "help"
-runHelp ("version":_) = H.directiveHelp "version"
-runHelp ("all":_)     = H.keywordHelp "all"
-runHelp ("and":_)     = H.keywordHelp "and"
-runHelp (",":_)       = H.keywordHelp "and"
-runHelp ("with":_)    = H.keywordHelp "with"
-runHelp ("+":_)       = H.keywordHelp "with"
-runHelp ("copying":_) = H.copyingStr
-runHelp xs            = intercalate "\n"
-                        . map ( H.longCmdHelpStr . route )
-                        $ xs
+runHelp :: T.StyleMap -> [String] -> String
+runHelp sm []            = H.displayHelp sm hub
+runHelp sm ("run":_)     = H.directiveHelp sm "run"
+runHelp sm ("help":_)    = H.directiveHelp sm "help"
+runHelp sm ("version":_) = H.directiveHelp sm "version"
+runHelp sm ("all":_)     = H.keywordHelp sm "all"
+runHelp sm ("and":_)     = H.keywordHelp sm "and"
+runHelp sm (",":_)       = H.keywordHelp sm "and"
+runHelp sm ("with":_)    = H.keywordHelp sm "with"
+runHelp sm ("+":_)       = H.keywordHelp sm "with"
+runHelp _  ("copying":_) = H.copyingStr
+runHelp sm xs            = intercalate "\n"
+                           . map ( H.longCmdHelpStr sm . route )
+                           $ xs
 
 -- =============================================================== --
 -- Finalization
