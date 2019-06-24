@@ -179,10 +179,12 @@ allHelp = KeywordHelp n s (unlines l)
     where n = "all"
           s =  "apply command to all entries in the context or bibliography"
           l = [ "The <all> keyword can be supplied to the commands <get>,"
-               , "<pull>, <list>, and <take> so that they apply to all entries"
-               , "is a given bibliography. It can be supplied to <toss> so"
-               , "that <toss> applies to all entries in the current context."
-               , "See help for the individual command for more details."
+               , "<pull> and <take> so that they apply to all entries in a"
+               , "given bibliography. For example,\n"
+               , "  get all\n"
+               , "will populate the context with all entries in the working"
+               , "bibliography. See help for these individual commands for"
+               , "more details."
                ]
 
 -- =============================================================== --
