@@ -1,12 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Model.Core.Messages.Help
-    ( -- General help messages
+    ( -- Main help messages
       mainHelp
+      -- Help Formatting
     , showHelp
-    , directives
+      -- Help for keywords
     , keywords
-    -- Error messages
+      -- Help for directives
+    , directives
+      -- Error messages
     , argInvalidErr
     , cmdInvalidErr
     , invalidUsageErr
@@ -30,6 +33,8 @@ import Model.Core.Formatting                 ( style, padRight     )
 -- =============================================================== --
 -- Main help messages
 
+-- Exported
+
 mainHelp :: T.StyleMap -> [T.HelpInfo] -> Text
 mainHelp sm commands = Tx.unlines
     [ mainHelpHeader sm
@@ -40,6 +45,8 @@ mainHelp sm commands = Tx.unlines
     , section sm "script command summaries", summaryList sm commands
     , section sm "copying"                 , mainHelpFooter
     ]
+
+-- Unexported
 
 mainHelpHeader :: T.StyleMap -> Text
 mainHelpHeader sm = Tx.unwords
@@ -66,11 +73,15 @@ section sm name = Tx.unwords
 -- =============================================================== --
 -- Help Formatting
 
+-- Exported
+
 showHelp :: T.StyleMap -> [T.HelpInfo] -> String -> Text
 showHelp sm hs x = let name = Tx.pack x
                    in  maybe ( "No help for <" <> name <> ">\n" )
                              ( detailedHelp sm                  )
                        . find ( elem name . T.names ) $ hs
+
+-- Unexported
 
 formatAllNames :: T.StyleMap -> Int -> T.HelpInfo -> Text
 formatAllNames sm width h = padRight width ns
@@ -110,17 +121,21 @@ summaryList sm hs =
 -- =============================================================== --
 -- Help for keywords
 
+-- Exported
+
 keywords :: [T.HelpInfo]
 keywords = [ andHelp
            , withHelp
            , allHelp
            ]
 
+-- Unexported
+
 andHelp :: T.HelpInfo
 andHelp = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "and", "\\n", "," ]
           us = Tx.empty
-          sh = "separates btx commands"
+          sh = "Separates btx commands"
           lh = [ "The <and> keyword is used to separate btx scripting"
                , "commands in a btx script. For example,\n"
                , "    btx in animals.bib and get Cats2016 and view\n"
@@ -138,7 +153,7 @@ withHelp :: T.HelpInfo
 withHelp = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "with", "+" ]
           us = Tx.empty
-          sh = "eliminate preceding <and> or its equivalent (same as '+')"
+          sh = "Eliminate preceding <and> or its equivalent"
           lh = [ "The <with> keyword is used to eliminate an <and> or its"
                , "equivalent that immediately precedes it. This can be used to"
                , "more easily pass a large number of arguments to a single btx"
@@ -168,7 +183,7 @@ allHelp :: T.HelpInfo
 allHelp = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = ["all"]
           us = Tx.empty
-          sh =  "apply command to all entries in the context or bibliography"
+          sh =  "Apply command to all entries in the context or bibliography"
           lh = [ "The <all> keyword can be supplied to the commands <get>,"
                , "<pull> and <take> so that they apply to all entries in a"
                , "given bibliography. For example,\n"
@@ -181,28 +196,32 @@ allHelp = T.HelpInfo ns us sh (Tx.unlines lh)
 -- =============================================================== --
 -- Help for directives
 
+-- Exported
+
 directives :: [T.HelpInfo]
 directives = [ helpHelp
              , runHelp
              , versionHelp
              ]
 
+-- Unexported
+
 helpHelp :: T.HelpInfo
 helpHelp = T.HelpInfo ns us sh Tx.empty
     where ns = [ "help" ]
           us = "ARGUMENT"
-          sh = "show this help screen or more help for ARGUMENT"
+          sh = "Show this help screen or more help for ARGUMENT"
 
 versionHelp :: T.HelpInfo
 versionHelp = T.HelpInfo ns Tx.empty sh Tx.empty
     where ns = [ "version" ]
-          sh = "display version information"
+          sh = "Display version information"
 
 runHelp :: T.HelpInfo
 runHelp = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "run" ]
           us = "FILE-PATH"
-          sh = "run btx script from a file"
+          sh = "Run btx script from a file"
           lh = [ "Rather than run a script entered at the command line, you"
                , "can use the <run> directive to run a script from a text file."
                , "In this case you can take advantage of line breaks and the"

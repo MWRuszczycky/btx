@@ -89,7 +89,7 @@ fromCmdHelp :: T.HelpInfo
 fromCmdHelp  = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "from" ]
           us = "[FILE-PATH]"
-          sh = "reset the import bibliography"
+          sh = "Reset the import bibliography"
           lh = [ "The import bibliography is a bibliography separate from the"
                , "working bibliography (set with <in>) that you can use to"
                , "populate the context with references using the <take>"
@@ -124,7 +124,7 @@ inCmdHelp :: T.HelpInfo
 inCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "in" ]
           us = "FILE-PATH"
-          sh = "initialize, reset or create the working bibliography"
+          sh = "Initialize, reset or create the working bibliography"
           lh = [ "This command has the following effects:\n"
                , "  1. Update working bibliography with the current context."
                , "  2. Save the updated working bibliography to disk."
@@ -156,7 +156,7 @@ saveCmdHelp :: T.HelpInfo
 saveCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "save" ]
           us = Tx.empty
-          sh = "update working bibliography and write everything to file"
+          sh = "Update working bibliography and write everything to file"
           lh = [ "This command is currently redundant, and you should never"
                , "need it, because it is automatically added to the end of any"
                , "script read from the command line or file. <save> ignores all"
@@ -180,7 +180,7 @@ toCmdHelp :: T.HelpInfo
 toCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "to" ]
           us = "[FILE-PATH]"
-          sh = "reset or create new export bibliography"
+          sh = "Reset or create new export bibliography"
           lh = [ "The export bibliography is separate from the working"
                , "bibliography (set with <in>) and represents a target where"
                , "references can be exported using the <send> command. This"
@@ -219,7 +219,7 @@ infoCmdHelp :: T.HelpInfo
 infoCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "info" ]
           us = "[ARG..]"
-          sh = "display summary of all bibliographies and the current context"
+          sh = "Display summary of all bibliographies and the current context"
           lh = [ "This command has the following effects:\n"
                , "  1. Leave the current context unchanged."
                , "  2. Display any arguments supplied. You can use this to more"
@@ -239,7 +239,7 @@ viewCmdHelp :: T.HelpInfo
 viewCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "view" ]
           us = "[ARG]"
-          sh = "view the details of all entries in the context"
+          sh = "View the details of all entries in the context"
           lh = [ "This command has no other effect besides displaying the"
                , "entries in the context in a nicely formatted way. Arguments"
                , "can be supplied to <view> to determine how the references"
@@ -266,7 +266,7 @@ doiCmdHelp :: T.HelpInfo
 doiCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "doi" ]
           us = "[DOI..]"
-          sh = "download an entry using the doi of its publication"
+          sh = "Download an entry using the doi of its publication"
           lh = [ "This command populates the context with entries downloaded"
                , "using the digital-object-identifiers of the corresponding"
                , "publications. It has the following effects:\n"
@@ -290,7 +290,7 @@ findCmdHelp :: T.HelpInfo
 findCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "find" ]
           us = "[EXP..]"
-          sh = "find entries that match EXP and add to the context"
+          sh = "Find entries that match EXP and add to the context"
           lh = [ "This command has the following effects:\n"
                , "  1. Update the working bibilography with the current context"
                , "     and clear the context."
@@ -346,7 +346,7 @@ getCmdHelp :: T.HelpInfo
 getCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "get" ]
           us = "[KEY..]"
-          sh = "copy entries from working bibliography to context"
+          sh = "Copy entries from working bibliography to context"
           lh = [ "This command has the following effects:\n"
                , "  1. Update the working bibliography with the current context"
                , "     and then clear the context."
@@ -374,7 +374,7 @@ newCmdHelp :: T.HelpInfo
 newCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "new" ]
           us = "[TYPE..]"
-          sh = "populate context with template entries of specified TYPEs"
+          sh = "Populate context with template entries of specified TYPEs"
           sp = Tx.unlines . map ( (Tx.replicate 9 " " <>) . fst ) $ supported
           lh = [ "The command has the following effects:\n"
                , "  1. Update the working bibliography with the current context"
@@ -403,7 +403,7 @@ pullCmdHelp :: T.HelpInfo
 pullCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "pull" ]
           us = "[KEY..]"
-          sh = "move entries from working bibliography to context"
+          sh = "Move entries from working bibliography to context"
           lh = [ "This command is the same as <get>; however the entries are"
                , "moved from the working bibliography to the context and thus"
                , "deleted from the working bibliography. Therefore, this"
@@ -429,7 +429,7 @@ takeCmdHelp :: T.HelpInfo
 takeCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "take" ]
           us = "[KEY..]"
-          sh = "copy entries from import bibliography to context"
+          sh = "Copy entries from import bibliography to context"
           lh = [ "This command is the same as <get>; however the entries are"
                , "copied to the context from the import bibliography rather"
                , "than the working bibliography. If the import bibliography is"
@@ -461,7 +461,7 @@ editCmdHelp :: T.HelpInfo
 editCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "edit" ]
           us = "EDITOR"
-          sh = "edit entries in the context using the external EDITOR"
+          sh = "Edit entries in the context using the external EDITOR"
           lh = [ "This command allows you to run an editor program on all the"
                , "bibliography entries currently in the context. The edited"
                , "entries remain in the context. You can use this to edit"
@@ -488,7 +488,7 @@ nameCmdHelp :: T.HelpInfo
 nameCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "name" ]
           us = "[KEY..]"
-          sh = "change key names for entries in the context"
+          sh = "Change key names for entries in the context"
           lh = [ "For example, if you have the following bibliography entries"
                , "in context:"
                , "    Dogs1964"
@@ -526,7 +526,7 @@ sendCmdHelp :: T.HelpInfo
 sendCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "send" ]
           us = Tx.empty
-          sh = "update export bibliography with the current context"
+          sh = "Update export bibliography with the current context"
           lh = [ "This command has the following effects:\n"
                , "  1. Update the export bibliography with the current context"
                , "     overwritting any references that have the same keys."
@@ -553,7 +553,7 @@ tossCmdHelp :: T.HelpInfo
 tossCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "toss" ]
           us = "[KEY..]"
-          sh = "remove some or all entries from the context"
+          sh = "Remove some or all entries from the context"
           lh = [ "This command removes those entries with the specified keys"
                , "from the current context. If no keys are specified, then all"
                , "all entries are cleared from the current context. The <toss>"
