@@ -21,6 +21,7 @@ module Model.Core.Types
     , Command           (..)
     , CommandMonad
     , ParsedCommand
+    , HelpInfo          (..)
     ) where
 
 -- =============================================================== --
@@ -111,12 +112,19 @@ type ParsedCommand = (String, [String])
 -- |Generalized Btx command that includes the monadic component and
 -- additional information including arguments and help strings.
 data Command a = Command {
-      cmdName  :: String         -- User interface to the command
-    , cmdCmd   :: CommandMonad a -- Monadic Btx command
-    , cmdArgs  :: String         -- Help string for allowed arguments
-    , cmdSHelp :: String         -- Short help information
-    , cmdLHelp :: String         -- Long help information
+      cmdName :: String         -- User interface to the command
+    , cmdCmd  :: CommandMonad a -- Monadic Btx command
+    , cmdHelp :: HelpInfo       -- Help information for the command
     }
 
 instance Show ( Command a ) where
     show = cmdName
+
+-- |General data type for managing help information about commands,
+-- keywords and directives.
+data HelpInfo = HelpInfo {
+      names     :: [Text]
+    , usage     :: Text
+    , shortHelp :: Text
+    , longHelp  :: Text
+    }

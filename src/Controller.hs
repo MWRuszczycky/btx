@@ -5,7 +5,7 @@ module Controller
     , getInput
     , getStyleMap
     , initBtx
-    , runHelp
+    , getHelp
     , runBtx
     ) where
 
@@ -19,7 +19,6 @@ import qualified Model.Core.Types            as T
 import qualified Model.Core.Messages.Help    as H
 import qualified Model.Core.Messages.Copying as H
 import Data.Text                                    ( Text, pack          )
-import Data.List                                    ( intercalate         )
 import System.Directory                             ( listDirectory
                                                     , getCurrentDirectory )
 import System.IO                                    ( stdout
@@ -92,20 +91,14 @@ runBtx = execStateT . foldM runCmd []
 ---------------------------------------------------------------------
 -- Generating help and information strings for display
 
-runHelp :: T.StyleMap -> [String] -> String
-runHelp sm []            = H.displayHelp sm hub
-runHelp sm ("run":_)     = H.directiveHelp sm "run"
-runHelp sm ("help":_)    = H.directiveHelp sm "help"
-runHelp sm ("version":_) = H.directiveHelp sm "version"
-runHelp sm ("all":_)     = H.keywordHelp sm "all"
-runHelp sm ("and":_)     = H.keywordHelp sm "and"
-runHelp sm (",":_)       = H.keywordHelp sm "and"
-runHelp sm ("with":_)    = H.keywordHelp sm "with"
-runHelp sm ("+":_)       = H.keywordHelp sm "with"
-runHelp _  ("copying":_) = H.copyingStr
-runHelp sm xs            = intercalate "\n"
-                           . map ( H.longCmdHelpStr sm . route )
-                           $ xs
+helpCommands :: [T.HelpInfo]
+helpCommands = map T.cmdHelp hub
+
+getHelp :: T.StyleMap -> [String] -> Text
+getHelp sm []            = H.mainHelp sm $ helpCommands
+getHelp _  ("copying":_) = H.copyingStr
+getHelp sm xs            = Tx.intercalate "\n" . map (H.showHelp sm hs) $ xs
+    where hs = helpCommands ++ H.keywords ++ H.directives
 
 -- =============================================================== --
 -- Finalization

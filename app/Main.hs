@@ -5,6 +5,7 @@ module Main where
 -- =============================================================== --
 
 import qualified Model.Core.Types as T
+import qualified Data.Text.IO     as Tx
 import System.Environment               ( getArgs       )
 import Control.Monad.Except             ( runExceptT    )
 import Model.Core.ScriptParser          ( parse         )
@@ -13,7 +14,7 @@ import Controller                       ( finish
                                         , getStyleMap
                                         , initBtx
                                         , runBtx
-                                        , runHelp       )
+                                        , getHelp       )
 
 main :: IO ()
 main = do
@@ -21,6 +22,6 @@ main = do
     styles <- getStyleMap
     case either T.Usage parse input of
          T.Usage msg      -> finish . Left $ msg
-         T.Help cs        -> finish . Left . runHelp styles $ cs
+         T.Help cs        -> Tx.putStr $ getHelp styles $ cs
          T.Script mbFp cs -> let startUp = initBtx styles mbFp
                              in  runExceptT (startUp >>= runBtx cs) >>= finish

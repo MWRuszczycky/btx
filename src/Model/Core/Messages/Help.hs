@@ -2,11 +2,10 @@
 
 module Model.Core.Messages.Help
     ( -- General help messages
-      displayHelp
-    -- Keyword help strings
-    , keywordHelp
-    -- Directive help strings
-    , directiveHelp
+      mainHelp
+    , showHelp
+    , directives
+    , keywords
     -- Error messages
     , argInvalidErr
     , cmdInvalidErr
@@ -16,140 +15,131 @@ module Model.Core.Messages.Help
     , renameErr
     , unableToParseErr
     , uniqueBibErr
-    -- Help formatting
-    , shortCmdHelpStr
-    , longCmdHelpStr
     ) where
 
 -- =============================================================== --
--- Help, errors and other information messages
+-- Help, errors and other information messages                     --
 -- =============================================================== --
 
 import qualified Model.Core.Types      as T
-import Data.Text                             ( pack, unpack        )
+import qualified Data.Text             as Tx
+import Data.Text                             ( Text                )
 import Data.List                             ( intercalate, find   )
-import Model.Core.Formatting                 ( style               )
+import Model.Core.Formatting                 ( style, padRight     )
 
 -- =============================================================== --
--- Local helper types
+-- Main help messages
 
-data DirectiveHelp = DirectiveHelp {
-      dirName  :: String
-    , dirArgs  :: String
-    , dirShort :: String
-    , dirLong  :: String
-    }
+mainHelp :: T.StyleMap -> [T.HelpInfo] -> Text
+mainHelp sm commands = Tx.unlines
+    [ mainHelpHeader sm
+    , section sm "usage"
+    , "btx DIRECTIVE | SCRIPT"
+    , section sm "directives"              , summaryList sm directives
+    , section sm "script keyword summaries", summaryList sm keywords
+    , section sm "script command summaries", summaryList sm commands
+    , section sm "copying"                 , mainHelpFooter
+    ]
 
-data KeywordHelp = KeywordHelp {
-      kwName  :: String
-    , kwShort :: String
-    , kwLong  :: String
-    }
+mainHelpHeader :: T.StyleMap -> Text
+mainHelpHeader sm = Tx.unwords
+    [ style sm "emph" "Welcome to btx!"
+    , "btx is a light-weight, command-line interface"
+    , "for working with\nBibTeX bibliography files."
+    ]
 
--- =============================================================== --
--- General help messages
+mainHelpFooter :: Text
+mainHelpFooter = Tx.unwords
+    [ "btx is free, open-source software maintained with full"
+    , "documentation and\n  licensing information at:"
+    , "https://github.com/MWRuszczycky/btx\n\nFor binary copyright information,"
+    , "try: btx help copying"
+    ]
 
-displayHelp :: T.StyleMap -> [T.Command T.Context] -> String
-displayHelp sm xs = unlines hs
-    where hs = [ helpStrHeader sm
-               , section sm "usage"
-               , "btx DIRECTIVE | SCRIPT"
-               , section sm "directives"              , directiveSummaries sm
-               , section sm "script keyword summaries", keywordSummaries sm
-               , section sm "script command summaries", summarizeCommands sm xs
-               , section sm "copying"                 , helpStrFooter
-               ]
-
-helpStrHeader :: T.StyleMap -> String
-helpStrHeader sm = unpack (style sm "emph" "Welcome to btx!")
-                   ++ " btx is a light-weight, command-line interface"
-                   ++ " for working with\nBibTeX bibliography files."
-
-helpStrFooter :: String
-helpStrFooter = intercalate "\n" hs
-    where hs = [ "btx is free, open-source software maintained with full"
-                 ++ " documentation and\n  licensing information at:"
-                 ++ " https://github.com/MWRuszczycky/btx\n"
-               , "For binary copyright information, try: btx help copying"
-               ]
-
-section :: T.StyleMap -> String -> String
-section sm name =
-     let n  = length name
-         ds = replicate (80 - n - 5) '-'
-         nm = pack name
-     in  "\n-- " ++ unpack (style sm "header" nm) ++ " " ++ ds
-
-summarizeCommands :: T.StyleMap -> [T.Command T.Context] -> String
-summarizeCommands sm xs =
-    let nLen = maximum . map ( length . T.cmdName ) $ xs
-        aLen = maximum . map ( length . T.cmdArgs ) $ xs
-    in  intercalate "\n" . map (shortCmdHelpStr sm nLen aLen) $ xs
-
-directiveSummaries :: T.StyleMap -> String
-directiveSummaries sm =
-    let nLen = maximum . map ( length . dirName ) $ directives
-        aLen = maximum . map ( length . dirArgs ) $ directives
-    in  intercalate "\n" . map (shortDirHelpStr sm nLen aLen) $ directives
-
-keywordSummaries :: T.StyleMap -> String
-keywordSummaries sm =
-    let nLen = maximum . map ( length . kwName ) $ keywords
-    in  intercalate "\n" . map ( shortKwHelpStr sm nLen ) $ keywords
+section :: T.StyleMap -> Text -> Text
+section sm name = Tx.unwords
+    [ "\n--"
+    , style sm "header" name
+    , Tx.replicate (80 - Tx.length name - 5) "-"
+    ]
 
 -- =============================================================== --
--- Keyword help strings
+-- Help Formatting
 
----------------------------------------------------------------------
--- Formatting
+showHelp :: T.StyleMap -> [T.HelpInfo] -> String -> Text
+showHelp sm hs x = let name = Tx.pack x
+                   in  maybe ( "No help for <" <> name <> ">\n" )
+                             ( detailedHelp sm                  )
+                       . find ( elem name . T.names ) $ hs
 
-keywordHelp :: T.StyleMap -> String -> String
-keywordHelp sm x = maybe ("No such keyword " ++ x) (longKwHelpStr sm)
-                   . find ( (== x) . kwName )
-                   $ keywords
+formatAllNames :: T.StyleMap -> Int -> T.HelpInfo -> Text
+formatAllNames sm width h = padRight width ns
+    where ns = Tx.intercalate " | " . map (style sm "emph") . T.names $ h
 
-shortKwHelpStr :: T.StyleMap -> Int -> KeywordHelp -> String
-shortKwHelpStr sm padName (KeywordHelp name helpStr _) =
-    shortHelpStr sm (padName, name) (0, "") helpStr
+formatMainName :: T.StyleMap -> Int -> T.HelpInfo -> Text
+formatMainName sm width h = case T.names h of
+                                 []    -> padRight width Tx.empty
+                                 (n:_) -> style sm "emph" . padRight width $ n
 
-longKwHelpStr :: T.StyleMap -> KeywordHelp -> String
-longKwHelpStr sm kw
-    | null $ kwLong kw = hdr ++ "\n"
-    | otherwise        = hdr ++ bdy
-    where hdr = shortKwHelpStr sm 0 kw
-          bdy = "\n\n" ++ kwLong kw
+detailedHelp :: T.StyleMap -> T.HelpInfo -> Text
+detailedHelp sm h
+    | Tx.null $ T.longHelp h = hdr <> "\n"
+    | otherwise              = hdr <> bdy
+    where bdy = "\n\n" <> T.longHelp h
+          hdr = Tx.unwords [ formatAllNames sm 0 h
+                           , T.usage h
+                           , ":"
+                           , style sm "command" . T.shortHelp $ h
+                           ]
 
----------------------------------------------------------------------
--- Help strings
+summaryHelp :: T.StyleMap -> Int -> Int -> T.HelpInfo -> Text
+summaryHelp sm nw uw h = Tx.unwords [ formatMainName sm nw h
+                                    , padRight uw . T.usage $ h
+                                    , ":"
+                                    , style sm "command" . T.shortHelp $ h
+                                    ]
 
-keywords :: [KeywordHelp]
+summaryList :: T.StyleMap -> [T.HelpInfo] -> Text
+summaryList sm hs =
+    let go (T.HelpInfo []    _ _ _ ) = 0
+        go (T.HelpInfo (n:_) _ _ _ ) = Tx.length n
+        nLen = maximum . map go $ hs
+        uLen = maximum . map ( Tx.length . T.usage ) $ hs
+    in  Tx.intercalate "\n" . map ( summaryHelp sm nLen uLen ) $ hs
+
+-- =============================================================== --
+-- Help for keywords
+
+keywords :: [T.HelpInfo]
 keywords = [ andHelp
            , withHelp
            , allHelp
            ]
 
-andHelp :: KeywordHelp
-andHelp = KeywordHelp n s (unlines l)
-    where n = "and"
-          s = "separates btx commands (same as ',' and '\\n')"
-          l = [ "The <and> keyword is used to separate btx scripting"
-              , "commands in a btx script. For example,\n"
-              , "    btx in animals.bib and get Cats2016 and view\n"
-              , "The <and> keyword can be abbreviated in two ways. The first"
-              , "is a comma, so that the above is the same as\n"
-              , "    btx in animals.bib, get Cats2016, view\n"
-              , "The second is a line break, which is useful for writing"
-              , "scripts as separate files. Continuing with the example:\n"
-              , "    in animals.bib"
-              , "        get Cats2016"
-              , "        view"
-              ]
+andHelp :: T.HelpInfo
+andHelp = T.HelpInfo ns us sh (Tx.unlines lh)
+    where ns = [ "and", "\\n", "," ]
+          us = Tx.empty
+          sh = "separates btx commands"
+          lh = [ "The <and> keyword is used to separate btx scripting"
+               , "commands in a btx script. For example,\n"
+               , "    btx in animals.bib and get Cats2016 and view\n"
+               , "The <and> keyword can be abbreviated in two ways. The first"
+               , "is a comma, so that the above is the same as\n"
+               , "    btx in animals.bib, get Cats2016, view\n"
+               , "The second is a line break, which is useful for writing"
+               , "scripts as separate files. Continuing with the example:\n"
+               , "    in animals.bib"
+               , "        get Cats2016"
+               , "        view"
+               ]
 
-withHelp :: KeywordHelp
-withHelp = KeywordHelp n s (unlines l)
-    where n = "with"
-          s = "eliminate preceding <and> or its equivalent (same as '+')"
-          l = [ "The <with> keyword is used to eliminate an <and> or its"
+withHelp :: T.HelpInfo
+withHelp = T.HelpInfo ns us sh (Tx.unlines lh)
+    where ns = [ "with", "+" ]
+          us = Tx.empty
+          sh = "eliminate preceding <and> or its equivalent (same as '+')"
+          lh = [ "The <with> keyword is used to eliminate an <and> or its"
                , "equivalent that immediately precedes it. This can be used to"
                , "more easily pass a large number of arguments to a single btx"
                , "scripting command. For example, if we have a file containing"
@@ -174,11 +164,12 @@ withHelp = KeywordHelp n s (unlines l)
                , "been interpreted as scripting commands."
                ]
 
-allHelp :: KeywordHelp
-allHelp = KeywordHelp n s (unlines l)
-    where n = "all"
-          s =  "apply command to all entries in the context or bibliography"
-          l = [ "The <all> keyword can be supplied to the commands <get>,"
+allHelp :: T.HelpInfo
+allHelp = T.HelpInfo ns us sh (Tx.unlines lh)
+    where ns = ["all"]
+          us = Tx.empty
+          sh =  "apply command to all entries in the context or bibliography"
+          lh = [ "The <all> keyword can be supplied to the commands <get>,"
                , "<pull> and <take> so that they apply to all entries in a"
                , "given bibliography. For example,\n"
                , "  get all\n"
@@ -188,64 +179,42 @@ allHelp = KeywordHelp n s (unlines l)
                ]
 
 -- =============================================================== --
--- Directive help strings
+-- Help for directives
 
----------------------------------------------------------------------
--- Formatting
-
-directiveHelp :: T.StyleMap -> String -> String
-directiveHelp sm x = maybe ("No such directive " ++ x) (longDirHelpStr sm)
-                     . find ( (== x) . dirName )
-                     $ directives
-
-shortDirHelpStr :: T.StyleMap -> Int -> Int -> DirectiveHelp -> String
-shortDirHelpStr sm padName padArgs (DirectiveHelp name args helpStr _) =
-    shortHelpStr sm (padName, name) (padArgs, args) helpStr
-
-longDirHelpStr :: T.StyleMap -> DirectiveHelp -> String
-longDirHelpStr sm d
-    | null $ dirLong d = hdr ++ "\n"
-    | otherwise        = hdr ++ bdy
-    where hdr = shortDirHelpStr sm 0 0 d
-          bdy = "\n\n" ++ dirLong d
-
----------------------------------------------------------------------
--- Help strings
-
-directives :: [DirectiveHelp]
+directives :: [T.HelpInfo]
 directives = [ helpHelp
              , runHelp
              , versionHelp
              ]
 
-helpHelp :: DirectiveHelp
-helpHelp = DirectiveHelp n a s ""
-    where n = "help"
-          a = "ARGUMENT"
-          s = "show this help screen or more help for ARGUMENT"
+helpHelp :: T.HelpInfo
+helpHelp = T.HelpInfo ns us sh Tx.empty
+    where ns = [ "help" ]
+          us = "ARGUMENT"
+          sh = "show this help screen or more help for ARGUMENT"
 
-versionHelp :: DirectiveHelp
-versionHelp = DirectiveHelp n "" s ""
-    where n = "version"
-          s = "display version information"
+versionHelp :: T.HelpInfo
+versionHelp = T.HelpInfo ns Tx.empty sh Tx.empty
+    where ns = [ "version" ]
+          sh = "display version information"
 
-runHelp :: DirectiveHelp
-runHelp = DirectiveHelp n a s (unlines l)
-    where n = "run"
-          a = "FILE-PATH"
-          s = "run btx script from a file"
-          l = [ "Rather than run a script entered at the command line, you"
-              , "can use the <run> directive to run a script from a text file."
-              , "In this case you can take advantage of line breaks and the"
-              , "<with> command to better lay out the script. Line breaks are"
-              , "directly interpreted as <and> keywords (see help and). White-"
-              , "space is otherwise ignored. If no FILE-PATH is supplied to"
-              , "<run>, then btx attempts to read commands from standard input"
-              , "producing a REPL-like interpreter. To exit this interactive"
-              , "editing of bibliographies, use <ctrl-c> after saving your"
-              , "work with the <save> command (see also help for the <and>,"
-              , "<save> and <with> keywords and commands)."
-              ]
+runHelp :: T.HelpInfo
+runHelp = T.HelpInfo ns us sh (Tx.unlines lh)
+    where ns = [ "run" ]
+          us = "FILE-PATH"
+          sh = "run btx script from a file"
+          lh = [ "Rather than run a script entered at the command line, you"
+               , "can use the <run> directive to run a script from a text file."
+               , "In this case you can take advantage of line breaks and the"
+               , "<with> command to better lay out the script. Line breaks are"
+               , "directly interpreted as <and> keywords (see help and). White-"
+               , "space is otherwise ignored. If no FILE-PATH is supplied to"
+               , "<run>, then btx attempts to read commands from standard input"
+               , "producing a REPL-like interpreter. To exit this interactive"
+               , "editing of bibliographies, use <ctrl-c> after saving your"
+               , "work with the <save> command (see also help for the <and>,"
+               , "<save> and <with> keywords and commands)."
+               ]
 
 -- =============================================================== --
 -- Error messages
@@ -288,23 +257,3 @@ uniqueBibErr fp = unlines es
                , fp
                , "(Try: btx help in)"
                ]
-
--- =============================================================== --
--- General help formatting
-
-padRightStr :: Int -> String -> String
-padRightStr n x = x ++ replicate (n - length x) ' '
-
-shortHelpStr :: T.StyleMap -> (Int,String) -> (Int,String) -> String -> String
-shortHelpStr sm (padName, name) (padArgs, args) helpStr =
-    let nm = style sm "emph"    . pack . padRightStr padName $ name
-        hs = style sm "command" . pack $ helpStr
-        as = padRightStr padArgs args
-    in  unpack nm ++ " " ++ as ++ " : " ++ unpack hs
-
-shortCmdHelpStr :: T.StyleMap -> Int -> Int -> T.Command T.Context -> String
-shortCmdHelpStr sm namePad argPad (T.Command name _ args helpStr _) =
-    shortHelpStr sm (namePad, name) (argPad, args) helpStr
-
-longCmdHelpStr :: T.StyleMap -> T.Command T.Context -> String
-longCmdHelpStr sm c = shortCmdHelpStr sm 0 0 c ++ "\n\n" ++ T.cmdLHelp c

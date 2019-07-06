@@ -14,11 +14,12 @@ module Model.BibTeX.Resources
 import qualified Data.Text        as Tx
 import qualified Data.Map.Strict  as Map
 import qualified Model.Core.Types as T
+import Data.Text                         ( Text )
 
 -- =============================================================== --
 -- Standard references
 
-supported :: [ (String, T.Entry) ]
+supported :: [ (Text, T.Entry) ]
 -- ^Associative list of all supported reference types.
 supported = [ ( "article",       article       )
             , ( "book",          book          )
@@ -40,7 +41,7 @@ templates :: [(T.Key, String)] -> T.Context
 -- ^Create blank templates based on a list of BibTeX entry types and
 -- corresponding keys to name them with.
 templates = map ( \ (k,x) -> T.Ref "new-entry" k (go x) )
-    where go t = maybe misc id . lookup t $ supported
+    where go t = maybe misc id . lookup (Tx.pack t) $ supported
 
 uniqueKeys :: T.Bibliography -> [T.Key]
 -- ^List of key names that are not already in the bibliogrphy.

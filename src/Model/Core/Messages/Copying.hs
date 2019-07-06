@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Model.Core.Messages.Copying
     ( copyingStr
     ) where
@@ -6,10 +8,10 @@ module Model.Core.Messages.Copying
 -- License string with copyright information
 -- =============================================================== --
 
-import Data.List ( intercalate )
+import qualified Data.Text as Tx
 
-copyingStr :: String
-copyingStr = intercalate "\n"
+copyingStr :: Tx.Text
+copyingStr = Tx.intercalate "\n"
   [ "The btx binary contains code generated from the following sources. Each of"
   , "the licenses represented are reproduced in full below.\n"
   , "btx | BSD-3"
@@ -87,20 +89,20 @@ copyingStr = intercalate "\n"
   , "    Maintainer: Bryan O'Sullivan"
   , "    https://hackage.haskell.org/package/wreq\n"
   , "\nDetails of each license type:\n"
-  , replicate 80 '-'
+  , Tx.replicate 80 "-"
   , ghcLicense
-  , replicate 80 '-'
+  , Tx.replicate 80 "-"
   , spj2002
-  , replicate 80 '-'
+  , Tx.replicate 80 "-"
   , mmtc2002
-  , replicate 80 '-'
+  , Tx.replicate 80 "-"
   , bsd2License
-  , replicate 80 '-'
+  , Tx.replicate 80 "-"
   , bsd3License
   ]
 
-bsd2License :: String
-bsd2License = unlines
+bsd2License :: Tx.Text
+bsd2License = Tx.unlines
   [ "BSD-2\n"
   , "Redistribution and use in source and binary forms, with or without"
   , "modification, are permitted provided that the following conditions"
@@ -124,8 +126,8 @@ bsd2License = unlines
   , "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
   ]
 
-bsd3License :: String
-bsd3License = unlines
+bsd3License :: Tx.Text
+bsd3License = Tx.unlines
   [ "BSD-3\n"
   , "Redistribution and use in source and binary forms, with or without"
   , "modification, are permitted provided that the following conditions"
@@ -151,8 +153,8 @@ bsd3License = unlines
   , "POSSIBILITY OF SUCH DAMAGE."
   ]
 
-ghcLicense :: String
-ghcLicense = unlines
+ghcLicense :: Tx.Text
+ghcLicense = Tx.unlines
   [ "The Glasgow Haskell Compiler License\n"
   , "Copyright 2004, The University Court of the University of Glasgow."
   , "All rights reserved.\n"
@@ -180,8 +182,8 @@ ghcLicense = unlines
   , "DAMAGE."
   ]
 
-spj2002 :: String
-spj2002 = unlines
+spj2002 :: Tx.Text
+spj2002 = Tx.unlines
   [ "SPJ-Haskell98\n"
   , "Code derived from the document 'Report on the Programming Language"
   , "Haskell 98', is distributed under the following license:\n"
@@ -195,8 +197,8 @@ spj2002 = unlines
   , "  be a definition of the Haskell 98 Language."
   ]
 
-mmtc2002 :: String
-mmtc2002 = unlines
+mmtc2002 :: Tx.Text
+mmtc2002 = Tx.unlines
   [ "MMTC-Haskell98\n"
   , "Code derived from the document 'The Haskell 98 Foreign Function"
   , "Interface, An Addendum to the Haskell 98 Report' is distributed under"

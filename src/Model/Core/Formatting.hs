@@ -8,6 +8,7 @@ module Model.Core.Formatting
     , viewRef
     , viewRefTex
     , summarize
+    , padRight
       -- Styling text and style maps
     , noStyles
     , defaultStyles
