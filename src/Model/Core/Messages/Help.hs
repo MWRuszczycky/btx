@@ -89,14 +89,14 @@ detailedHelp sm h
           hdr = Tx.unwords [ formatAllNames sm 0 h
                            , T.usage h
                            , ":"
-                           , style sm "command" . T.shortHelp $ h
+                           , style sm "short" . T.shortHelp $ h
                            ]
 
 summaryHelp :: T.StyleMap -> Int -> Int -> T.HelpInfo -> Text
 summaryHelp sm nw uw h = Tx.unwords [ formatMainName sm nw h
                                     , padRight uw . T.usage $ h
                                     , ":"
-                                    , style sm "command" . T.shortHelp $ h
+                                    , style sm "short" . T.shortHelp $ h
                                     ]
 
 summaryList :: T.StyleMap -> [T.HelpInfo] -> Text
