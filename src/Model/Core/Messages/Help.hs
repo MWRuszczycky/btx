@@ -209,8 +209,8 @@ directives = [ helpHelp
 helpHelp :: T.HelpInfo
 helpHelp = T.HelpInfo ns us sh Tx.empty
     where ns = [ "help" ]
-          us = "ARGUMENT"
-          sh = "Show this help screen or more help for ARGUMENT"
+          us = "[ARGUMENT]"
+          sh = "Show main help screen or more help for ARGUMENT"
 
 versionHelp :: T.HelpInfo
 versionHelp = T.HelpInfo ns Tx.empty sh Tx.empty

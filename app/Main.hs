@@ -22,6 +22,6 @@ main = do
     styles <- getStyleMap
     case either T.Usage parse input of
          T.Usage msg      -> finish . Left $ msg
-         T.Help cs        -> Tx.putStr $ getHelp styles $ cs
+         T.Help cs        -> Tx.putStr . getHelp styles $ cs
          T.Script mbFp cs -> let startUp = initBtx styles mbFp
                              in  runExceptT (startUp >>= runBtx cs) >>= finish

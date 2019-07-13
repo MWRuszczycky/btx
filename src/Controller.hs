@@ -95,7 +95,7 @@ helpCommands :: [T.HelpInfo]
 helpCommands = map T.cmdHelp hub
 
 getHelp :: T.StyleMap -> [String] -> Text
-getHelp sm []            = H.mainHelp sm $ helpCommands
+getHelp sm []            = H.mainHelp sm helpCommands
 getHelp _  ("copying":_) = H.copyingStr
 getHelp sm xs            = Tx.intercalate "\n" . map (H.showHelp sm hs) $ xs
     where hs = helpCommands ++ H.keywords ++ H.directives
