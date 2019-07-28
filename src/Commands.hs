@@ -15,7 +15,7 @@ import qualified Model.Core.Types         as T
 import qualified Model.Core.Messages.Help as H
 import Data.List                                 ( find, foldl'     )
 import Control.Monad.Except                      ( throwError
-                                                 , liftEither       )
+                                                 , when, liftEither )
 import Control.Monad.State.Lazy                  ( get, gets, put
                                                  , modify, lift     )
 import Model.Core.Core                           ( addToLog
@@ -97,26 +97,28 @@ fromCmdHelp  = T.HelpInfo ns us sh (Tx.unlines lh)
                , "previously existing ones. The import bibliography is never"
                , "modified. The <from> command has the following effects:\n"
                , "  1. The context is left unchanged."
-               , "  2. If FILE-PATH does not exist, then an error is generated."
+               , "  2. If FILE-PATH does not exist, then it is an error."
                , "  3. If FILE-PATH is the same as the working bibliography,"
                , "     then the import bibliography becomes unset."
-               , "  4. If no FILE-PATH is provided, then the import"
+               , "  4. If FILE-PATH is the same as that for the export biblio-"
+               , "     graphy, then it is an error."
+               , "  5. If no FILE-PATH is provided, then the import"
                , "     bibliography becomes unset.\n"
                , "See also help for the <take> command."
                ]
 
 fromCmd :: T.CommandMonad T.Context
-fromCmd xs rs
-    | null xs       = get >>= \ b -> put b { T.fromBib = Nothing } >> pure rs
-    | length xs > 1 = throwError "Command <from> allows one or no argument.\n"
-    | otherwise     = do btxState <- get
-                         let fp = head xs
-                         if fp == ( T.path . T.inBib ) btxState
-                            then fromCmd [] rs
-                            else do content <- lift . readFileExcept $ fp
-                                    bib <- liftEither . parseBib fp $ content
-                                    put btxState { T.fromBib = Just bib }
-                                    pure rs
+fromCmd []      rs = modify ( \ b -> b { T.fromBib = Nothing } ) >> pure rs
+fromCmd (_:_:_) _  = throwError "Command <from> allows one or no argument.\n"
+fromCmd (fp:_)  rs = do btxState <- get
+                        let toPath = T.path <$> T.toBib btxState
+                        when (Just fp == toPath) $ throwError H.sameToFromBibs
+                        if fp == ( T.path . T.inBib ) btxState
+                           then fromCmd [] rs
+                           else do tex <- lift . readFileExcept $ fp
+                                   bib <- liftEither . parseBib fp $ tex
+                                   put btxState { T.fromBib = Just bib }
+                                   pure rs
 
 -- in command -------------------------------------------------------
 
@@ -183,7 +185,7 @@ toCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
           sh = "Reset or create new export bibliography"
           lh = [ "The export bibliography is separate from the working"
                , "bibliography (set with <in>) and represents a target where"
-               , "references can be exported using the <send> command. This"
+               , "references can be exported using the <send> command. The <to>"
                , "command has the following effects:\n"
                , "  1. Leave the current context unchanged."
                , "  2. Save the current export bibliography if it exists."
@@ -193,22 +195,26 @@ toCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
                , "  4. If FILE-PATH is the same as that for the working"
                , "     bibliography, then the export bibliography is unset and"
                , "     nothing else happens."
-               , "  5. If no file path argument is supplied, then the current"
+               , "  5. If FILE-PATH is the same as that for the import biblio-"
+               , "     graphy, then it is an error."
+               , "  6. If no FILE-PATH argument is supplied, then the current"
                , "     export bibliography is saved and unset.\n"
                , "See also help for the <send> command."
                ]
 
 toCmd :: T.CommandMonad T.Context
+toCmd []      rs = gets T.toBib >>= maybe ( pure () ) bibToFile
+                   >> modify ( \ b ->  b { T.toBib = Nothing } ) >> pure rs
 toCmd (_:_:_) _  = throwError "Command <to> allows only one or no argument.\n"
-toCmd xs      rs = do btxState <- get
-                      maybe ( pure () ) bibToFile $ T.toBib btxState
-                      let fp = head xs
-                      if null xs || fp == (T.path . T.inBib) btxState
-                         then put btxState { T.toBib = Nothing }
-                         else do content <- lift . readOrMakeFile $ fp
-                                 bib <- liftEither . parseBib fp $ content
-                                 put btxState { T.toBib = Just bib }
-                      pure rs
+toCmd (tp:_)  rs = do btxState <- get
+                      let fromPath = T.path <$> T.fromBib btxState
+                      when (Just tp == fromPath) $ throwError H.sameToFromBibs
+                      if tp == ( T.path . T.inBib ) btxState
+                          then toCmd [] rs
+                          else do tex <- lift . readOrMakeFile $ tp
+                                  bib <- liftEither . parseBib tp $ tex
+                                  put btxState { T.toBib = Just bib }
+                                  pure rs
 
 -- =============================================================== --
 -- Queries

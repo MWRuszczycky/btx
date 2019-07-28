@@ -16,6 +16,7 @@ module Model.Core.Messages.Help
     , missingScriptErr
     , noCommandsErr
     , renameErr
+    , sameToFromBibs
     , unableToParseErr
     , uniqueBibErr
     ) where
@@ -265,6 +266,9 @@ renameErr n r = intercalate "\n" es
                   ++ ") does not match"
                , "the number of new names supplied (" ++ show n ++ ")."
                ]
+
+sameToFromBibs :: T.ErrString
+sameToFromBibs = "Import and export bibliographies cannot have the same path.\n"
 
 unableToParseErr :: T.ErrString
 unableToParseErr  = "Unable to parse input. (Try: btx help)\n"
