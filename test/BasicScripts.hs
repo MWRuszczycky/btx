@@ -76,24 +76,31 @@ main = hspec $ around_ manageScriptTests $ do
                          "script-send-toss"
                          "testBib-formatted.bib"
                          "testExportBib-masked.bib"
+    describe "btx manages errors states correctly" $ do
+        testScriptError "fails on invalid commands"
+                        "script-bad-command"
+        testScriptError "will not allow import and export bibs to be the same"
+                        "script-same-import-export"
+        testScriptError "will not allow export and import bibs to be the same"
+                        "script-same-export-import"
 
 -- =============================================================== --
 -- Mocking the executable
 
-mock :: [String] -> IO Text
+mock :: [String] -> IO (Either Text Text)
 -- ^Mocks the main function for executing scripts.
 mock args = do
     input <- C.getInput args
     case either T.Usage M.parse input of
-         T.Usage msg      -> pure . pack $ msg
-         T.Help cs        -> pure . pack . unlines $ cs
+         T.Usage msg      -> pure . Left  . pack $ msg
+         T.Help cs        -> pure . Right . pack . unlines $ cs
          T.Script mbFp cs -> let startUp = C.initBtx F.noStyles mbFp
                              in  runExceptT ( startUp >>= C.runBtx cs )
                                  >>= mockFinish
 
-mockFinish :: Either String T.BtxState -> IO Text
-mockFinish (Left msg) = pure . pack $ msg ++ "\n"
-mockFinish (Right bs) = pure . (<> "\n") . T.logger $ bs
+mockFinish :: Either String T.BtxState -> IO (Either Text Text)
+mockFinish (Left msg) = pure . Left . pack $ msg ++ "\n"
+mockFinish (Right bs) = pure . Right . (<> "\n") . T.logger $ bs
 
 -- =============================================================== --
 -- Utilities for preparing tests, running them and cleaning up after
@@ -104,13 +111,16 @@ mockFinish (Right bs) = pure . (<> "\n") . T.logger $ bs
 manageScriptTests :: IO () -> IO ()
 -- ^Performs setup and teardown for a single-bibliography test.
 manageScriptTests = bracket_ setupBib tearDown
-    where setupBib = copyFile "test/bib/testBib.bib" "test/testBib.bib"
+    where setupBib = do copyFile "test/bib/testBib.bib" "test/testBib.bib"
+                        copyFile "test/bib/testBib.bib" "test/testBib-copy.bib"
 
 testScriptOutputLog :: String -> String -> FilePath -> Spec
 testScriptOutputLog cue name target = it (makeTitle cue name) action
-    where action = do actualLog   <- getTestScript name >>= mock . words
+    where action = do result      <- getTestScript name >>= mock . words
                       expectedLog <- Tx.readFile $ "test/testLogs/" ++ target
-                      actualLog `shouldBe` expectedLog
+                      case result of
+                           Left  _         -> error "Script fails to execute!"
+                           Right actualLog -> actualLog `shouldBe` expectedLog
 
 testOneBibScript :: String -> String -> FilePath -> Spec
 -- ^Run tests involving only a single bibliography.
@@ -131,12 +141,20 @@ testExportScript cue name targetWk targetEx = it (makeTitle cue name) action
                       actualEx `shouldBe` expectedEx
                       actualWk `shouldBe` expectedWk
 
+testScriptError :: String -> String -> Spec
+testScriptError cue name = it (makeTitle cue name) action
+    where action = do let errMsg = "Invalid script executes without error!"
+                      result <- mock . words =<< getTestScript name
+                      case result of
+                           Left _ -> pure ()
+                           _      -> error errMsg
+
 getTestScript :: String -> IO String
 -- ^Finds the test script by name from the /test/scripts.txt file.
 getTestScript name = do
     scripts <- map ( break (== ':') ) . lines <$> readFile "test/scripts.txt"
     case lookup name scripts of
-         Nothing -> pure []
+         Nothing -> error $ "Cannot find test script: " <> name
          Just x  -> pure . tail $ x
 
 makeTitle :: String -> String -> String
