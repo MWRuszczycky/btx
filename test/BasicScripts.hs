@@ -83,6 +83,8 @@ main = hspec $ around_ manageScriptTests $ do
                         "script-same-import-export"
         testScriptError "will not allow export and import bibs to be the same"
                         "script-same-export-import"
+        testScriptError "will not allow take before from"
+                        "script-take-from"
 
 -- =============================================================== --
 -- Mocking the executable
@@ -142,12 +144,17 @@ testExportScript cue name targetWk targetEx = it (makeTitle cue name) action
                       actualWk `shouldBe` expectedWk
 
 testScriptError :: String -> String -> Spec
+-- ^When an error occurs, the original bibliography should be unchanged.
 testScriptError cue name = it (makeTitle cue name) action
     where action = do let errMsg = "Invalid script executes without error!"
+                          path0  = "test/bib/testBib.bib"
+                          path1  = "test/testBib.bib"
                       result <- mock . words =<< getTestScript name
                       case result of
-                           Left _ -> pure ()
-                           _      -> error errMsg
+                           Right _ -> error errMsg
+                           Left  _ -> do expected <- readFile path0
+                                         actual   <- readFile path1
+                                         expected `shouldBe` actual
 
 getTestScript :: String -> IO String
 -- ^Finds the test script by name from the /test/scripts.txt file.

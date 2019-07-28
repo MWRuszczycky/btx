@@ -13,6 +13,8 @@ module Model.Core.Messages.Help
     , argInvalidErr
     , cmdInvalidErr
     , invalidUsageErr
+    , missingFromBibErr
+    , missingToBibErr
     , missingScriptErr
     , noCommandsErr
     , renameErr
@@ -249,6 +251,12 @@ invalidUsageErr :: String -> T.ErrString
 invalidUsageErr c = unwords [ "Invalid usage for command <" ++ c ++ ">."
                             , "(Try: btx help " ++ c ++ ")\n"
                             ]
+
+missingFromBibErr :: T.ErrString
+missingFromBibErr = "Use of <take> without an import bibliography being set.\n"
+
+missingToBibErr :: T.ErrString
+missingToBibErr = "Use of <send> without an export bibliography being set.\n"
 
 missingScriptErr :: T.ErrString
 missingScriptErr = "Script file required (Try: btx help in).\n"

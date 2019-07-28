@@ -439,10 +439,9 @@ takeCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
           lh = [ "This command is the same as <get>; however the entries are"
                , "copied to the context from the import bibliography rather"
                , "than the working bibliography. If the import bibliography is"
-               , "unset, then the context is just cleared after updating the"
-               , "working bibliography first. You can also copy all the entries"
-               , "in the import bibliography to the context using the <all>"
-               , "keyword. For example, the script\n"
+               , "unset, then using <take> will result in an error. You can"
+               , "also copy all the entries in the import bibliography to the"
+               , "context using the <all> keyword. For example, the script\n"
                , "    btx in Working.bib, from Import.bib, take all\n"
                , "will add all the entries in Import.bib to Working.bib. If"
                , "Working.bib did not previously exist, then this is the same"
@@ -450,12 +449,12 @@ takeCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
                ]
 
 takeCmd :: T.CommandMonad T.Context
-takeCmd ("all":_) rs = do xs <- maybe [] allKeysToArgs . T.fromBib <$> get
+takeCmd ("all":_) rs = do xs <- gets $ maybe [] allKeysToArgs . T.fromBib
                           takeCmd xs rs
 takeCmd xs        rs = do updateIn rs
-                          btxState <- get
-                          case T.fromBib btxState of
-                               Nothing  -> pure []
+                          fromBib <- gets T.fromBib
+                          case fromBib of
+                               Nothing  -> throwError $ H.missingFromBibErr
                                Just bib -> pure . map ( getRef bib ) $ xs
 
 -- =============================================================== --
