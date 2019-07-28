@@ -39,6 +39,7 @@ import Model.BibTeX.Resources                    ( genericKey
 import Model.Core.Formatting                     ( viewRef
                                                  , viewRefTex
                                                  , summarize
+                                                 , toAscii
                                                  , listEntry        )
 
 -- =============================================================== --
@@ -288,7 +289,7 @@ doiCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
 doiCmd :: T.CommandMonad T.Context
 doiCmd xs rs = do
     updateIn rs
-    lift . mapM getDoi $ xs
+    lift . mapM (getDoi toAscii) $ xs
 
 -- find command -----------------------------------------------------
 

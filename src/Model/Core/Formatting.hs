@@ -9,6 +9,8 @@ module Model.Core.Formatting
     , viewRefTex
     , summarize
     , padRight
+      -- Decoding and formatting ByteStrings
+    , toAscii
       -- Styling text and style maps
     , noStyles
     , defaultStyles
@@ -21,8 +23,10 @@ module Model.Core.Formatting
 
 import qualified System.Console.ANSI as Ans
 import qualified Data.Text           as Tx
+import qualified Data.Text.Encoding  as Tx
 import qualified Data.Map.Strict     as Map
 import qualified Model.Core.Types    as T
+import qualified Data.ByteString     as BS
 import Data.Text                            ( Text                )
 import Data.List                            ( foldl'              )
 import System.Console.ANSI.Types            ( Color (..)
@@ -186,6 +190,16 @@ breakToFit n x
                       | Tx.null w2 = (t <> " " <> w1) : ts -- everthing fits
                       | otherwise  = go [] w ++ (t : ts)   -- doesn't fit
                       where (w1,w2) = Tx.splitAt ( n - Tx.length t - 1 ) w
+
+-- =============================================================== --
+-- Decoding and formatting ByteStrings
+
+toAscii :: BS.ByteString -> Text
+-- ^Converts a bytestring to text changing all non-ascii characters
+-- to bracketed question marks.
+toAscii = Tx.concatMap go . Tx.decodeUtf8
+    where go c | fromEnum c < 128 = Tx.singleton c
+               | otherwise        = "[?]"
 
 -- =============================================================== --
 -- Styling text for terminal display

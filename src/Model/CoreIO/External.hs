@@ -9,27 +9,27 @@ module Model.CoreIO.External
 -- IO DSL for commands involving the internet and external processes
 -- =============================================================== --
 
-import qualified Data.Text             as Tx
-import qualified Data.Text.Encoding    as Tx
-import qualified Network.Wreq          as Wreq
-import qualified Model.Core.Types      as T
-import qualified Model.CoreIO.ErrMonad as E
-import Data.ByteString.Lazy.Internal           ( ByteString       )
-import Data.ByteString.Lazy                    ( toStrict         )
-import Data.Bifunctor                          ( bimap            )
-import Lens.Micro                              ( (^.), (.~), (&)  )
-import Data.Text                               ( Text             )
-import System.Directory                        ( removeFile       )
-import System.IO.Temp                          ( emptyTempFile    )
-import Control.Monad.Trans                     ( liftIO           )
-import Control.Monad.Except                    ( ExceptT (..)
-                                               , throwError
-                                               , catchError
-                                               , liftEither       )
-import Control.Exception                       ( SomeException
-                                               , catch            )
-import Model.Core.Formatting                   ( refToBibtex      )
-import Model.BibTeX.Parser                     ( parseRef         )
+import qualified Data.Text                     as Tx
+import qualified Network.Wreq                  as Wreq
+import qualified Model.Core.Types              as T
+import qualified Model.CoreIO.ErrMonad         as E
+import qualified Data.ByteString               as BS
+import qualified Data.ByteString.Lazy.Internal as BSL
+import Data.ByteString.Lazy                             ( toStrict         )
+import Data.Bifunctor                                   ( bimap            )
+import Lens.Micro                                       ( (^.), (.~), (&)  )
+import Data.Text                                        ( Text             )
+import System.Directory                                 ( removeFile       )
+import System.IO.Temp                                   ( emptyTempFile    )
+import Control.Monad.Trans                              ( liftIO           )
+import Control.Monad.Except                             ( ExceptT (..)
+                                                        , throwError
+                                                        , catchError
+                                                        , liftEither       )
+import Control.Exception                                ( SomeException
+                                                        , catch            )
+import Model.Core.Formatting                            ( refToBibtex      )
+import Model.BibTeX.Parser                              ( parseRef         )
 
 -- =============================================================== --
 -- Handling external processes with temporary files
@@ -97,38 +97,34 @@ wantsToAbort = Tx.null . Tx.dropWhile ( /= '@' )
 -- =============================================================== --
 -- Interfacing with the internet
 
-type WreqResponse = Wreq.Response ByteString
+type WreqResponse = Wreq.Response BSL.ByteString
+type DOI          = String
+type WebAddress   = String
+type Decoder      = BS.ByteString -> Text
 
-getDoi :: String -> T.ErrMonad T.Ref
+getDoi :: Decoder -> DOI -> T.ErrMonad T.Ref
 -- ^Attempt to download a BibTeX reference from a doi. Retrieving
 -- references with the indicated Accept header and doi address should
 -- result in braced rather than quoted reference fields.
-getDoi doi = do
+getDoi decode doi = do
     let ps = [ "text/bibliography; style=bibtex" ]
         os = Wreq.defaults & Wreq.header "Accept" .~ ps
         ad = "https://doi.org/" ++ doi
-    catchError ( tryToConnectWithGet os ad >>= readResponse ad )
-               ( pure . T.Missing doi "no-key"                 )
+    catchError ( tryToConnectWithGet os ad >>= readResponse decode ad )
+               ( pure . T.Missing doi "no-key"                           )
 
-tryToConnectWithGet :: Wreq.Options -> String -> T.ErrMonad WreqResponse
+tryToConnectWithGet :: Wreq.Options -> WebAddress -> T.ErrMonad WreqResponse
 tryToConnectWithGet ops address = ExceptT $ do
     liftIO . catch ( Right <$> Wreq.getWith ops address ) $ hndlErr
     where hndlErr :: SomeException -> IO ( Either T.ErrString WreqResponse )
           hndlErr _ = pure . Left $ "Unable to connect to " ++ address
 
-readResponse :: String -> WreqResponse -> T.ErrMonad T.Ref
+readResponse :: Decoder -> WebAddress -> WreqResponse -> T.ErrMonad T.Ref
 -- ^Helper function for reading the response to a get request.
-readResponse ad resp
-    | code == 200 = liftEither . perr . parseRef ad . format $ body
+readResponse decode ad resp
+    | code == 200 = liftEither . perr . parseRef ad . decode . toStrict $ body
     | otherwise   = liftEither . Left $ errs
     where code = resp ^. Wreq.responseStatus . Wreq.statusCode
           body = resp ^. Wreq.responseBody
           errs = "Cannot access " ++ ad ++ ", error code: " ++ show code
           perr = bimap ("Cannot parse: " ++) id
-
-format :: ByteString -> Text
--- ^Converts a bytestring to text changing all non-ascii characters
--- to bracketed question marks.
-format = Tx.concatMap toAscii . Tx.decodeUtf8 . toStrict
-    where toAscii c | fromEnum c < 128 = Tx.singleton c
-                    | otherwise        = "[?]"
