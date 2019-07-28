@@ -1,6 +1,6 @@
 # *btx*
 
-This is a light-weight, command-line interface for working with basic *BibTeX* bibliographies (i.e., `.bib` files). A more complete description about how *btx* works with several examples can be found in the [*btx* wiki](https://github.com/MWRuszczycky/btx/wiki) and detailed help information can also be found by running `btx help`.
+This is a light-weight, command-line interface for working with basic *BibTeX* bibliographies (i.e., `.bib` files). A short tutorial describing how *btx* works can be found in the [*btx* wiki](https://github.com/MWRuszczycky/btx/wiki), and detailed help information can be found by running `btx help`.
 
 **Note:** The parser used by *btx* will not work with all *BibTeX* files, especially those that do not use the braced-format (see below). Likewise, *btx* collects and reformats all data between entries as metadata associated with the preceding reference entry. So, **please play around with it using a test bibliography before trying it with anything you care about**.
 
@@ -73,5 +73,4 @@ stack test
 ## To do and known issues
 
 * See if there is away to fix the script parser to work more cleanly with escaped characters entered at the command line.
-* Include a test bibliography and a short getting-started tutorial.
 * Fix/add a real REPL.
