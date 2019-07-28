@@ -536,8 +536,7 @@ sendCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
                , "  1. Update the export bibliography with the current context"
                , "     overwritting any references that have the same keys."
                , "  2. Depopulate the context."
-               , "  3. If no export bibliography is set, then nothing happens"
-               , "     besides depopulation of the context."
+               , "  3. If no export bibliography is set, then it's an error."
                , "  4. Ignore any arguments.\n"
                , "This command is used with the <to> command, which sets the"
                , "export bibliography (see help for <to>). However, there is"
@@ -549,8 +548,10 @@ sendCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
                ]
 
 sendCmd :: T.CommandMonad T.Context
-sendCmd ("to":xs) rs = toCmd xs rs >>= sendCmd []
-sendCmd _         rs = updateTo rs >> pure []
+sendCmd ("to":xs) rs = toCmd xs rs  >>= sendCmd []
+sendCmd _         rs = gets T.toBib >>= maybe err go
+    where err  = throwError H.missingToBibErr
+          go _ = updateTo rs >> pure []
 
 -- toss command -----------------------------------------------------
 

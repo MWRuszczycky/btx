@@ -85,6 +85,8 @@ main = hspec $ around_ manageScriptTests $ do
                         "script-same-export-import"
         testScriptError "will not allow take before from"
                         "script-take-from"
+        testScriptError "will not allow send before to"
+                        "script-send-before-to"
 
 -- =============================================================== --
 -- Mocking the executable

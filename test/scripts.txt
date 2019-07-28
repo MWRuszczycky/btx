@@ -28,4 +28,6 @@ script-same-import-export: in test/testBib.bib, pull Cats2016, from test/testBib
 
 script-same-export-import: in test/testBib.bib, pull Cats2016, to test/testBib-copy.bib, from test/testBib-copy.bib, take Felines2016 and send
 
-script-take-from: in test/testBib.bib, pull Cats2016, take Frogs1987 and view
+script-take-from: in test/testBib.bib, pull Cats2016, take Frogs1987, from test/testBib-copy.bib and view
+
+script-send-before-to: in test/testBib.bib, pull Cats2016, send, to test/testBib-copy.bib and view
