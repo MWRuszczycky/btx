@@ -72,5 +72,9 @@ stack test
 
 ## To do and known issues
 
-* See if there is away to fix the script parser to work more cleanly with escaped characters entered at the command line.
-* Fix/add a real REPL.
+* If an entry is going to be replaced, then provide a warning and some mechanism to change its key. This may require changing some of the commands. For example, `pull` becomes `get` and `get` becomes `copy` so that you are not annoyed by unnecessary replacement messages and don't have to use `pull` all the time.
+* Remove the `+` token and just require `,` in scripts even in files. The `+` interferes with some program names such as `notepad++`. This includes a refactor of the script parser.
+* Allow more than one reference to be edited at a time. This could be done by adding an `edits` command.
+* Add a configuration file to name a default bibliography file and a set of shortcuts to bibliography files.
+* Add commands for resorting, adding and deleting the fields of references.
+* Refactor the BibTeX parser to allow for quoted fields.
