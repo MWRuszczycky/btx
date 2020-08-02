@@ -1,5 +1,6 @@
 *.nix
 .stack-work/
+stack.yaml.lock
 dist/
 dev/
 result
