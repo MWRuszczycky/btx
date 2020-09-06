@@ -54,7 +54,7 @@ versionRequest = do
 -- Script parsing
 
 btxScript :: At.Parser T.Start
-btxScript = many aToken >>= pure . finalize . format
+btxScript = At.skipSpace *> many aToken >>= pure . finalize . format
 
 finalize :: [T.ParsedCommand] -> T.Start
 -- ^Finalize the parse by identifying the initial bibliography file.
@@ -67,39 +67,25 @@ finalize xs                = T.Script Nothing  xs
 format :: [String] -> [T.ParsedCommand]
 -- ^Format commands from the parsed script:
 -- 1. Remove any empty strings.
--- 2. Remove ', +' (i.e., <and with>) and read through argements.
--- 3. Remove isolated '+' (i.e., <with>) and read through arguments.
--- 4. Parse individual commands on ',' (i.e., <and>).
--- 5. Append a final <save> command.
+-- 2. Parse individual commands on ',' (i.e., <and>).
+-- 3. Append a final <save> command.
 format []       = [ ("save", []) ]
 format ("" :xs) = format xs
 format (",":xs) = format xs
-format ("+":xs) = format xs
-format (x  :xs) = case break ( flip elem [",", "+", ""] ) xs of
-                             (ys, "":zs     ) -> format $ x : (ys ++ zs)
-                             (ys, "+":zs    ) -> format $ x : (ys ++ zs)
-                             (ys, ",":"+":zs) -> format $ x : (ys ++ zs)
-                             (ys, zs        ) -> (x, ys) : format zs
+format (x  :xs) = case break ( flip elem [",", ""] ) xs of
+                             (ys, "":zs) -> format $ x : (ys <> zs)
+                             (ys,    zs) -> (x, ys) : format zs
 
 aToken :: At.Parser String
-aToken = do
-    At.skipWhile (== ' ')
-    At.choice [ withKey, andKey, aWord, quotedString ]
-
-withKey :: At.Parser String
-withKey = At.choice [ At.char   '+'    *> pure "+"
-                    , At.string "with" *> pure "+"
-                    ]
+aToken = At.choice [ andKey, aWord, quotedString ] <* At.skipSpace
 
 andKey :: At.Parser String
 andKey  = At.choice [ At.char   ','    *> pure ","
                     , At.string "and"  *> pure ","
-                    , At.char   '\n'   *> pure ","
-                    , At.string "\n\r" *> pure ","
                     ]
 
 aWord :: At.Parser String
-aWord = some $ At.satisfy (At.notInClass "+, \n\r'\"")
+aWord = some $ At.satisfy (At.notInClass ", \n\r'\"")
 
 quotedString :: At.Parser String
 quotedString = do

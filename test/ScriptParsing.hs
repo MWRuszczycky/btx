@@ -26,7 +26,7 @@ main = hspec $ do
             parse script102 `shouldBe` result102
             parse script103 `shouldBe` result103
             parse script104 `shouldBe` result104
-        it "handles variations of and/with/,/+/\\n" $ do
+        it "handles variations \\n and '+' correctly" $ do
             parse script201 `shouldBe` result201
             parse script202 `shouldBe` result202
             parse script203 `shouldBe` result203
@@ -97,12 +97,11 @@ result104 = T.Script (Just "plants.bib")
 ---------------------------------------------------------------------
 -- Variations with special tokens
 
-script201 = "in animals.bib, and and pull Cats2016 \n name Felines2018 and \n view"
+script201 = "in animals.bib, and and pull Cats2016 \n Felines2018 and \n view"
 result201 = T.Script (Just "animals.bib")
-                     [ ( "pull", ["Cats2016"]    )
-                     , ( "name", ["Felines2018"] )
-                     , ( "view", []              )
-                     , ( "save", []              )
+                     [ ( "pull", ["Cats2016", "Felines2018"] )
+                     , ( "view", []                          )
+                     , ( "save", []                          )
                      ]
 
 script202 = "and in animals.bib,,,, and,and pull Cats2016 and\n\n name Felines2018 and \n view and and"
@@ -113,37 +112,37 @@ result202 = T.Script (Just "animals.bib")
                      , ( "save", []              )
                      ]
 
-script203 = "in animals.bib, and and pull Cats2016 and with Dogs1977 \n name Felines2018 \n + Canines1981 and \n view"
+script203 = "in animals.bib, and and pull Cats2016 \n\n Dogs1977 \n, name Felines2018+ \n Canines1981++ and \n view"
 result203 = T.Script (Just "animals.bib")
-                     [ ( "pull", ["Cats2016", "Dogs1977"]       )
-                     , ( "name", ["Felines2018", "Canines1981"] )
-                     , ( "view", []                             )
-                     , ( "save", []                             )
+                     [ ( "pull", ["Cats2016", "Dogs1977"]          )
+                     , ( "name", ["Felines2018+", "Canines1981++"] )
+                     , ( "view", []                                )
+                     , ( "save", []                                )
                      ]
 
-script204 = ", with in animals.bib, and with and pull Cats2016 + and with Dogs1977 \n name Felines2018 \n + Canines1981 and \n view"
+script204 = ",  \t   in animals.bib, and and pull Cats2016+ Dogs1977 \n, name Felines2018 \n +Canines1981 and \n view"
 result204 = T.Script (Just "animals.bib")
-                     [ ( "pull", ["Cats2016", "Dogs1977"]       )
-                     , ( "name", ["Felines2018", "Canines1981"] )
-                     , ( "view", []                             )
-                     , ( "save", []                             )
+                     [ ( "pull", ["Cats2016+", "Dogs1977"]       )
+                     , ( "name", ["Felines2018", "+Canines1981"] )
+                     , ( "view", []                              )
+                     , ( "save", []                              )
                      ]
-script205 = ", with and with \n and and + ,,,,and with \n\n with and and, and"
+script205 = ",      and      \n and and   ,,,,and   \t   \n\t\n    , and and, and"
 result205 = T.Script Nothing
                      [ ( "save", [] )
                      ]
 
 script206 = Tx.unlines $
-    [ "in animals.bib"
+    [ "in animals.bib,"
     , "    doi 10.1021/bi00685a029"
-    , "        with 10.1021/j150544a010"
-    , "        with 10.1021/bi00289a003"
+    , "        10.1021/j150544a010"
+    , "        10.1021/bi00289a003,"
     , "    info This is what everything looks like after the download"
-    , "    name Cleland1975"
-    , "        + King1956"
-    , "        + Ray1983"
+    , "and    name Cleland1975"
+    , "            King1956"
+    , "            Ray1983     ,"
     , "    edit vim"
-    , "    info This is what everything looks like before saving"
+    , ",   info This is what everything looks like before saving"
     ]
 result206 = T.Script (Just "animals.bib")
                      [ ( "doi", [ "10.1021/bi00685a029"
