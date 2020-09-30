@@ -23,7 +23,7 @@ Missing: Dogs1986 from test/testBib.bib (no such entry)
 file = Cleland_1965_Biochemistry.pdf
 
 Bibliographies:
-  working: test/testBib.bib has 5 entries
+  working: test/testBib.bib has 3 entries
   import:  unset
   export:  unset
 Context:

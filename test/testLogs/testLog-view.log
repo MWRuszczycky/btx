@@ -21,7 +21,7 @@ Cleland1975 in test/testBib.bib
   metadata: file = Cleland_1965_Biochemistry.pdf
 
 Bibliographies:
-  working: test/testBib.bib has 5 entries
+  working: test/testBib.bib has 3 entries
   import:  unset
   export:  unset
 Context:

@@ -1,5 +1,5 @@
 Bibliographies:
-  working: test/testBib.bib has 5 entries
+  working: test/testBib.bib has 0 entries
   import:  unset
   export:  unset
 Context:
@@ -10,7 +10,7 @@ Context:
   Watson1953 from test/testBib.bib
 
 Bibliographies:
-  working: test/testBib.bib has 5 entries
+  working: test/testBib.bib has 0 entries
   import:  unset
   export:  unset
 Context:

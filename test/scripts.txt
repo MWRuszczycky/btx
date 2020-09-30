@@ -2,7 +2,7 @@ script-doi:       in test/testBib.bib, doi 10.1016/bs.mie.2017.07.022, name Mark
 
 script-formatted: in test/testBib.bib
 
-script-renaming:  in test/testBib.bib, pull Cats2016 Watson1953, and name Felines2016 DNA_Structure
+script-renaming:  in test/testBib.bib, get Cats2016 Watson1953, and name Felines2016 DNA_Structure
 
 script-sendto:    in test/testBib.bib, copy Cats2016 Watson1953, name Felines2016 DNA_Structure and send to test/testExportBib.bib
 
@@ -14,20 +14,20 @@ script-find1:     in test/testBib.bib, find M.*r and toss
 
 script-find2:     in test/testBib.bib, find net\srate\sconstants \\alpha and toss
 
-script-info:      in test/testBib.bib, copy all, info and info
+script-info:      in test/testBib.bib, get all, info and info
 
-script-view:      in test/testBib.bib, copy Cats2016 Dogs1986 Cleland1975, view and info
+script-view:      in test/testBib.bib, get Cats2016 Dogs1986 Cleland1975, view and info
 
-script-list:      in test/testBib.bib, copy Cats2016 Dogs1986 Cleland1975, view list and info
+script-list:      in test/testBib.bib, get Cats2016 Dogs1986 Cleland1975, view list and info
 
-script-view-tex:  in test/testBib.bib, copy Cats2016 Dogs1986 Cleland1975, view tex and info
+script-view-tex:  in test/testBib.bib, get Cats2016 Dogs1986 Cleland1975, view tex and info
 
-script-bad-command: in test/testBib.bib, pull Cats2016 and not-a-command and view
+script-bad-command: in test/testBib.bib, get Cats2016 and not-a-command and view
 
-script-same-import-export: in test/testBib.bib, pull Cats2016, from test/testBib-copy.bib, take Felines2016 and send to test/testBib-copy.bib
+script-same-import-export: in test/testBib.bib, get Cats2016, from test/testBib-copy.bib, take Felines2016 and send to test/testBib-copy.bib
 
-script-same-export-import: in test/testBib.bib, pull Cats2016, to test/testBib-copy.bib, from test/testBib-copy.bib, take Felines2016 and send
+script-same-export-import: in test/testBib.bib, get Cats2016, to test/testBib-copy.bib, from test/testBib-copy.bib, take Felines2016 and send
 
-script-take-from: in test/testBib.bib, pull Cats2016, take Frogs1987, from test/testBib-copy.bib and view
+script-take-from: in test/testBib.bib, get Cats2016, take Frogs1987, from test/testBib-copy.bib and view
 
-script-send-before-to: in test/testBib.bib, pull Cats2016, send, to test/testBib-copy.bib and view
+script-send-before-to: in test/testBib.bib, get Cats2016, send, to test/testBib-copy.bib and view

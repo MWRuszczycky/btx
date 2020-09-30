@@ -65,7 +65,7 @@ hub = [ -- Bibliography managers
       , T.Command "find" findCmd findCmdHelp
       , T.Command "copy" copyCmd copyCmdHelp
       , T.Command "new"  newCmd  newCmdHelp
-      , T.Command "pull" pullCmd pullCmdHelp
+      , T.Command "get"  getCmd  getCmdHelp
       , T.Command "take" takeCmd takeCmdHelp
         -- Context operators
       , T.Command "edit" editCmd editCmdHelp
@@ -305,7 +305,7 @@ findCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
                , "     contain matches to the input expressions."
                , "  3. Move the matching entries into the current context."
                , "  4. Delete the entries from the working bibliography making"
-               , "     this more like <pull> rather than <copy>. If nothing is"
+               , "     this more like <get> rather than <copy>. If nothing is"
                , "     done with the entries, then they are saved back"
                , "     unchanged. This allows you to remove entries from the"
                , "     working bibilography using a find/toss combination.\n"
@@ -364,7 +364,7 @@ copyCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
                , "     no corresponding reference is copied to the context.\n"
                , "You can use the argument <all> (i.e., copy all) to populate"
                , "the the context with all the entries in the working"
-               , "bibliography. See also <pull>, which deletes the entries from"
+               , "bibliography. See also <get>, which deletes the entries from"
                , "the working bibliography after moving them to the context,"
                , "and <take>, which applies to the import bibliography."
                ]
@@ -404,11 +404,11 @@ newCmd xs rs = do
     bib <- gets T.inBib
     pure . templates $ zip (uniqueKeys bib) xs
 
--- pull command -----------------------------------------------------
+-- get command -----------------------------------------------------
 
-pullCmdHelp :: T.HelpInfo
-pullCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
-    where ns = [ "pull" ]
+getCmdHelp :: T.HelpInfo
+getCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
+    where ns = [ "get" ]
           us = "[KEY..]"
           sh = "Move entries from working bibliography to context"
           lh = [ "This command is the same as <copy>; however the entries are"
@@ -416,14 +416,14 @@ pullCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
                , "deleted from the working bibliography. Therefore, this"
                , "command can be used to remove entries from the working"
                , "bibliography using the script:\n"
-               , "    pull [KEY..] and toss\n"
+               , "    get [KEY..] and toss\n"
                , "You can move all entries from the working bibilography to the"
-               , "context using the <all> keyword (i.e., pull all). See also"
+               , "context using the <all> keyword (i.e., get all). See also"
                , "<copy> and <toss>."
                ]
 
-pullCmd :: T.CommandMonad T.Context
-pullCmd xs rs = do
+getCmd :: T.CommandMonad T.Context
+getCmd xs rs = do
     rs' <- copyCmd xs rs
     btxState <- get
     let bib = T.inBib btxState
@@ -476,7 +476,7 @@ editCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
                , "  1. If you edit the key following a <copy> command and save"
                , "     back to the working bibliography, then the entry will"
                , "     be saved alongside its unedited previous version. This"
-               , "     can be avoided by using <pull> instead of <copy>."
+               , "     can be avoided by using <get> instead of <copy>."
                , "  2. If you edit an entry obtained using <copy>, but do not"
                , "     edit the key, saving back will overwrite the previous"
                , "     unedited version with the same key."
@@ -508,7 +508,7 @@ nameCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
                , "entries in the context, which can be missing. If there is not"
                , "a one-to-one matching, then the context remains unchanged.\n"
                , "NOTE: This command only applies in-context, so it should be"
-               , "used with <pull>, <send> or <take> commands to change the"
+               , "used with <get>, <send> or <take> commands to change the"
                , "name of the entry in a bibliography. If you use it with"
                , "<copy>, then you will end up having a duplicate entry in the"
                , "working bibliography with two different keys."
@@ -570,9 +570,9 @@ tossCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
                , "Cats2016 from file Working.bib to Export.bib, you could use\n"
                , "    btx in Working.bib, copy all, toss Cats2016 and send to"
                       <> " Export.bib \n"
-               , "Used with <pull>, the <toss> command can be used to delete"
+               , "Used with <get>, the <toss> command can be used to delete"
                , "entries from the working bibliography. For example,\n"
-               , "    btx in Working.bib, pull Cats2016 Dogs1984 and toss\n"
+               , "    btx in Working.bib, get Cats2016 Dogs1984 and toss\n"
                , "deletes Cats2016 and Dogs1984 from the working bibliography."
                ]
 
