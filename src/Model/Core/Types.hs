@@ -51,7 +51,7 @@ data BtxState = BtxState {
       inBib   :: Bibliography       -- Current bibliography
     , toBib   :: Maybe Bibliography -- Target bibliography
     , fromBib :: Maybe Bibliography -- Source bibliography
-    , logger  :: Text               -- Log of action performed
+    , logger  :: Text               -- Log of actions performed
     , styles  :: StyleMap           -- Functions for styling text
     }
 

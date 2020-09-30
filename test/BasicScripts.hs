@@ -76,7 +76,7 @@ main = hspec $ around_ manageScriptTests $ do
                          "script-send-toss"
                          "testBib-formatted.bib"
                          "testExportBib-masked.bib"
-    describe "btx manages errors states correctly" $ do
+    describe "btx manages error states correctly" $ do
         testScriptError "fails on invalid commands"
                         "script-bad-command"
         testScriptError "will not allow import and export bibs to be the same"
