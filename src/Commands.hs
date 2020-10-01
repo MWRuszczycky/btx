@@ -347,7 +347,7 @@ findCmd xs rs = do
     put btxState { T.inBib = bib { T.refs = deleteRefs ( T.refs bib ) rs' } }
     pure rs'
 
--- copy command ------------------------------------------------------
+-- copy command -----------------------------------------------------
 
 copyCmdHelp :: T.HelpInfo
 copyCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
@@ -370,10 +370,11 @@ copyCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
                ]
 
 copyCmd :: T.CommandMonad T.Context
-copyCmd ("all":_) rs = allKeysToArgs . T.inBib <$> get >>= flip copyCmd rs
-copyCmd xs        rs = do updateIn rs
-                          bib <- T.inBib <$> get
-                          pure . map (getRef bib) $ xs
+copyCmd xs rs = do updateIn rs
+                   bib <- gets T.inBib
+                   pure . map (getRef bib) . go bib $ xs
+    where go b ("all":_) = allKeysToArgs b
+          go _ ks        = ks
 
 -- new command ------------------------------------------------------
 
