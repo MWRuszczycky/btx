@@ -549,10 +549,8 @@ sendCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
                ]
 
 sendCmd :: T.CommandMonad T.Context
-sendCmd ("to":xs) rs = toCmd xs rs  >>= sendCmd []
-sendCmd _         rs = gets T.toBib >>= maybe err go
-    where err  = throwError H.missingToBibErr
-          go _ = updateTo rs >> pure []
+sendCmd ("to":xs) rs = toCmd xs rs >>= sendCmd []
+sendCmd _         rs = updateTo rs >>  pure []
 
 -- toss command -----------------------------------------------------
 

@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase        #-}
 
 module Model.CoreIO.CoreIO
     ( bibToFile
@@ -10,11 +11,16 @@ module Model.CoreIO.CoreIO
 -- IO DSL for working with modeled bibliography information
 -- =============================================================== --
 
-import qualified Model.Core.Types as T
-import Model.Core.Core                  ( insertRefs         )
-import Control.Monad.State.Lazy         ( modify, gets, lift )
-import Model.CoreIO.ErrMonad            ( writeFileExcept    )
-import Model.Core.Formatting            ( bibToBibtex        )
+import qualified Data.Map.Strict          as Map
+import qualified Data.Text                as Tx
+import qualified Model.Core.Types         as T
+import qualified Model.Core.Messages.Help as H
+import Model.Core.Core                           ( insertRefs         )
+import Control.Monad.State.Lazy                  ( modify, gets, lift )
+import Control.Monad.Except                      ( throwError         )
+import Model.CoreIO.ErrMonad                     ( writeFileExcept
+                                                 , requestNewKey      )
+import Model.Core.Formatting                     ( bibToBibtex        )
 
 bibToFile :: T.Bibliography -> T.BtxStateMonad ()
 -- ^Convert a bibliography to BibTeX and write to file.
@@ -23,17 +29,28 @@ bibToFile b = lift . writeFileExcept (T.path b) . bibToBibtex $ b
 updateIn :: T.Context -> T.BtxStateMonad T.Bibliography
 -- ^Save references in context to the in-bibliography and return the
 -- updated bibliography.
-updateIn rs = do
-    modify $ \ s -> s { T.inBib = addContext rs . T.inBib $ s }
+updateIn rs0 = do
+    bib <- gets T.inBib
+    rs1 <- mapM ( resolveConflict . T.refs $ bib ) rs0
+    modify $ \ s -> s { T.inBib = insertRefs bib rs1 }
     gets T.inBib
 
-updateTo :: T.Context -> T.BtxStateMonad ( Maybe T.Bibliography )
+updateTo :: T.Context -> T.BtxStateMonad T.Bibliography
 -- ^Save references in context to the to-bibliography and return the
--- updated bibligraphy.
-updateTo rs = do
-    modify $ \ s -> s { T.toBib = addContext rs <$> T.toBib s }
-    gets T.toBib
+-- updated bibligraphy. An error is generated if there is no
+-- to-bibliography to export to.
+updateTo rs0 = do
+    gets T.toBib >>= \case
+        Nothing  -> throwError H.missingToBibErr
+        Just bib -> do rs1 <- mapM ( resolveConflict . T.refs $ bib ) rs0
+                       modify $ \ s -> s { T.toBib = Just $ insertRefs bib rs1 }
+                       pure bib
 
-addContext :: T.Context -> T.Bibliography -> T.Bibliography
--- ^Add references in a context to a bibliography.
-addContext rs bib = bib { T.refs = insertRefs (T.refs bib) rs }
+resolveConflict :: T.References -> T.Ref -> T.BtxStateMonad T.Ref
+resolveConflict _ r@(T.Missing _ _ _) = pure r
+resolveConflict refs r@(T.Ref   fp k1 e)
+    | Map.member k1 refs = do k2 <-lift . requestNewKey k1 $ altKey
+                              pure (T.Ref fp k2 e)
+    | otherwise          = pure r
+    where altKey = head . filter ( not . flip Map.member refs ) $ ks
+          ks     = map ( \ x -> k1 <> "-" <> (Tx.pack . show) x ) [1..]

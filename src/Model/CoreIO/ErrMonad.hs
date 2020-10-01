@@ -7,6 +7,8 @@ module Model.CoreIO.ErrMonad
     , writeFileExcept
       -- External processes
     , callProcExcept
+      -- CLI interaction with user
+    , requestNewKey
     ) where
 
 -- =============================================================== --
@@ -16,13 +18,15 @@ module Model.CoreIO.ErrMonad
 import qualified Data.Text.IO        as Tx
 import qualified Data.Text           as Tx
 import qualified Model.Core.Types    as T
-import Data.Text                             ( Text                )
-import System.Process                        ( callProcess         )
-import System.IO.Error                       ( isDoesNotExistError )
-import Control.Monad.Except                  ( ExceptT (..)        )
+import Data.Text                             ( Text                 )
+import Data.Char                             ( isSpace              )
+import System.Process                        ( callProcess          )
+import System.IO                             ( stdout, hFlush       )
+import System.IO.Error                       ( isDoesNotExistError  )
+import Control.Monad.Except                  ( ExceptT (..), liftIO )
 import Control.Exception                     ( IOException
                                              , displayException
-                                             , catch               )
+                                             , catch                )
 
 -- =============================================================== --
 -- Reading and writing files
@@ -56,3 +60,25 @@ callProcExcept p args = ExceptT $ do
     catch ( Right <$> callProcess p args ) hndlErr
     where hndlErr :: IOException -> IO ( Either T.ErrString () )
           hndlErr = pure . Left . displayException
+
+-- =============================================================== --
+-- CLI interaction with the user
+
+requestNewKey :: T.Key -> T.Key -> T.ErrMonad T.Key
+-- ^A key for a new entry is already present in the bibliography. We
+-- want to determine whether the user wants to overwrite this entry
+-- or use a new key. A unique alternative key is suggested.
+requestNewKey oldKey uniqueKey = do
+    let msg = [ "An entry already has key"
+              , "'" <> oldKey <> "'"
+              , "and will be overwritten.\nEnter 'x' to continue with"
+              , "overwrite.\nPress <enter> to change key to:"
+              , "'" <> uniqueKey <> "'\nbtx>"
+              ]
+    liftIO . Tx.putStr . Tx.unwords $ msg
+    liftIO . hFlush $ stdout
+    response <- liftIO getLine
+    case filter (not . isSpace) response of
+         "x" -> pure oldKey
+         "X" -> pure oldKey
+         _   -> pure uniqueKey

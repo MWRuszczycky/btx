@@ -32,11 +32,11 @@ addToLog t bs
     | otherwise      = bs { T.logger = btxLog <> "\n\n" <> t }
     where !btxLog = T.logger bs
 
-refToPair :: T.Ref -> Maybe (Text, T.Entry)
+refToPair :: T.Ref -> Maybe (T.Key, T.Entry)
 refToPair (T.Ref _ k v     ) = Just (k, v)
 refToPair (T.Missing _ _ _ ) = Nothing
 
-pairToRef :: FilePath -> (Text, T.Entry) -> T.Ref
+pairToRef :: FilePath -> (T.Key, T.Entry) -> T.Ref
 pairToRef fp (k, v) = T.Ref fp k v
 
 isPresent :: T.Ref -> Bool
@@ -48,10 +48,11 @@ allKeysToArgs :: T.Bibliography -> [String]
 -- This is useful for generating argument lists.
 allKeysToArgs = map Tx.unpack . Map.keys . T.refs
 
-insertRefs :: T.References -> T.Context -> T.References
--- ^Update a reference map with a list of references.
-insertRefs refs = foldl' go refs . mapMaybe refToPair
-    where go = flip $ uncurry Map.insert
+insertRefs :: T.Bibliography -> T.Context -> T.Bibliography
+-- ^Update a bibliography with a list of references.
+insertRefs bib rs = let go m (key, entry) = Map.insert key entry m
+                    in  bib { T.refs = foldl' go (T.refs bib)
+                                       . mapMaybe refToPair $ rs }
 
 deleteRefs :: T.References -> T.Context -> T.References
 -- ^Update a reference map by deleting references in a list.
