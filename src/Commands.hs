@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase        #-}
 
 module Commands
     ( hub
@@ -454,8 +455,7 @@ takeCmd :: T.CommandMonad T.Context
 takeCmd ("all":_) rs = do xs <- gets $ maybe [] allKeysToArgs . T.fromBib
                           takeCmd xs rs
 takeCmd xs        rs = do updateIn rs
-                          fromBib <- gets T.fromBib
-                          case fromBib of
+                          gets T.fromBib >>= \case
                                Nothing  -> throwError $ H.missingFromBibErr
                                Just bib -> pure . map ( getRef bib ) $ xs
 
