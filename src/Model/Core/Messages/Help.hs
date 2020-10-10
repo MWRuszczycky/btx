@@ -128,7 +128,6 @@ summaryList sm hs =
 
 keywords :: [T.HelpInfo]
 keywords = [ andHelp
-           , withHelp
            , allHelp
            ]
 
@@ -150,36 +149,6 @@ andHelp = T.HelpInfo ns us sh (Tx.unlines lh)
                , "    in animals.bib"
                , "        get Cats2016"
                , "        view"
-               ]
-
-withHelp :: T.HelpInfo
-withHelp = T.HelpInfo ns us sh (Tx.unlines lh)
-    where ns = [ "with", "+" ]
-          us = Tx.empty
-          sh = "Eliminate preceding <and> or its equivalent"
-          lh = [ "The <with> keyword is used to eliminate an <and> or its"
-               , "equivalent that immediately precedes it. This can be used to"
-               , "more easily pass a large number of arguments to a single btx"
-               , "scripting command. For example, if we have a file containing"
-               , "the script:\n"
-               , "    in animals.bib, get Cats Dogs Chipmunks, view\n"
-               , "then we can separate the Cats, Dogs and Chipmunks arguments"
-               , "onto separate lines using <with>:\n"
-               , "    in animals.bib"
-               , "        get Cats"
-               , "           with Dogs"
-               , "           with Chipmunks"
-               , "        view\n"
-               , "since the new lines are parsed as <and> keywords. The <with>"
-               , "keyword can also be abbreviated with a '+'. Thus the above"
-               , "script is also equivalent to:\n"
-               , "    in animals.bib"
-               , "        get Cats"
-               , "           + Dogs"
-               , "           + Chipmunks"
-               , "        view\n"
-               , "If we did not use <with>, then Dogs and Chipmunks would have"
-               , "been interpreted as scripting commands."
                ]
 
 allHelp :: T.HelpInfo
@@ -227,15 +196,12 @@ runHelp = T.HelpInfo ns us sh (Tx.unlines lh)
           sh = "Run btx script from a file"
           lh = [ "Rather than run a script entered at the command line, you"
                , "can use the <run> directive to run a script from a text file."
-               , "In this case you can take advantage of line breaks and the"
-               , "<with> command to better lay out the script. Line breaks are"
-               , "directly interpreted as <and> keywords (see help and). White-"
-               , "space is otherwise ignored. If no FILE-PATH is supplied to"
-               , "<run>, then btx attempts to read commands from standard input"
-               , "producing a REPL-like interpreter. To exit this interactive"
-               , "editing of bibliographies, use <ctrl-c> after saving your"
-               , "work with the <save> command (see also help for the <and>,"
-               , "<save> and <with> keywords and commands)."
+               , "If no FILE-PATH is supplied to <run>, then btx attempts to"
+               , "read commands from standard input producing a REPL-like"
+               , "interpreter. To exit this interactive editing of"
+               , "bibliographies, use <ctrl-c> after saving your work with the"
+               , "<save> command (see also help for the <and> and <save>"
+               , "keywords and commands)."
                ]
 
 -- =============================================================== --
