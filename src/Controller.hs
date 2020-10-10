@@ -22,6 +22,7 @@ import Data.Text                                    ( Text, pack          )
 import System.Directory                             ( listDirectory
                                                     , getCurrentDirectory )
 import System.IO                                    ( stdout
+                                                    , getContents
                                                     , hIsTerminalDevice   )
 import Control.Monad.State.Lazy                     ( execStateT
                                                     , foldM, liftIO       )
@@ -41,7 +42,7 @@ import Commands                                     ( hub, route,         )
 
 getInput :: [String] -> IO (Either String Text)
 getInput ("run":fp:_) = Right <$> Tx.readFile fp
-getInput ("run":[])   = pure . Left $ H.missingScriptErr
+getInput ("run":[])   = pure . pack <$> getContents
 getInput xs           = pure . Right . pack . unwords $ xs
 
 ---------------------------------------------------------------------

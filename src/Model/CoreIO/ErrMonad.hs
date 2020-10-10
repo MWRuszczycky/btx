@@ -21,7 +21,8 @@ import qualified Model.Core.Types    as T
 import Data.Text                             ( Text                 )
 import Data.Char                             ( isSpace              )
 import System.Process                        ( callProcess          )
-import System.IO                             ( stdout, hFlush       )
+import System.IO                             ( stdout, hFlush
+                                             , stdin, hIsClosed     )
 import System.IO.Error                       ( isDoesNotExistError  )
 import Control.Monad.Except                  ( ExceptT (..), liftIO )
 import Control.Exception                     ( IOException
@@ -69,16 +70,23 @@ requestNewKey :: T.Key -> T.Key -> T.ErrMonad T.Key
 -- want to determine whether the user wants to overwrite this entry
 -- or use a new key. A unique alternative key is suggested.
 requestNewKey oldKey uniqueKey = do
-    let msg = [ "An entry already has key"
-              , "'" <> oldKey <> "'"
-              , "and will be overwritten.\nEnter 'x' to continue with"
-              , "overwrite.\nPress <enter> to change key to:"
-              , "'" <> uniqueKey <> "'\nbtx>"
-              ]
-    liftIO . Tx.putStr . Tx.unwords $ msg
-    liftIO . hFlush $ stdout
-    response <- liftIO getLine
-    case filter (not . isSpace) response of
-         "x" -> pure oldKey
-         "X" -> pure oldKey
-         _   -> pure uniqueKey
+    let msg1 = [ "An entry already has key"
+               , "'" <> oldKey <> "'"
+               , "and will be overwritten.\nEnter 'x' to continue with"
+               , "overwrite.\nPress <enter> to change key to:"
+               , "'" <> uniqueKey <> "'\nbtx>"
+               ]
+        msg2 = [ "Key '" <> oldKey <> "' is already in use,"
+               , "so unique key '" <> uniqueKey <> "' was used instead."
+               ]
+    isClosed <- liftIO . hIsClosed $ stdin
+    if isClosed
+       then do liftIO . Tx.putStrLn . Tx.unwords $ msg2
+               pure uniqueKey
+       else do liftIO . Tx.putStr . Tx.unwords $ msg1
+               liftIO . hFlush $ stdout
+               response <- liftIO getLine
+               case filter (not . isSpace) response of
+                    "x" -> pure oldKey
+                    "X" -> pure oldKey
+                    _   -> pure uniqueKey

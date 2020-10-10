@@ -197,11 +197,7 @@ runHelp = T.HelpInfo ns us sh (Tx.unlines lh)
           lh = [ "Rather than run a script entered at the command line, you"
                , "can use the <run> directive to run a script from a text file."
                , "If no FILE-PATH is supplied to <run>, then btx attempts to"
-               , "read commands from standard input producing a REPL-like"
-               , "interpreter. To exit this interactive editing of"
-               , "bibliographies, use <ctrl-c> after saving your work with the"
-               , "<save> command (see also help for the <and> and <save>"
-               , "keywords and commands)."
+               , "read commands piped or redirected in from standard input."
                ]
 
 -- =============================================================== --
