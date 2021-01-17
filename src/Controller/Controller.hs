@@ -14,7 +14,6 @@ module Controller.Controller
 -- =============================================================== --
 
 import qualified View.Help                as H
-import qualified View.Copying             as H
 import qualified Model.Types              as T
 import qualified Data.Text                as Tx
 import qualified Data.Text.IO             as Tx

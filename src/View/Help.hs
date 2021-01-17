@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 module View.Help
     ( -- Main help messages
@@ -18,17 +19,20 @@ module View.Help
     , renameErr
     , sameToFromBibs
     , uniqueBibErr
+      -- Text Strings
+    , copyingStr
     ) where
 
 -- =============================================================== --
 -- Help, errors and other information messages                     --
 -- =============================================================== --
 
-import qualified Model.Types as T
-import qualified Data.Text   as Tx
-import           Data.Text         ( Text              )
-import           Data.List         ( intercalate, find )
-import           View.View         ( style, padRight   )
+import qualified Model.Types  as T
+import qualified Data.Text    as Tx
+import           Data.Text          ( Text              )
+import           Data.List          ( intercalate, find )
+import           Model.Macros       ( embedFile         )
+import           View.View          ( style, padRight   )
 
 -- =============================================================== --
 -- Main help messages
@@ -233,3 +237,9 @@ uniqueBibErr fp = unlines es
                , fp
                , "(Try: btx help in)"
                ]
+
+-- =============================================================== --
+-- Help strings
+
+copyingStr :: Tx.Text
+copyingStr = $(embedFile "res/help/copying.txt")

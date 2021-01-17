@@ -30,13 +30,13 @@ library btx-internal
                       , Controller.BtxStateMonad
                       , Model.BtxState
                       , Model.Matcher
+                      , Model.Macros
                       , Model.Types
                       , Model.BibTeX.Resources
                       , Model.Parsers.BibTex
                       , Model.Parsers.Scripts
                       , View.View
                       , View.Help
-                      , View.Copying
                       , Paths_btx
   hs-source-dirs:       src
   default-language:     Haskell2010
@@ -51,6 +51,7 @@ library btx-internal
                       , mtl
                       , process
                       , temporary
+                      , template-haskell
                       , text
                       , wreq
 
