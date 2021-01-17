@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Model.Core.ScriptParser
+module Model.Parsers.Scripts
     ( parse
     ) where
 
@@ -9,16 +9,13 @@ module Model.Core.ScriptParser
 -- =============================================================== --
 
 import qualified Data.Attoparsec.Text   as At
+import qualified Model.Types            as T
 import qualified Data.Text              as Tx
-import qualified Model.Core.Types       as T
-import Data.Version                           ( showVersion      )
-import Paths_btx                              ( version          )
-import Control.Applicative                    ( (<|>), liftA2
+import           Data.Version                 ( showVersion      )
+import           Paths_btx                    ( version          )
+import           Control.Applicative          ( (<|>), liftA2
                                               , many, some       )
-import Data.Text                              ( Text, unpack     )
-import Model.Core.Messages.Help               ( invalidUsageErr
-                                              , noCommandsErr
-                                              , unableToParseErr )
+import           Data.Text                    ( Text, unpack     )
 
 ---------------------------------------------------------------------
 -- Exported btx parser interface
@@ -97,3 +94,20 @@ quotedContent c = escaped <|> closeQuote <|> moreContent
     where escaped     = At.string ("\\" <> c) *> fmap (c <>) (quotedContent c)
           closeQuote  = At.string c           *> pure Tx.empty
           moreContent = liftA2 Tx.cons At.anyChar (quotedContent c)
+
+---------------------------------------------------------------------
+-- Error messages
+
+invalidUsageErr :: String -> T.ErrString
+invalidUsageErr c = unwords [ "Invalid usage for command <" ++ c ++ ">."
+                            , "(Try: btx help " ++ c ++ ")\n"
+                            ]
+
+noCommandsErr :: T.ErrString
+noCommandsErr   = unwords [ "This won't do anything --"
+                          , "a script or command needs to be provided."
+                          , "(Try: btx help)\n"
+                          ]
+
+unableToParseErr :: T.ErrString
+unableToParseErr  = "Unable to parse input. (Try: btx help)\n"

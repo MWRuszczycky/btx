@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE BangPatterns      #-}
 
-module Model.Core.Core
+module Model.BtxState
     ( addToLog
     , allKeysToArgs
     , deleteRefs
@@ -14,17 +14,13 @@ module Model.Core.Core
     , refToPair
     ) where
 
--- =============================================================== --
--- DSL for working with modeled bibliography information
--- =============================================================== --
-
-import qualified Data.Map.Strict    as Map
-import qualified Data.Text          as Tx
-import qualified Model.Core.Types   as T
-import Model.Core.Matcher                  ( hasMatch )
-import Data.Text                           ( Text     )
-import Data.List                           ( foldl'   )
-import Data.Maybe                          ( mapMaybe )
+import qualified Data.Map.Strict as Map
+import qualified Model.Types     as T
+import qualified Data.Text       as Tx
+import           Model.Matcher          ( hasMatch )
+import           Data.Text              ( Text     )
+import           Data.List              ( foldl'   )
+import           Data.Maybe             ( mapMaybe )
 
 addToLog :: Text -> T.BtxState -> T.BtxState
 addToLog t bs

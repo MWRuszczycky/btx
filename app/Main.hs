@@ -4,17 +4,17 @@ module Main where
 -- Entry and exit point
 -- =============================================================== --
 
-import qualified Model.Core.Types as T
-import qualified Data.Text.IO     as Tx
-import System.Environment               ( getArgs       )
-import Control.Monad.Except             ( runExceptT    )
-import Model.Core.ScriptParser          ( parse         )
-import Controller                       ( finish
-                                        , getInput
-                                        , getStyleMap
-                                        , initBtx
-                                        , runBtx
-                                        , getHelp       )
+import qualified Model.Types           as T
+import qualified Data.Text.IO          as Tx
+import           System.Environment          ( getArgs       )
+import           Control.Monad.Except        ( runExceptT    )
+import           Model.Parsers.Scripts       ( parse         )
+import           Controller.Controller       ( finish
+                                             , getInput
+                                             , getStyleMap
+                                             , initBtx
+                                             , runBtx
+                                             , getHelp       )
 
 main :: IO ()
 main = do

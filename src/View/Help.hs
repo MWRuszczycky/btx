@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Model.Core.Messages.Help
+module View.Help
     ( -- Main help messages
       mainHelp
       -- Help Formatting
@@ -12,14 +12,11 @@ module Model.Core.Messages.Help
       -- Error messages
     , argInvalidErr
     , cmdInvalidErr
-    , invalidUsageErr
     , missingFromBibErr
     , missingToBibErr
     , missingScriptErr
-    , noCommandsErr
     , renameErr
     , sameToFromBibs
-    , unableToParseErr
     , uniqueBibErr
     ) where
 
@@ -27,11 +24,11 @@ module Model.Core.Messages.Help
 -- Help, errors and other information messages                     --
 -- =============================================================== --
 
-import qualified Model.Core.Types      as T
-import qualified Data.Text             as Tx
-import Data.Text                             ( Text                )
-import Data.List                             ( intercalate, find   )
-import Model.Core.Formatting                 ( style, padRight     )
+import qualified Model.Types as T
+import qualified Data.Text   as Tx
+import           Data.Text         ( Text              )
+import           Data.List         ( intercalate, find )
+import           View.View         ( style, padRight   )
 
 -- =============================================================== --
 -- Main help messages
@@ -209,11 +206,6 @@ argInvalidErr c a = "Invalid argument for " ++ c ++ ": " ++ a ++ ".\n"
 cmdInvalidErr :: String -> T.ErrString
 cmdInvalidErr c = "Invalid command: " ++ "<" ++ c ++ ">.\n"
 
-invalidUsageErr :: String -> T.ErrString
-invalidUsageErr c = unwords [ "Invalid usage for command <" ++ c ++ ">."
-                            , "(Try: btx help " ++ c ++ ")\n"
-                            ]
-
 missingFromBibErr :: T.ErrString
 missingFromBibErr = "Use of <take> without an import bibliography being set.\n"
 
@@ -222,12 +214,6 @@ missingToBibErr = "Use of <send> without an export bibliography being set.\n"
 
 missingScriptErr :: T.ErrString
 missingScriptErr = "Script file required (Try: btx help in).\n"
-
-noCommandsErr :: T.ErrString
-noCommandsErr   = unwords [ "This won't do anything --"
-                          , "a script or command needs to be provided."
-                          , "(Try: btx help)\n"
-                          ]
 
 renameErr :: Int -> Int -> T.ErrString
 renameErr n r = intercalate "\n" es
@@ -239,9 +225,6 @@ renameErr n r = intercalate "\n" es
 
 sameToFromBibs :: T.ErrString
 sameToFromBibs = "Import and export bibliographies cannot have the same path.\n"
-
-unableToParseErr :: T.ErrString
-unableToParseErr  = "Unable to parse input. (Try: btx help)\n"
 
 uniqueBibErr :: FilePath -> T.ErrString
 uniqueBibErr fp = unlines es

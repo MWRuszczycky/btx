@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Model.BibTeX.Parser
+module Model.Parsers.BibTex
     ( parseBib
     , parseRef
     ) where
@@ -10,14 +10,14 @@ module Model.BibTeX.Parser
 -- =============================================================== --
 
 import qualified Data.Attoparsec.Text as At
-import qualified Data.Text            as Tx
 import qualified Data.Map.Strict      as M
-import qualified Model.Core.Types     as T
-import Data.Bifunctor                       ( bimap       )
-import Control.Applicative                  ( (<|>)
+import qualified Model.Types          as T
+import qualified Data.Text            as Tx
+import           Data.Bifunctor             ( bimap       )
+import           Control.Applicative        ( (<|>)
                                             , many        )
-import Data.Text                            ( Text, pack  )
-import Data.Char                            ( isAlphaNum
+import           Data.Text                  ( Text, pack  )
+import           Data.Char                  ( isAlphaNum
                                             , isSpace     )
 
 -- =============================================================== --

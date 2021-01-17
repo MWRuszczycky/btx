@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Model.CoreIO.External
+module Controller.External
     ( getDoi
     , runExternal
     ) where
@@ -9,27 +9,27 @@ module Model.CoreIO.External
 -- IO DSL for commands involving the internet and external processes
 -- =============================================================== --
 
-import qualified Data.Text                     as Tx
-import qualified Network.Wreq                  as Wreq
-import qualified Model.Core.Types              as T
-import qualified Model.CoreIO.ErrMonad         as E
 import qualified Data.ByteString               as BS
 import qualified Data.ByteString.Lazy.Internal as BSL
-import Data.ByteString.Lazy                             ( toStrict         )
-import Data.Bifunctor                                   ( bimap            )
-import Lens.Micro                                       ( (^.), (.~), (&)  )
-import Data.Text                                        ( Text             )
-import System.Directory                                 ( removeFile       )
-import System.IO.Temp                                   ( emptyTempFile    )
-import Control.Monad.Trans                              ( liftIO           )
-import Control.Monad.Except                             ( ExceptT (..)
-                                                        , throwError
-                                                        , catchError
-                                                        , liftEither       )
-import Control.Exception                                ( SomeException
-                                                        , catch            )
-import Model.Core.Formatting                            ( refToBibtex      )
-import Model.BibTeX.Parser                              ( parseRef         )
+import qualified Controller.ErrMonad           as E
+import qualified Model.Types                   as T
+import qualified Data.Text                     as Tx
+import qualified Network.Wreq                  as Wreq
+import           Data.ByteString.Lazy                  ( toStrict         )
+import           Data.Bifunctor                        ( bimap            )
+import           Lens.Micro                            ( (^.), (.~), (&)  )
+import           Data.Text                             ( Text             )
+import           System.Directory                      ( removeFile       )
+import           System.IO.Temp                        ( emptyTempFile    )
+import           Control.Monad.Trans                   ( liftIO           )
+import           Control.Monad.Except                  ( ExceptT (..)
+                                                       , throwError
+                                                       , catchError
+                                                       , liftEither       )
+import           Control.Exception                     ( SomeException
+                                                       , catch            )
+import           View.View                             ( refToBibtex      )
+import           Model.Parsers.BibTex                  ( parseRef         )
 
 -- =============================================================== --
 -- Handling external processes with temporary files

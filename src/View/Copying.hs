@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Model.Core.Messages.Copying
+module View.Copying
     ( copyingStr
     ) where
 

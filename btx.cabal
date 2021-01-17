@@ -23,20 +23,20 @@ executable btx
                       , text
 
 library btx-internal
-  exposed-modules:      Commands
-                      , Controller
-                      , Model.Core.Types
-                      , Model.BibTeX.Parser
+  exposed-modules:      Controller.Commands
+                      , Controller.Controller
+                      , Controller.External
+                      , Controller.ErrMonad
+                      , Controller.BtxStateMonad
+                      , Model.BtxState
+                      , Model.Matcher
+                      , Model.Types
                       , Model.BibTeX.Resources
-                      , Model.Core.Core
-                      , Model.Core.ScriptParser
-                      , Model.Core.Formatting
-                      , Model.Core.Matcher
-                      , Model.Core.Messages.Help
-                      , Model.Core.Messages.Copying
-                      , Model.CoreIO.CoreIO
-                      , Model.CoreIO.External
-                      , Model.CoreIO.ErrMonad
+                      , Model.Parsers.BibTex
+                      , Model.Parsers.Scripts
+                      , View.View
+                      , View.Help
+                      , View.Copying
                       , Paths_btx
   hs-source-dirs:       src
   default-language:     Haskell2010

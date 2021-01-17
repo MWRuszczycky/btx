@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Model.Core.Matcher
+module Model.Matcher
     ( (=~)
     , hasMatch
     , runRegex
@@ -12,16 +12,16 @@ module Model.Core.Matcher
 -- implementing the <find> command.                                --
 -- =============================================================== --
 
-import qualified Data.Text as Tx
-import Data.Text                   ( Text         )
-import Data.Char                   ( isDigit
-                                   , isAlphaNum
-                                   , isSpace      )
-import Control.Monad.State.Lazy    ( (<=<)
-                                   , StateT
-                                   , StateT (..)
-                                   , runStateT    )
-import Control.Applicative         ( many, empty  )
+import qualified Data.Text                as Tx
+import           Data.Text                      ( Text         )
+import           Data.Char                      ( isDigit
+                                                , isAlphaNum
+                                                , isSpace      )
+import           Control.Monad.State.Lazy       ( (<=<)
+                                                , StateT
+                                                , StateT (..)
+                                                , runStateT    )
+import           Control.Applicative            ( many, empty  )
 
 ---------------------------------------------------------------------
 -- Types

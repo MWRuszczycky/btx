@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Model.Core.Types
+module Model.Types
     ( -- State
       BtxState          (..)
     , BtxStateMonad
@@ -24,16 +24,12 @@ module Model.Core.Types
     , HelpInfo          (..)
     ) where
 
--- =============================================================== --
--- Defines how bibliographies and program state are modeled
--- =============================================================== --
+import qualified Data.Map.Strict          as Map
+import           Data.Text                       ( Text    )
+import           Control.Monad.State.Lazy        ( StateT  )
+import           Control.Monad.Except            ( ExceptT )
 
-import qualified Data.Map.Strict as Map
-import Data.Text                        ( Text          )
-import Control.Monad.State.Lazy         ( StateT        )
-import Control.Monad.Except             ( ExceptT       )
-
----------------------------------------------------------------------
+-- =============================================================== -- 
 -- State
 
 type ErrString = String
@@ -61,12 +57,12 @@ data Start = Help [String]
            | Script (Maybe FilePath) [ParsedCommand]
            deriving ( Eq, Show )
 
----------------------------------------------------------------------
+-- =============================================================== -- 
 -- Style maps for holding color/display preferences
 
 type StyleMap = Map.Map Text (Text -> Text)
 
----------------------------------------------------------------------
+-- =============================================================== -- 
 -- Bibliographies
 
 -- |Representation of a BibTeX bibliography
@@ -97,7 +93,7 @@ type Field = ( Text, Text )
 
 type Context = [Ref]
 
----------------------------------------------------------------------
+-- =============================================================== -- 
 -- Commands
 
 -- |Monadic Btx command that can be run in the BtxStateMonad

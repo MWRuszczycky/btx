@@ -11,10 +11,10 @@ module Model.BibTeX.Resources
 -- Templates and handlers for adding new bibliography entries
 -- =============================================================== --
 
-import qualified Data.Text        as Tx
-import qualified Data.Map.Strict  as Map
-import qualified Model.Core.Types as T
-import Data.Text                         ( Text )
+import qualified Data.Map.Strict as Map
+import qualified Model.Types     as T
+import qualified Data.Text       as Tx
+import           Data.Text              ( Text )
 
 -- =============================================================== --
 -- Standard references

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Controller
+module Controller.Controller
     ( finish
     , getInput
     , getStyleMap
@@ -13,26 +13,26 @@ module Controller
 -- Provides the interface between the user and the model
 -- =============================================================== --
 
-import qualified Data.Text                   as Tx
-import qualified Data.Text.IO                as Tx
-import qualified Model.Core.Types            as T
-import qualified Model.Core.Messages.Help    as H
-import qualified Model.Core.Messages.Copying as H
-import Data.Text                                    ( Text, pack          )
-import System.Directory                             ( listDirectory
-                                                    , getCurrentDirectory )
-import System.IO                                    ( stdout
-                                                    , getContents
-                                                    , hIsTerminalDevice   )
-import Control.Monad.State.Lazy                     ( execStateT
-                                                    , foldM, liftIO       )
-import Control.Monad.Except                         ( throwError
-                                                    , liftEither          )
-import Model.BibTeX.Parser                          ( parseBib            )
-import Model.CoreIO.ErrMonad                        ( readOrMakeFile      )
-import Model.Core.Formatting                        ( noStyles
-                                                    , defaultStyles       )
-import Commands                                     ( hub, route,         )
+import qualified View.Help                as H
+import qualified View.Copying             as H
+import qualified Model.Types              as T
+import qualified Data.Text                as Tx
+import qualified Data.Text.IO             as Tx
+import           Data.Text                      ( Text, pack          )
+import           System.Directory               ( listDirectory
+                                                , getCurrentDirectory )
+import           System.IO                      ( stdout
+                                                , getContents
+                                                , hIsTerminalDevice   )
+import           Control.Monad.State.Lazy       ( execStateT
+                                                , foldM, liftIO       )
+import           Control.Monad.Except           ( throwError
+                                                , liftEither          )
+import           Model.Parsers.BibTex           ( parseBib            )
+import           Controller.ErrMonad            ( readOrMakeFile      )
+import           View.View                      ( noStyles
+                                                , defaultStyles       )
+import           Controller.Commands            ( hub, route,         )
 
 -- =============================================================== --
 -- Initialization

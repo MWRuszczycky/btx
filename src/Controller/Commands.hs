@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase        #-}
 
-module Commands
+module Controller.Commands
     ( hub
     , route
     ) where
@@ -11,37 +11,37 @@ module Commands
 -- Commands are documented using their help strings.
 -- =============================================================== --
 
+import qualified View.Help                as H
+import qualified Model.Types              as T
 import qualified Data.Text                as Tx
-import qualified Model.Core.Types         as T
-import qualified Model.Core.Messages.Help as H
-import Data.List                                 ( find, foldl'     )
-import Control.Monad.Except                      ( throwError
-                                                 , when, liftEither )
-import Control.Monad.State.Lazy                  ( get, gets, put
-                                                 , modify, lift     )
-import Model.Core.Core                           ( addToLog
-                                                 , allKeysToArgs
-                                                 , deleteRefs
-                                                 , dropRefByKey
-                                                 , searchRefs
-                                                 , getRef           )
-import Model.CoreIO.CoreIO                       ( bibToFile
-                                                 , updateIn
-                                                 , updateTo         )
-import Model.CoreIO.External                     ( getDoi
-                                                 , runExternal      )
-import Model.CoreIO.ErrMonad                     ( readOrMakeFile
-                                                 , readFileExcept   )
-import Model.BibTeX.Parser                       ( parseBib         )
-import Model.BibTeX.Resources                    ( genericKey
-                                                 , uniqueKeys
-                                                 , supported
-                                                 , templates        )
-import Model.Core.Formatting                     ( viewRef
-                                                 , viewRefTex
-                                                 , summarize
-                                                 , toAscii
-                                                 , listEntry        )
+import           Data.List                      ( find, foldl'     )
+import           Control.Monad.Except           ( throwError
+                                                , when, liftEither )
+import           Control.Monad.State.Lazy       ( get, gets, put
+                                                , modify, lift     )
+import           Model.BtxState                 ( addToLog
+                                                , allKeysToArgs
+                                                , deleteRefs
+                                                , dropRefByKey
+                                                , searchRefs
+                                                , getRef           )
+import           Controller.BtxStateMonad       ( bibToFile
+                                                , updateIn
+                                                , updateTo         )
+import           Controller.External            ( getDoi
+                                                , runExternal      )
+import           Controller.ErrMonad            ( readOrMakeFile
+                                                , readFileExcept   )
+import           Model.Parsers.BibTex           ( parseBib         )
+import           Model.BibTeX.Resources         ( genericKey
+                                                , uniqueKeys
+                                                , supported
+                                                , templates        )
+import           View.View                      ( viewRef
+                                                , viewRefTex
+                                                , summarize
+                                                , toAscii
+                                                , listEntry        )
 
 -- =============================================================== --
 -- Hub and router

@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase        #-}
 
-module Model.CoreIO.CoreIO
+module Controller.BtxStateMonad
     ( bibToFile
     , updateIn
     , updateTo
@@ -12,15 +12,15 @@ module Model.CoreIO.CoreIO
 -- =============================================================== --
 
 import qualified Data.Map.Strict          as Map
+import qualified View.Help                as H
 import qualified Data.Text                as Tx
-import qualified Model.Core.Types         as T
-import qualified Model.Core.Messages.Help as H
-import Model.Core.Core                           ( insertRefs         )
-import Control.Monad.State.Lazy                  ( modify, gets, lift )
-import Control.Monad.Except                      ( throwError         )
-import Model.CoreIO.ErrMonad                     ( writeFileExcept
+import qualified Model.Types              as T
+import           Model.BtxState                  ( insertRefs         )
+import           Control.Monad.State.Lazy        ( modify, gets, lift )
+import           Control.Monad.Except            ( throwError         )
+import           Controller.ErrMonad             ( writeFileExcept
                                                  , requestNewKey      )
-import Model.Core.Formatting                     ( bibToBibtex        )
+import           View.View                       ( bibToBibtex        )
 
 bibToFile :: T.Bibliography -> T.BtxStateMonad ()
 -- ^Convert a bibliography to BibTeX and write to file.

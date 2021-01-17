@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Model.Core.Formatting
+module View.View
     ( -- Bibliography formatting
       refToBibtex
     , bibToBibtex
@@ -18,19 +18,19 @@ module Model.Core.Formatting
     ) where
 
 -- =============================================================== --
--- DSL for converting bibliography information to readable output
+-- DSL for converting bibliography information to text strings
 -- =============================================================== --
 
-import qualified System.Console.ANSI as Ans
-import qualified Data.Text           as Tx
-import qualified Data.Text.Encoding  as Tx
-import qualified Data.Map.Strict     as Map
-import qualified Model.Core.Types    as T
-import qualified Data.ByteString     as BS
-import Data.Text                            ( Text                )
-import Data.List                            ( foldl'              )
-import System.Console.ANSI.Types            ( Color (..)
-                                            , ColorIntensity (..) )
+import qualified System.Console.ANSI        as Ans
+import qualified Data.ByteString            as BS
+import qualified Data.Map.Strict            as Map
+import qualified Model.Types                as T
+import qualified Data.Text                  as Tx
+import qualified Data.Text.Encoding         as Tx
+import           Data.Text                         ( Text                )
+import           Data.List                         ( foldl'              )
+import           System.Console.ANSI.Types         ( Color (..)
+                                                   , ColorIntensity (..) )
 
 -- =============================================================== --
 -- Bibliography formatting

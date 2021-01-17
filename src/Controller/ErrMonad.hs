@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Model.CoreIO.ErrMonad
+module Controller.ErrMonad
     ( -- File management
       readOrMakeFile
     , readFileExcept
@@ -15,19 +15,19 @@ module Model.CoreIO.ErrMonad
 -- Wrappers for the ErrMonad type
 -- =============================================================== --
 
-import qualified Data.Text.IO        as Tx
-import qualified Data.Text           as Tx
-import qualified Model.Core.Types    as T
-import Data.Text                             ( Text                 )
-import Data.Char                             ( isSpace              )
-import System.Process                        ( callProcess          )
-import System.IO                             ( stdout, hFlush
-                                             , stdin, hIsClosed     )
-import System.IO.Error                       ( isDoesNotExistError  )
-import Control.Monad.Except                  ( ExceptT (..), liftIO )
-import Control.Exception                     ( IOException
-                                             , displayException
-                                             , catch                )
+import qualified Model.Types          as T
+import qualified Data.Text.IO         as Tx
+import qualified Data.Text            as Tx
+import           Data.Text                  ( Text                 )
+import           Data.Char                  ( isSpace              )
+import           System.Process             ( callProcess          )
+import           System.IO                  ( stdout, hFlush
+                                            , stdin, hIsClosed     )
+import           System.IO.Error            ( isDoesNotExistError  )
+import           Control.Monad.Except       ( ExceptT (..), liftIO )
+import           Control.Exception          ( IOException
+                                            , displayException
+                                            , catch                )
 
 -- =============================================================== --
 -- Reading and writing files
