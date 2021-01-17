@@ -6,18 +6,18 @@
 -- This is the 'matcher' test-suite for testing the Matcher module
 -- =============================================================== --
 
-import qualified Data.Text               as Tx
-import qualified Model.Core.Types        as T
-import qualified Model.Core.Matcher      as M
-import Model.Core.Matcher                      ( (=~)               )
-import Data.Text                               ( Text               )
-import Test.Hspec                              ( Spec (..)
-                                               , describe
-                                               , hspec
-                                               , it
-                                               , shouldBe
-                                               , shouldNotSatisfy
-                                               , shouldSatisfy      )
+import qualified Model.Types   as T
+import qualified Data.Text     as Tx
+import qualified Model.Matcher as M
+import           Model.Matcher       ( (=~)             )
+import           Data.Text           ( Text             )
+import           Test.Hspec          ( Spec (..)
+                                     , describe
+                                     , hspec
+                                     , it
+                                     , shouldBe
+                                     , shouldNotSatisfy
+                                     , shouldSatisfy    )
 
 main :: IO ()
 main = hspec $ do

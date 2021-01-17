@@ -3,34 +3,34 @@
 -- Do not add a module declaration or it will fail to compile
 
 -- =============================================================== --
--- This is the 'basic' test-suite: BasicScripts.hs
+-- This is the 'mock' test-suite
+-- It simulates the running of scripts on a test bibliography.
 -- =============================================================== --
 
-import qualified Model.Core.Types        as T
-import qualified Controller              as C
-import qualified Model.Core.ScriptParser as M
-import qualified Model.Core.Formatting   as F
-import qualified Data.Text               as Tx
-import qualified Data.Text.IO            as Tx
-import Data.Text                                ( Text, pack      )
-import Test.Hspec                               ( Spec      (..)
-                                                , around_
-                                                , describe
-                                                , hspec
-                                                , it
-                                                , shouldBe        )
-import Control.Exception                        ( bracket_        )
-import Control.Monad.Except                     ( runExceptT      )
-import System.Directory                         ( copyFile
-                                                , listDirectory
-                                                , removeFile      )
+import qualified Controller.Controller as C
+import qualified Model.Parsers.Scripts as P
+import qualified Model.Types           as T
+import qualified Data.Text             as Tx
+import qualified Data.Text.IO          as Tx
+import qualified View.View             as V
+import           Data.Text                   ( Text, pack      )
+import           Test.Hspec                  ( Spec      (..)
+                                             , around_
+                                             , describe
+                                             , hspec
+                                             , it
+                                             , shouldBe        )
+import           Control.Exception           ( bracket_        )
+import           Control.Monad.Except        ( runExceptT      )
+import           System.Directory            ( copyFile
+                                             , listDirectory
+                                             , removeFile      )
 
 -- =============================================================== --
--- Running the basic test-suite
 -- Tests involve a script/BibTeX-file pair. The script when run on
--- the test bibliography 'test/bib/testBib.bib' should generate the
--- associated BibTeX file(s) as the target. Scripts are listed by
--- name in the test/scripts.txt file.
+-- the test bibliography 'test/Mock/bib/testBib.bib' should generate
+-- the associated BibTeX file(s) as the target. Scripts are listed by
+-- name in the test/Mock/scripts.txt file.
 
 main :: IO ()
 main = hspec $ around_ manageScriptTests $ do
@@ -95,15 +95,15 @@ mock :: [String] -> IO (Either Text Text)
 -- ^Mocks the main function for executing scripts.
 mock args = do
     input <- C.getInput args
-    case either T.Usage M.parse input of
+    case either T.Usage P.parse input of
          T.Usage msg      -> pure . Left  . pack $ msg
          T.Help cs        -> pure . Right . pack . unlines $ cs
-         T.Script mbFp cs -> let startUp = C.initBtx F.noStyles mbFp
+         T.Script mbFp cs -> let startUp = C.initBtx V.noStyles mbFp
                              in  runExceptT ( startUp >>= C.runBtx cs )
                                  >>= mockFinish
 
 mockFinish :: Either String T.BtxState -> IO (Either Text Text)
-mockFinish (Left msg) = pure . Left . pack $ msg ++ "\n"
+mockFinish (Left msg) = pure . Left . pack $ msg <> "\n"
 mockFinish (Right bs) = pure . Right . (<> "\n") . T.logger $ bs
 
 -- =============================================================== --
@@ -115,13 +115,13 @@ mockFinish (Right bs) = pure . Right . (<> "\n") . T.logger $ bs
 manageScriptTests :: IO () -> IO ()
 -- ^Performs setup and teardown for a single-bibliography test.
 manageScriptTests = bracket_ setupBib tearDown
-    where setupBib = do copyFile "test/bib/testBib.bib" "test/testBib.bib"
-                        copyFile "test/bib/testBib.bib" "test/testBib-copy.bib"
+    where setupBib = do copyFile "test/Mock/bib/testBib.bib"
+                                 "test/Mock/testBib.bib"
 
 testScriptOutputLog :: String -> String -> FilePath -> Spec
 testScriptOutputLog cue name target = it (makeTitle cue name) action
     where action = do result      <- getTestScript name >>= mock . words
-                      expectedLog <- Tx.readFile $ "test/testLogs/" ++ target
+                      expectedLog <- Tx.readFile $ "test/Mock/testLogs/" <> target
                       case result of
                            Left  _         -> error "Script fails to execute!"
                            Right actualLog -> actualLog `shouldBe` expectedLog
@@ -130,18 +130,18 @@ testOneBibScript :: String -> String -> FilePath -> Spec
 -- ^Run tests involving only a single bibliography.
 testOneBibScript cue name target = it (makeTitle cue name) action
     where action = do getTestScript name >>= mock . words
-                      expected <- readFile $ "test/bib/" ++ target
-                      actual   <- readFile "test/testBib.bib"
+                      expected <- readFile $ "test/Mock/bib/" <> target
+                      actual   <- readFile   "test/Mock/testBib.bib"
                       actual `shouldBe` expected
 
 testExportScript :: String -> String -> FilePath -> FilePath -> Spec
 -- ^Run tests involving an export bibliography.
 testExportScript cue name targetWk targetEx = it (makeTitle cue name) action
     where action = do getTestScript name >>= mock . words
-                      expectedEx <- readFile $ "test/bib/" ++ targetEx
-                      expectedWk <- readFile $ "test/bib/" ++ targetWk
-                      actualEx   <- readFile "test/testExportBib.bib"
-                      actualWk   <- readFile "test/testBib.bib"
+                      expectedEx <- readFile $ "test/Mock/bib/" <> targetEx
+                      expectedWk <- readFile $ "test/Mock/bib/" <> targetWk
+                      actualEx   <- readFile "test/Mock/testExportBib.bib"
+                      actualWk   <- readFile "test/Mock/testBib.bib"
                       actualEx `shouldBe` expectedEx
                       actualWk `shouldBe` expectedWk
 
@@ -149,8 +149,8 @@ testScriptError :: String -> String -> Spec
 -- ^When an error occurs, the original bibliography should be unchanged.
 testScriptError cue name = it (makeTitle cue name) action
     where action = do let errMsg = "Invalid script executes without error!"
-                          path0  = "test/bib/testBib.bib"
-                          path1  = "test/testBib.bib"
+                          path0  = "test/Mock/bib/testBib.bib"
+                          path1  = "test/Mock/testBib.bib"
                       result <- mock . words =<< getTestScript name
                       case result of
                            Right _ -> error errMsg
@@ -159,23 +159,24 @@ testScriptError cue name = it (makeTitle cue name) action
                                          expected `shouldBe` actual
 
 getTestScript :: String -> IO String
--- ^Finds the test script by name from the /test/scripts.txt file.
+-- ^Finds the test script by name from the /test/Mock/scripts.txt file.
 getTestScript name = do
-    scripts <- map ( break (== ':') ) . lines <$> readFile "test/scripts.txt"
+    let scriptFile = "test/Mock/scripts.txt"
+    scripts <- map ( break (== ':') ) . lines <$> readFile scriptFile
     case lookup name scripts of
          Nothing -> error $ "Cannot find test script: " <> name
          Just x  -> pure . tail $ x
 
 makeTitle :: String -> String -> String
-makeTitle cue script = cue ++ "\n    script: " ++ script
+makeTitle cue script = cue <> "\n    script: " <> script
 
 ---------------------------------------------------------------------
 -- Utilities for cleaning up the test bibliographies
 
 tearDown :: IO ()
 tearDown = do
-    bibFiles <- filter isBibFile <$> listDirectory "test"
-    mapM_ ( removeFile . ("test/" ++) ) bibFiles
+    bibFiles <- filter isBibFile <$> listDirectory "test/Mock"
+    mapM_ ( removeFile . ("test/Mock/" <>) ) bibFiles
 
 isBibFile :: FilePath -> Bool
 isBibFile = (== ".bib") . reverse . take 4 . reverse

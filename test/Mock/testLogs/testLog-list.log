@@ -1,0 +1,12 @@
+Cats2016: article, Synthesis of 4a$\alpha$,7$\alpha$,7a$\alpha$-Nepetalactone
+Missing: Dogs1986 from test/Mock/testBib.bib (no such entry)
+Cleland1975: article, Partition analysis and concept of net rate constants as ..
+
+Bibliographies:
+  working: test/Mock/testBib.bib has 3 entries
+  import:  unset
+  export:  unset
+Context:
+  Cats2016 from test/Mock/testBib.bib
+  Dogs1986 is missing from test/Mock/testBib.bib (no such entry)
+  Cleland1975 from test/Mock/testBib.bib

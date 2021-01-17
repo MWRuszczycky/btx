@@ -1,0 +1,21 @@
+Bibliographies:
+  working: test/Mock/testBib.bib has 0 entries
+  import:  unset
+  export:  unset
+Context:
+  Atkins2005 from test/Mock/testBib.bib
+  Cats2016 from test/Mock/testBib.bib
+  Cleland1975 from test/Mock/testBib.bib
+  Durbin1998 from test/Mock/testBib.bib
+  Watson1953 from test/Mock/testBib.bib
+
+Bibliographies:
+  working: test/Mock/testBib.bib has 0 entries
+  import:  unset
+  export:  unset
+Context:
+  Atkins2005 from test/Mock/testBib.bib
+  Cats2016 from test/Mock/testBib.bib
+  Cleland1975 from test/Mock/testBib.bib
+  Durbin1998 from test/Mock/testBib.bib
+  Watson1953 from test/Mock/testBib.bib

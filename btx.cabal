@@ -56,8 +56,8 @@ library btx-internal
 
 test-suite parsing
   type:                 exitcode-stdio-1.0
-  main-is:              ScriptParsing.hs
   hs-source-dirs:       test
+  main-is:              ModelSpec/Parsers/Scripts.hs
   build-depends:        base >=4.7 && <5
                       , btx-internal
                       , hspec
@@ -66,18 +66,18 @@ test-suite parsing
 
 test-suite matcher
   type:                 exitcode-stdio-1.0
-  main-is:              MatcherTests.hs
   hs-source-dirs:       test
+  main-is:              ModelSpec/Matcher.hs
   build-depends:        base >=4.7 && <5
                       , btx-internal
                       , hspec
                       , text
   default-language:     Haskell2010
 
-test-suite basic
+test-suite mock
   type:                 exitcode-stdio-1.0
-  main-is:              BasicScripts.hs
   hs-source-dirs:       test
+  main-is:              Mock/MockApp.hs
   build-depends:        base >=4.7 && <5
                       , btx-internal
                       , directory

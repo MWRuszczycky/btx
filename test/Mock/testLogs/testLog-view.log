@@ -1,4 +1,4 @@
-Cats2016 in test/testBib.bib
+Cats2016 in test/Mock/testBib.bib
   type:    article
   author:  Katze, Felix and Fischer, Norman and Hilbert, Penelope
   title:   Synthesis of 4a$\alpha$,7$\alpha$,7a$\alpha$-Nepetalactone
@@ -7,9 +7,9 @@ Cats2016 in test/testBib.bib
   volume:  10
   pages:   1-2
 
-Missing: Dogs1986 from test/testBib.bib (no such entry)
+Missing: Dogs1986 from test/Mock/testBib.bib (no such entry)
 
-Cleland1975 in test/testBib.bib
+Cleland1975 in test/Mock/testBib.bib
   type:     article
   author:   Cleland, W. W.
   title:    Partition analysis and concept of net rate constants as tools in
@@ -21,10 +21,10 @@ Cleland1975 in test/testBib.bib
   metadata: file = Cleland_1965_Biochemistry.pdf
 
 Bibliographies:
-  working: test/testBib.bib has 3 entries
+  working: test/Mock/testBib.bib has 3 entries
   import:  unset
   export:  unset
 Context:
-  Cats2016 from test/testBib.bib
-  Dogs1986 is missing from test/testBib.bib (no such entry)
-  Cleland1975 from test/testBib.bib
+  Cats2016 from test/Mock/testBib.bib
+  Dogs1986 is missing from test/Mock/testBib.bib (no such entry)
+  Cleland1975 from test/Mock/testBib.bib

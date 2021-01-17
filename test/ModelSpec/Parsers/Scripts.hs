@@ -4,19 +4,19 @@
 
 -- =============================================================== --
 -- This is the 'parsing' test-suite for testing the                --
--- Model.Core.ScriptParser module
+-- Model.Parsers.Scripts module
 -- =============================================================== --
 
-import qualified Data.Text               as Tx
-import qualified Model.Core.Types        as T
-import Model.Core.ScriptParser                 ( parse              )
-import Data.Text                               ( Text               )
-import Test.Hspec                              ( Spec (..)
-                                               , describe
-                                               , hspec
-                                               , it
-                                               , shouldBe
-                                               , shouldSatisfy      )
+import qualified Model.Types           as T
+import qualified Data.Text             as Tx
+import           Model.Parsers.Scripts       ( parse         )
+import           Data.Text                   ( Text          )
+import           Test.Hspec                  ( Spec (..)
+                                             , describe
+                                             , hspec
+                                             , it
+                                             , shouldBe
+                                             , shouldSatisfy )
 
 main :: IO ()
 main = hspec $ do

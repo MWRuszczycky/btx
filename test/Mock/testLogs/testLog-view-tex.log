@@ -10,7 +10,7 @@
     note = {}
 }
 
-Missing: Dogs1986 from test/testBib.bib (no such entry)
+Missing: Dogs1986 from test/Mock/testBib.bib (no such entry)
 
 @article{Cleland1975,
     author = {Cleland, W. W.},
@@ -23,10 +23,10 @@ Missing: Dogs1986 from test/testBib.bib (no such entry)
 file = Cleland_1965_Biochemistry.pdf
 
 Bibliographies:
-  working: test/testBib.bib has 3 entries
+  working: test/Mock/testBib.bib has 3 entries
   import:  unset
   export:  unset
 Context:
-  Cats2016 from test/testBib.bib
-  Dogs1986 is missing from test/testBib.bib (no such entry)
-  Cleland1975 from test/testBib.bib
+  Cats2016 from test/Mock/testBib.bib
+  Dogs1986 is missing from test/Mock/testBib.bib (no such entry)
+  Cleland1975 from test/Mock/testBib.bib
