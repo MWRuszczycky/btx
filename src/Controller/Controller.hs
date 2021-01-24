@@ -1,11 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Controller.Controller
-    ( finish
-    , getInput
-    , getStyleMap
-    , initBtx
-    , getHelp
+    ( configureBtx
     , runBtx
     ) where
 
@@ -13,60 +9,56 @@ module Controller.Controller
 -- Provides the interface between the user and the model
 -- =============================================================== --
 
+import qualified Controller.Commands      as C
+import qualified Model.Core.ErrMonad      as E
 import qualified View.Help                as H
-import qualified Model.Types              as T
+import qualified Model.Parsers.BibTex     as PB
+import qualified Model.Parsers.Config     as PC
+import qualified Model.Core.Types         as T
 import qualified Data.Text                as Tx
-import qualified Data.Text.IO             as Tx
-import           Data.Text                      ( Text, pack          )
+import qualified View.View                as V
+import           Data.Text                      ( Text                )
 import           System.Directory               ( listDirectory
                                                 , getCurrentDirectory )
 import           System.IO                      ( stdout
-                                                , getContents
                                                 , hIsTerminalDevice   )
 import           Control.Monad.State.Lazy       ( execStateT
                                                 , foldM, liftIO       )
 import           Control.Monad.Except           ( throwError
                                                 , liftEither          )
-import           Model.Parsers.BibTex           ( parseBib            )
-import           Controller.ErrMonad            ( readOrMakeFile      )
-import           View.View                      ( noStyles
-                                                , defaultStyles       )
-import           Controller.Commands            ( hub, route,         )
 
 -- =============================================================== --
--- Initialization
+-- Configuration
+-- TODO: This will need to be refactored eventually
+--       The styles selection especially needs to be fixed.
+--       Including changing the type. This will need to be done when
+--       the View module is refactored.
 
----------------------------------------------------------------------
--- Finding the script or directive that the user wants to run
+configureBtx :: Text -> T.ErrMonad T.Config
+configureBtx cmdLine = do
+    opts   <- liftEither . PC.parseConfig $ cmdLine
+    config <- foldM (flip ($)) T.defaultConfig opts
+    styles <- getStyleMap
+    pure $ config { T.cStyles = styles }
 
-getInput :: [String] -> IO (Either String Text)
-getInput ("run":fp:_) = Right <$> Tx.readFile fp
-getInput ("run":[])   = pure . pack <$> getContents
-getInput xs           = pure . Right . pack . unwords $ xs
-
----------------------------------------------------------------------
--- Determine which style map should be used. If stdout is a terminal
+getStyleMap :: T.ErrMonad T.StyleMap
+-- ^Determine which style map should be used. If stdout is a terminal
 -- then a colored style map should be used. Otherwise, a plain style
 -- map should be used so that escape sequences are not inserted.
-
-getStyleMap :: IO T.StyleMap
 getStyleMap = do
-    useStyles <- hIsTerminalDevice stdout
+    useStyles <- liftIO $ hIsTerminalDevice stdout
     if useStyles
-       then pure defaultStyles
-       else pure noStyles
+       then pure V.defaultStyles
+       else pure V.noStyles
 
 ---------------------------------------------------------------------
 -- Finding the working BibTeX bibliography that the user wants to use
 -- and initializing the btx state with it
 
-initBtx :: T.StyleMap -> Maybe FilePath -> T.ErrMonad T.BtxState
--- ^Generate the initial state given a file path.
-initBtx sm Nothing   = findUniqueBibFile >>= initBtx sm . Just
-initBtx sm (Just fp) = do
-    content <- readOrMakeFile fp
-    bib     <- liftEither . parseBib fp $ content
-    pure $ T.BtxState bib Nothing Nothing Tx.empty sm
+getInBib :: Maybe FilePath -> T.ErrMonad T.Bibliography
+-- ^Find and parse the in bibliography
+getInBib Nothing   = findUniqueBibFile   >>= getInBib . Just
+getInBib (Just fp) = E.readOrMakeFile fp >>= liftEither . PB.parseBib fp
 
 findUniqueBibFile :: T.ErrMonad FilePath
 -- ^Look in current working directory for a unique .bib file.
@@ -78,35 +70,22 @@ findUniqueBibFile = do
          _       -> throwError . H.uniqueBibErr $ cwd
 
 -- =============================================================== --
--- Managers for program execution
+-- Running btx after configuration
 
----------------------------------------------------------------------
--- Compiling and running a btx script
+runBtx :: T.Config -> T.ErrMonad Text
+runBtx config
+    | helpReq   = pure $ H.getHelp (T.cStyles config) C.hub (T.cHelp config)
+    | otherwise = initBtx config >>= runCommands >>= finish
+    where helpReq = not . null . T.cHelp $ config
+          finish  = pure . T.logger
 
-runBtx :: [T.ParsedCommand] -> T.BtxState -> T.ErrMonad T.BtxState
--- ^Compile and run the commands on the initial state.
-runBtx = execStateT . foldM runCmd []
-    where runCmd = flip . uncurry $ T.cmdCmd . route
+initBtx :: T.Config -> T.ErrMonad T.BtxState
+initBtx config = do
+    (path, cmds) <- liftEither . PC.parseScript . T.cScript $ config
+    inBib        <- getInBib path
+    pure $ T.BtxState inBib Nothing Nothing cmds Tx.empty (T.cStyles config)
 
----------------------------------------------------------------------
--- Generating help and information strings for display
-
-helpCommands :: [T.HelpInfo]
-helpCommands = map T.cmdHelp hub
-
-getHelp :: T.StyleMap -> [String] -> Text
-getHelp sm []            = H.mainHelp sm helpCommands
-getHelp _  ("copying":_) = H.copyingStr
-getHelp sm xs            = Tx.intercalate "\n" . map (H.showHelp sm hs) $ xs
-    where hs = helpCommands ++ H.keywords ++ H.directives
-
--- =============================================================== --
--- Finalization
-
-finish :: Either String T.BtxState -> IO ()
--- ^Cleanup after running a script.
-finish (Left msg) = putStr msg
-finish (Right bs)
-    | Tx.null lg = pure ()
-    | otherwise  = Tx.putStrLn lg
-    where lg = T.logger bs
+runCommands :: T.BtxState -> T.ErrMonad T.BtxState
+runCommands btx = execStateT ( foldM runCmd [] cmds ) btx
+    where cmds   = T.commands btx
+          runCmd = flip . uncurry $ T.cmdCmd . C.route

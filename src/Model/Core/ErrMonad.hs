@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Controller.ErrMonad
+module Model.Core.ErrMonad
     ( -- File management
       readOrMakeFile
     , readFileExcept
@@ -15,7 +15,7 @@ module Controller.ErrMonad
 -- Wrappers for the ErrMonad type
 -- =============================================================== --
 
-import qualified Model.Types          as T
+import qualified Model.Core.Types     as T
 import qualified Data.Text.IO         as Tx
 import qualified Data.Text            as Tx
 import           Data.Text                  ( Text                 )

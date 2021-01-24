@@ -12,7 +12,7 @@ module Controller.Commands
 -- =============================================================== --
 
 import qualified View.Help                as H
-import qualified Model.Types              as T
+import qualified Model.Core.Types         as T
 import qualified Data.Text                as Tx
 import           Data.List                      ( find, foldl'     )
 import           Control.Monad.Except           ( throwError
@@ -28,9 +28,9 @@ import           Model.BtxState                 ( addToLog
 import           Controller.BtxStateMonad       ( bibToFile
                                                 , updateIn
                                                 , updateTo         )
-import           Controller.External            ( getDoi
+import           Model.Core.External            ( getDoi
                                                 , runExternal      )
-import           Controller.ErrMonad            ( readOrMakeFile
+import           Model.Core.ErrMonad            ( readOrMakeFile
                                                 , readFileExcept   )
 import           Model.Parsers.BibTex           ( parseBib         )
 import           Model.BibTeX.Resources         ( genericKey

@@ -25,16 +25,16 @@ executable btx
 library btx-internal
   exposed-modules:      Controller.Commands
                       , Controller.Controller
-                      , Controller.External
-                      , Controller.ErrMonad
                       , Controller.BtxStateMonad
                       , Model.BtxState
+                      , Model.Core.External
+                      , Model.Core.ErrMonad
+                      , Model.Core.Types
                       , Model.Matcher
                       , Model.Macros
-                      , Model.Types
                       , Model.BibTeX.Resources
                       , Model.Parsers.BibTex
-                      , Model.Parsers.Scripts
+                      , Model.Parsers.Config
                       , View.View
                       , View.Help
                       , Paths_btx
@@ -58,7 +58,7 @@ library btx-internal
 test-suite parsing
   type:                 exitcode-stdio-1.0
   hs-source-dirs:       test
-  main-is:              ModelSpec/Parsers/Scripts.hs
+  main-is:              ModelSpec/Parsers/Config.hs
   build-depends:        base >=4.7 && <5
                       , btx-internal
                       , hspec

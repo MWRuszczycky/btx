@@ -3,7 +3,7 @@
 
 module Model.Macros
     ( embedFile
-    , readGitHash
+    , gitHash
     ) where
 
 import qualified Language.Haskell.TH as TH
@@ -13,8 +13,8 @@ embedFile fp = do
     content <- TH.runIO . readFile $ fp
     [| content |]
 
-readGitHash :: TH.Q TH.Exp
-readGitHash = do
+gitHash :: TH.Q TH.Exp
+gitHash = do
     content <- TH.runIO . readFile $ ".git/HEAD"
     case words content of
          "ref:":path:_ -> do hash <- TH.runIO . readFile $ ".git/" <> path

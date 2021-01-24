@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Controller.External
+module Model.Core.External
     ( getDoi
     , runExternal
     ) where
@@ -11,8 +11,8 @@ module Controller.External
 
 import qualified Data.ByteString               as BS
 import qualified Data.ByteString.Lazy.Internal as BSL
-import qualified Controller.ErrMonad           as E
-import qualified Model.Types                   as T
+import qualified Model.Core.ErrMonad           as E
+import qualified Model.Core.Types              as T
 import qualified Data.Text                     as Tx
 import qualified Network.Wreq                  as Wreq
 import           Data.ByteString.Lazy                  ( toStrict         )

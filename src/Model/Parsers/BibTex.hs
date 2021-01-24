@@ -11,7 +11,7 @@ module Model.Parsers.BibTex
 
 import qualified Data.Attoparsec.Text as At
 import qualified Data.Map.Strict      as M
-import qualified Model.Types          as T
+import qualified Model.Core.Types     as T
 import qualified Data.Text            as Tx
 import           Data.Bifunctor             ( bimap       )
 import           Control.Applicative        ( (<|>)

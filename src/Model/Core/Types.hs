@@ -1,12 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Model.Types
+module Model.Core.Types
     ( -- State
       BtxState          (..)
     , BtxStateMonad
     , ErrMonad
     , ErrString
-    , Start             (..)
+    , Config            (..)
+    , defaultConfig
+    , Configurator
+    , Option
     -- StyleMaps
     , StyleMap
     -- Bibliographies
@@ -25,6 +28,7 @@ module Model.Types
     ) where
 
 import qualified Data.Map.Strict          as Map
+import qualified Data.Text                as Tx
 import           Data.Text                       ( Text    )
 import           Control.Monad.State.Lazy        ( StateT  )
 import           Control.Monad.Except            ( ExceptT )
@@ -44,18 +48,31 @@ type BtxStateMonad = StateT BtxState ErrMonad
 
 -- |Program state.
 data BtxState = BtxState {
-      inBib   :: Bibliography       -- Current bibliography
-    , toBib   :: Maybe Bibliography -- Target bibliography
-    , fromBib :: Maybe Bibliography -- Source bibliography
-    , logger  :: Text               -- Log of actions performed
-    , styles  :: StyleMap           -- Functions for styling text
+      inBib    :: Bibliography       -- Current bibliography
+    , toBib    :: Maybe Bibliography -- Target bibliography
+    , fromBib  :: Maybe Bibliography -- Source bibliography
+    , commands :: [ParsedCommand]    -- Parsed script to run
+    , logger   :: Text               -- Log of actions performed
+    , styles   :: StyleMap           -- Functions for styling text
     }
 
--- |Starting state
-data Start = Help [String]
-           | Usage String
-           | Script (Maybe FilePath) [ParsedCommand]
-           deriving ( Eq, Show )
+-- |Configuration
+data Config = Config {
+      cHelp   :: [String]
+    , cScript :: Text
+    , cStyles :: StyleMap
+    }
+
+defaultConfig :: Config
+defaultConfig = Config {
+      cHelp   = []
+    , cScript = Tx.empty
+    , cStyles = Map.empty
+    }
+
+type Configurator = Config -> ErrMonad Config
+
+type Option = (String, [String])
 
 -- =============================================================== -- 
 -- Style maps for holding color/display preferences

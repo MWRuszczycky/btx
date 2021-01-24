@@ -14,13 +14,13 @@ module Model.BtxState
     , refToPair
     ) where
 
-import qualified Data.Map.Strict as Map
-import qualified Model.Types     as T
-import qualified Data.Text       as Tx
-import           Model.Matcher          ( hasMatch )
-import           Data.Text              ( Text     )
-import           Data.List              ( foldl'   )
-import           Data.Maybe             ( mapMaybe )
+import qualified Data.Map.Strict  as Map
+import qualified Model.Core.Types as T
+import qualified Data.Text        as Tx
+import           Model.Matcher           ( hasMatch )
+import           Data.Text               ( Text     )
+import           Data.List               ( foldl'   )
+import           Data.Maybe              ( mapMaybe )
 
 addToLog :: Text -> T.BtxState -> T.BtxState
 addToLog t bs

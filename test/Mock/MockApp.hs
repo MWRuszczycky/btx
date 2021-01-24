@@ -8,8 +8,8 @@
 -- =============================================================== --
 
 import qualified Controller.Controller as C
-import qualified Model.Parsers.Scripts as P
-import qualified Model.Types           as T
+import qualified Model.Parsers.Config  as P
+import qualified Model.Core.Types      as T
 import qualified Data.Text             as Tx
 import qualified Data.Text.IO          as Tx
 import qualified View.View             as V
@@ -91,20 +91,15 @@ main = hspec $ around_ manageScriptTests $ do
 -- =============================================================== --
 -- Mocking the executable
 
-mock :: [String] -> IO (Either Text Text)
--- ^Mocks the main function for executing scripts.
-mock args = do
-    input <- C.getInput args
-    case either T.Usage P.parse input of
-         T.Usage msg      -> pure . Left  . pack $ msg
-         T.Help cs        -> pure . Right . pack . unlines $ cs
-         T.Script mbFp cs -> let startUp = C.initBtx V.noStyles mbFp
-                             in  runExceptT ( startUp >>= C.runBtx cs )
-                                 >>= mockFinish
+mock :: String -> IO (Either String Text)
+mock args = runExceptT $ mockConfig (Tx.pack args)
+                         >>= C.runBtx
+                         >>= pure . (<> "\n")
 
-mockFinish :: Either String T.BtxState -> IO (Either Text Text)
-mockFinish (Left msg) = pure . Left . pack $ msg <> "\n"
-mockFinish (Right bs) = pure . Right . (<> "\n") . T.logger $ bs
+mockConfig :: Text -> T.ErrMonad T.Config
+mockConfig txt = do
+    config <- C.configureBtx txt
+    pure $ config { T.cStyles = V.noStyles }
 
 -- =============================================================== --
 -- Utilities for preparing tests, running them and cleaning up after
@@ -120,7 +115,7 @@ manageScriptTests = bracket_ setupBib tearDown
 
 testScriptOutputLog :: String -> String -> FilePath -> Spec
 testScriptOutputLog cue name target = it (makeTitle cue name) action
-    where action = do result      <- getTestScript name >>= mock . words
+    where action = do result      <- getTestScript name >>= mock
                       expectedLog <- Tx.readFile $ "test/Mock/testLogs/" <> target
                       case result of
                            Left  _         -> error "Script fails to execute!"
@@ -129,7 +124,7 @@ testScriptOutputLog cue name target = it (makeTitle cue name) action
 testOneBibScript :: String -> String -> FilePath -> Spec
 -- ^Run tests involving only a single bibliography.
 testOneBibScript cue name target = it (makeTitle cue name) action
-    where action = do getTestScript name >>= mock . words
+    where action = do getTestScript name >>= mock
                       expected <- readFile $ "test/Mock/bib/" <> target
                       actual   <- readFile   "test/Mock/testBib.bib"
                       actual `shouldBe` expected
@@ -137,7 +132,7 @@ testOneBibScript cue name target = it (makeTitle cue name) action
 testExportScript :: String -> String -> FilePath -> FilePath -> Spec
 -- ^Run tests involving an export bibliography.
 testExportScript cue name targetWk targetEx = it (makeTitle cue name) action
-    where action = do getTestScript name >>= mock . words
+    where action = do getTestScript name >>= mock
                       expectedEx <- readFile $ "test/Mock/bib/" <> targetEx
                       expectedWk <- readFile $ "test/Mock/bib/" <> targetWk
                       actualEx   <- readFile "test/Mock/testExportBib.bib"
@@ -151,7 +146,7 @@ testScriptError cue name = it (makeTitle cue name) action
     where action = do let errMsg = "Invalid script executes without error!"
                           path0  = "test/Mock/bib/testBib.bib"
                           path1  = "test/Mock/testBib.bib"
-                      result <- mock . words =<< getTestScript name
+                      result <- mock =<< getTestScript name
                       case result of
                            Right _ -> error errMsg
                            Left  _ -> do expected <- readFile path0

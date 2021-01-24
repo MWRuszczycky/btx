@@ -24,7 +24,7 @@ module View.View
 import qualified System.Console.ANSI        as Ans
 import qualified Data.ByteString            as BS
 import qualified Data.Map.Strict            as Map
-import qualified Model.Types                as T
+import qualified Model.Core.Types           as T
 import qualified Data.Text                  as Tx
 import qualified Data.Text.Encoding         as Tx
 import           Data.Text                         ( Text                )

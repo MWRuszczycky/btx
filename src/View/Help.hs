@@ -2,14 +2,8 @@
 {-# LANGUAGE TemplateHaskell   #-}
 
 module View.Help
-    ( -- Main help messages
-      mainHelp
-      -- Help Formatting
-    , showHelp
-      -- Help for keywords
-    , keywords
-      -- Help for directives
-    , directives
+    ( -- Routing help requests
+      getHelp
       -- Error messages
     , argInvalidErr
     , cmdInvalidErr
@@ -19,25 +13,34 @@ module View.Help
     , renameErr
     , sameToFromBibs
     , uniqueBibErr
-      -- Text Strings
-    , copyingStr
     ) where
 
 -- =============================================================== --
 -- Help, errors and other information messages                     --
 -- =============================================================== --
 
-import qualified Model.Types  as T
-import qualified Data.Text    as Tx
-import           Data.Text          ( Text              )
-import           Data.List          ( intercalate, find )
-import           Model.Macros       ( embedFile         )
-import           View.View          ( style, padRight   )
+import qualified Model.Core.Types as T
+import qualified Data.Text        as Tx
+import qualified Paths_btx        as Paths
+import qualified Data.Version     as Ver
+import           Data.Text                 ( Text               )
+import           Data.List                 ( intercalate, find  )
+import           Model.Macros              ( embedFile, gitHash )
+import           View.View                 ( style, padRight    )
+
+-- =============================================================== -- 
+-- Routing help requests
+
+getHelp :: T.StyleMap -> [T.Command T.Context] -> [String] -> Text
+getHelp sm cmds []            = mainHelp sm (map T.cmdHelp cmds)
+getHelp sm cmds ("btx":_)     = getHelp sm cmds []
+getHelp _  _    ("copying":_) = copyingStr
+getHelp _  _    ("version":_) = versionStr
+getHelp sm cmds xs            = Tx.intercalate "\n" . map (showHelp sm hs) $ xs
+    where hs = (map T.cmdHelp cmds) <> keywords <> directives
 
 -- =============================================================== --
 -- Main help messages
-
--- Exported
 
 mainHelp :: T.StyleMap -> [T.HelpInfo] -> Text
 mainHelp sm commands = Tx.unlines
@@ -49,8 +52,6 @@ mainHelp sm commands = Tx.unlines
     , section sm "script command summaries", summaryList sm commands
     , section sm "copying"                 , mainHelpFooter
     ]
-
--- Unexported
 
 mainHelpHeader :: T.StyleMap -> Text
 mainHelpHeader sm = Tx.unwords
@@ -77,15 +78,11 @@ section sm name = Tx.unwords
 -- =============================================================== --
 -- Help Formatting
 
--- Exported
-
 showHelp :: T.StyleMap -> [T.HelpInfo] -> String -> Text
 showHelp sm hs x = let name = Tx.pack x
                    in  maybe ( "No help for <" <> name <> ">\n" )
                              ( detailedHelp sm                  )
                        . find ( elem name . T.names ) $ hs
-
--- Unexported
 
 formatAllNames :: T.StyleMap -> Int -> T.HelpInfo -> Text
 formatAllNames sm width h = padRight width ns
@@ -125,14 +122,10 @@ summaryList sm hs =
 -- =============================================================== --
 -- Help for keywords
 
--- Exported
-
 keywords :: [T.HelpInfo]
 keywords = [ andHelp
            , allHelp
            ]
-
--- Unexported
 
 andHelp :: T.HelpInfo
 andHelp = T.HelpInfo ns us sh (Tx.unlines lh)
@@ -169,15 +162,11 @@ allHelp = T.HelpInfo ns us sh (Tx.unlines lh)
 -- =============================================================== --
 -- Help for directives
 
--- Exported
-
 directives :: [T.HelpInfo]
 directives = [ helpHelp
              , runHelp
              , versionHelp
              ]
-
--- Unexported
 
 helpHelp :: T.HelpInfo
 helpHelp = T.HelpInfo ns us sh Tx.empty
@@ -202,13 +191,24 @@ runHelp = T.HelpInfo ns us sh (Tx.unlines lh)
                ]
 
 -- =============================================================== --
+-- Help strings
+
+copyingStr :: Tx.Text
+copyingStr = $(embedFile "res/help/copying.txt")
+
+versionStr :: Tx.Text
+versionStr = "btx-" <> v <> "-dev-" <> g
+    where v = Tx.pack . Ver.showVersion $ Paths.version
+          g = Tx.take 7 $(gitHash)
+
+-- =============================================================== --
 -- Error messages
 
 argInvalidErr :: String -> String -> T.ErrString
-argInvalidErr c a = "Invalid argument for " ++ c ++ ": " ++ a ++ ".\n"
+argInvalidErr c a = "Invalid argument for " <> c <> ": " <> a <> ".\n"
 
 cmdInvalidErr :: String -> T.ErrString
-cmdInvalidErr c = "Invalid command: " ++ "<" ++ c ++ ">.\n"
+cmdInvalidErr c = "Invalid command: " <> "<" <> c <> ">.\n"
 
 missingFromBibErr :: T.ErrString
 missingFromBibErr = "Use of <take> without an import bibliography being set.\n"
@@ -222,9 +222,9 @@ missingScriptErr = "Script file required (Try: btx help in).\n"
 renameErr :: Int -> Int -> T.ErrString
 renameErr n r = intercalate "\n" es
     where es = [ "The entries cannot be renamed, because the number of"
-               , "entries currently in the context (" ++ show r
-                  ++ ") does not match"
-               , "the number of new names supplied (" ++ show n ++ ")."
+               , "entries currently in the context (" <> show r
+                  <> ") does not match"
+               , "the number of new names supplied (" <> show n <> ")."
                ]
 
 sameToFromBibs :: T.ErrString
@@ -233,13 +233,7 @@ sameToFromBibs = "Import and export bibliographies cannot have the same path.\n"
 uniqueBibErr :: FilePath -> T.ErrString
 uniqueBibErr fp = unlines es
     where es = [ "Cannot find a unique default .bib file in the current"
-                 ++ " directory:"
+                 <> " directory:"
                , fp
                , "(Try: btx help in)"
                ]
-
--- =============================================================== --
--- Help strings
-
-copyingStr :: Tx.Text
-copyingStr = $(embedFile "res/help/copying.txt")
