@@ -72,7 +72,8 @@ stack test
 
 ## To do and known issues
 
-* Maybe allow more than one reference to be edited at a time. This could be done by adding an `edits` command.
-* Maybe add a configuration file to name a default bibliography file and a set of shortcuts to bibliography files.
+* Add an `edits` command to allow editing more than one reference at a time.
+* Add a configuration file.
 * Add commands for resorting, adding and deleting the fields of references.
+* Refactor help information and write a man page.
 * Refactor the BibTeX parser to allow for quoted fields.
