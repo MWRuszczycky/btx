@@ -19,7 +19,9 @@ import qualified Data.Text                as Tx
 import qualified View.View                as V
 import           Data.Text                      ( Text                )
 import           System.Directory               ( listDirectory
-                                                , getCurrentDirectory )
+                                                , getCurrentDirectory
+                                                , getHomeDirectory
+                                                , doesFileExist       )
 import           System.IO                      ( stdout
                                                 , hIsTerminalDevice   )
 import           Control.Monad.State.Lazy       ( execStateT
@@ -29,27 +31,30 @@ import           Control.Monad.Except           ( throwError
 
 -- =============================================================== --
 -- Configuration
--- TODO: This will need to be refactored eventually
---       The styles selection especially needs to be fixed.
---       Including changing the type. This will need to be done when
---       the View module is refactored.
 
 configureBtx :: [String] -> T.ErrMonad T.Config
-configureBtx args = do
-    opts   <- liftEither . PC.parseInput . PC.formatInput $ args
-    config <- foldM (flip ($)) T.defaultConfig opts
-    styles <- getStyleMap
-    pure $ config { T.cStyles = styles }
+configureBtx args = configInit >>= configArgs args >>= configFinal
 
-getStyleMap :: T.ErrMonad T.StyleMap
--- ^Determine which style map should be used. If stdout is a terminal
--- then a colored style map should be used. Otherwise, a plain style
--- map should be used so that escape sequences are not inserted.
-getStyleMap = do
-    useStyles <- liftIO $ hIsTerminalDevice stdout
-    if useStyles
-       then pure V.defaultStyles
-       else pure V.noStyles
+configInit :: T.ErrMonad T.Config
+configInit = do
+    path   <- liftIO $ fmap (<> "/.config/btx/config") getHomeDirectory
+    exists <- liftIO . doesFileExist $ path
+    if not exists
+       then pure T.defaultConfig
+       else E.readFileExcept path
+            >>= liftEither . PC.parseConfig
+            >>= foldM (flip ($)) T.defaultConfig
+
+configArgs :: [String] -> T.Config -> T.ErrMonad T.Config
+configArgs args config = liftEither fs >>= foldM (flip ($)) config
+    where fs = PC.parseInput . PC.formatInput $ args
+
+configFinal :: T.Config -> T.ErrMonad T.Config
+configFinal config = do
+    isTerm <- liftIO . hIsTerminalDevice $ stdout
+    if isTerm && T.cUseANSI config
+       then pure $ config { T.cStyles = V.defaultStyles }
+       else pure $ config { T.cStyles = V.noStyles      }
 
 ---------------------------------------------------------------------
 -- Finding the working BibTeX bibliography that the user wants to use
