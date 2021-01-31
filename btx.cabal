@@ -35,6 +35,7 @@ library btx-internal
                       , Model.BibTeX.Resources
                       , Model.Parsers.BibTex
                       , Model.Parsers.Config
+                      , Model.Parsers.Core
                       , View.View
                       , View.Help
                       , Paths_btx
