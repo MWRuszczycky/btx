@@ -34,9 +34,9 @@ import           Control.Monad.Except           ( throwError
 --       Including changing the type. This will need to be done when
 --       the View module is refactored.
 
-configureBtx :: Text -> T.ErrMonad T.Config
-configureBtx cmdLine = do
-    opts   <- liftEither . PC.parseConfig $ cmdLine
+configureBtx :: [String] -> T.ErrMonad T.Config
+configureBtx args = do
+    opts   <- liftEither . PC.parseInput . PC.formatInput $ args
     config <- foldM (flip ($)) T.defaultConfig opts
     styles <- getStyleMap
     pure $ config { T.cStyles = styles }

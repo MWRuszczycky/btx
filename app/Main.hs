@@ -7,7 +7,6 @@ module Main where
 -- =============================================================== --
 
 import qualified Data.Text.IO          as Tx
-import qualified Data.Text             as Tx
 import           System.Environment          ( getArgs      )
 import           Control.Monad.Except        ( runExceptT   )
 import           Controller.Controller       ( configureBtx
@@ -15,7 +14,7 @@ import           Controller.Controller       ( configureBtx
 
 main :: IO ()
 main = do
-    args <- Tx.pack . unwords <$> getArgs
+    args <- getArgs
     runExceptT ( configureBtx args >>= runBtx ) >>= \case
            Left  err -> putStrLn err
            Right msg -> Tx.putStrLn msg

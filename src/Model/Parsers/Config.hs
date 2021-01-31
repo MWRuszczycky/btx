@@ -2,7 +2,8 @@
 {-# LANGUAGE LambdaCase        #-}
 
 module Model.Parsers.Config
-    ( parseConfig
+    ( formatInput
+    , parseInput
     , parseScript
     ) where
 
@@ -16,16 +17,22 @@ import           Control.Monad.Except         ( throwError
 import           Control.Applicative          ( (<|>), liftA2
                                               , many, some    )
 
-parseConfig :: Text -> Either T.ErrString [T.Configurator]
-parseConfig txt = do
-    (opts, script) <- At.parseOnly parseInput txt
-    pure $ configScript script : map readOption opts
+-- =============================================================== -- 
+-- Formatting input
+
+formatInput :: [String] -> Text
+formatInput = Tx.unwords . map Tx.pack
 
 -- =============================================================== -- 
 -- Parsers
 
-parseInput :: At.Parser ([T.Option], Text)
-parseInput = do
+parseInput :: Text -> Either T.ErrString [T.Configurator]
+parseInput txt = do
+    (opts, script) <- At.parseOnly parseCmdLine txt
+    pure $ configScript script : map readOption opts
+
+parseCmdLine :: At.Parser ([T.Option], Text)
+parseCmdLine = do
     At.skipSpace
     flags <- many $ At.choice [ helpOpt, versionOpt, runOpt ]
     rest <- At.takeText

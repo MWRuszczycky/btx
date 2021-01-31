@@ -92,13 +92,13 @@ main = hspec $ around_ manageScriptTests $ do
 -- Mocking the executable
 
 mock :: String -> IO (Either String Text)
-mock args = runExceptT $ mockConfig (Tx.pack args)
-                         >>= C.runBtx
-                         >>= pure . (<> "\n")
+mock argStr = runExceptT $ mockConfig (words argStr)
+                           >>= C.runBtx
+                           >>= pure . (<> "\n")
 
-mockConfig :: Text -> T.ErrMonad T.Config
-mockConfig txt = do
-    config <- C.configureBtx txt
+mockConfig :: [String] -> T.ErrMonad T.Config
+mockConfig args = do
+    config <- C.configureBtx args
     pure $ config { T.cStyles = V.noStyles }
 
 -- =============================================================== --
