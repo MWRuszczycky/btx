@@ -3,6 +3,7 @@
 
 module Model.Parsers.Config
     ( formatInput
+    , parseConfigTxt
     , parseInput
     , parseScript
     ) where
@@ -10,8 +11,10 @@ module Model.Parsers.Config
 import qualified Data.Attoparsec.Text   as At
 import qualified Model.Core.ErrMonad    as E
 import qualified Model.Core.Types       as T
+import qualified Model.Parsers.Core     as P
 import qualified Data.Text              as Tx
 import           Data.Text                    ( Text          )
+import           Data.Char                    ( isAlphaNum    )
 import           Control.Monad.Except         ( throwError
                                               , liftIO        )
 import           Control.Applicative          ( (<|>), liftA2
@@ -76,30 +79,48 @@ commands = ( many aToken <* At.endOfInput ) >>= pure . go
                              (ys, "":zs) -> go $ x  : (ys <> zs)
                              (ys,    zs) -> (x, ys) : go zs
 
----------------------------------------------------------------------
--- Parsing script commands
-
 aToken :: At.Parser String
-aToken = At.choice [ andKey, aWord, quotedString ] <* At.skipSpace
+aToken = At.choice [ andKey, aWord, P.quotedStr ] <* At.skipSpace
+    where aWord  = some $ At.satisfy (At.notInClass ", \n\r'\"")
+          andKey = At.choice [ At.char   ','    *> pure ","
+                             , At.string "and"  *> pure ","
+                             ]
 
-andKey :: At.Parser String
-andKey  = At.choice [ At.char   ','    *> pure ","
-                    , At.string "and"  *> pure ","
-                    ]
+---------------------------------------------------------------------
+-- Parsing configuration files
+-- Configuration files use a simple key:value format, where comments
+-- begin with a '#'. The value runs from the first nonspace character
+-- after the ':' until the end of the line or a comment. Any leading
+-- or trailing space of the value is stripped; however, any internal
+-- spaces are left unchanged.
 
-aWord :: At.Parser String
-aWord = some $ At.satisfy (At.notInClass ", \n\r'\"")
+parseConfigTxt :: Text -> Either T.ErrString [(Text,Text)]
+parseConfigTxt = At.parseOnly configKeyValPairs
 
-quotedString :: At.Parser String
-quotedString = do
-    open <- At.char '\"' <|> At.char '\''
-    Tx.unpack <$> quotedContent (Tx.singleton open)
+configKeyValPairs :: At.Parser [(Text, Text)]
+configKeyValPairs = do
+    P.comments
+    xs <- many keyValPair
+    P.comments
+    At.endOfInput
+    pure xs
 
-quotedContent :: Text -> At.Parser Text
-quotedContent c = escaped <|> closeQuote <|> moreContent
-    where escaped     = At.string ("\\" <> c) *> fmap (c <>) (quotedContent c)
-          closeQuote  = At.string c           *> pure Tx.empty
-          moreContent = liftA2 Tx.cons At.anyChar (quotedContent c)
+validKey :: At.Parser Text
+validKey = At.takeWhile1 $ \ c -> isAlphaNum c || c == '-' || c == '_'
+
+validValue :: At.Parser Text
+validValue = fmap Tx.strip . At.takeWhile1 . At.notInClass $ ":#\n\r\t"
+
+keyValPair :: At.Parser (Text, Text)
+keyValPair = do
+    P.comments
+    key <- validKey
+    P.comments
+    At.char ':'
+    P.comments
+    val <- validValue
+    P.comment <|> At.endOfLine
+    pure (key, val)
 
 -- =============================================================== -- 
 -- Converting parsed values to configurators

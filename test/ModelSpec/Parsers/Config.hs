@@ -9,7 +9,8 @@
 
 import qualified Model.Core.Types      as T
 import qualified Data.Text             as Tx
-import           Model.Parsers.Config        ( parseScript   )
+import qualified Data.Text.IO          as Tx
+import qualified Model.Parsers.Config  as P
 import           Data.Text                   ( Text          )
 import           Data.Either                 ( isLeft        )
 import           Test.Hspec                  ( Spec (..)
@@ -21,36 +22,42 @@ import           Test.Hspec                  ( Spec (..)
 
 main :: IO ()
 main = hspec $ do
-    describe "The btx script-parser" $ do
-        it "handles simple scripts" $ do
-            parseScript script101 `shouldBe` result101
-            parseScript script102 `shouldBe` result102
-            parseScript script103 `shouldBe` result103
-            parseScript script104 `shouldBe` result104
-        it "handles variations \\n and '+' correctly" $ do
-            parseScript script201 `shouldBe` result201
-            parseScript script202 `shouldBe` result202
-            parseScript script203 `shouldBe` result203
-            parseScript script204 `shouldBe` result204
-            parseScript script205 `shouldBe` result205
-            parseScript script206 `shouldBe` result206
-        it "handles quoted strings correctly" $ do
-            parseScript script301 `shouldBe` result301
-            parseScript script302 `shouldBe` result302
-            parseScript script303 `shouldBe` result303
-            parseScript script304 `shouldBe` result304
-            parseScript script305 `shouldBe` result305
-            parseScript script306 `shouldBe` result306
-            parseScript script307 `shouldBe` result307
-            parseScript script308 `shouldBe` result308
-        it "handles malformed scripts" $ do
-            parseScript script401 `shouldSatisfy` isLeft
-            parseScript script402 `shouldSatisfy` isLeft
-            parseScript script403 `shouldSatisfy` isLeft
-            parseScript script404 `shouldSatisfy` isLeft
+    describe "Model.Parsers.Config.parseScript" $ do
+        spec_parseScript
+    describe "Model.Parsers.Config.parseConfigTxt" $ do
+        spec_parseConfigTxt
 
 -- =============================================================== --
--- Test scripts
+-- Model.Parsers.Config.parseScript
+
+spec_parseScript :: Spec
+spec_parseScript = do
+    it "handles simple scripts" $ do
+        P.parseScript script101 `shouldBe` result101
+        P.parseScript script102 `shouldBe` result102
+        P.parseScript script103 `shouldBe` result103
+        P.parseScript script104 `shouldBe` result104
+    it "handles variations \\n and '+' correctly" $ do
+        P.parseScript script201 `shouldBe` result201
+        P.parseScript script202 `shouldBe` result202
+        P.parseScript script203 `shouldBe` result203
+        P.parseScript script204 `shouldBe` result204
+        P.parseScript script205 `shouldBe` result205
+        P.parseScript script206 `shouldBe` result206
+    it "handles quoted strings correctly" $ do
+        P.parseScript script301 `shouldBe` result301
+        P.parseScript script302 `shouldBe` result302
+        P.parseScript script303 `shouldBe` result303
+        P.parseScript script304 `shouldBe` result304
+        P.parseScript script305 `shouldBe` result305
+        P.parseScript script306 `shouldBe` result306
+        P.parseScript script307 `shouldBe` result307
+        P.parseScript script308 `shouldBe` result308
+    it "handles malformed scripts" $ do
+        P.parseScript script401 `shouldSatisfy` isLeft
+        P.parseScript script402 `shouldSatisfy` isLeft
+        P.parseScript script403 `shouldSatisfy` isLeft
+        P.parseScript script404 `shouldSatisfy` isLeft
 
 ---------------------------------------------------------------------
 -- Simple scripts
@@ -234,3 +241,29 @@ script402 = "in animals.bib plants.bib, pull Cats2016, name Felines2018 and view
 script403 = "in in animals.bib, pull Cats2016, name Felines2018 and view"
 -- Quotes are not all closed
 script404 = "get Cats2016, find 'Synthesis of 4a$\\alpha' 'cats like fish and view"
+
+-- =============================================================== -- 
+-- Model.Parsers.Config.parseConfigTxt
+
+spec_parseConfigTxt :: Spec
+spec_parseConfigTxt = do
+    it "works with mock_config_1" $ do
+        testFileTxt <- Tx.readFile "test/Mock/configs/mock_config_1"
+        P.parseConfigTxt testFileTxt `shouldBe`
+            Right [ ( ("key" <>) . Tx.pack . show $ n , "value" )
+                    | n <- [1..20] ]
+    it "works with mock_config_2" $ do
+        testFileTxt <- Tx.readFile "test/Mock/configs/mock_config_2"
+        P.parseConfigTxt testFileTxt `shouldBe`
+            Right [ ( ("key" <>) . Tx.pack . show $ n, "value value value" )
+                    | n <- [1..10] ]
+    it "works with mock_config_3" $ do
+        testFileTxt <- Tx.readFile "test/Mock/configs/mock_config_3"
+        P.parseConfigTxt testFileTxt `shouldBe`
+            Right [ ( ("key" <>) . Tx.pack . show $ n, "value" )
+                    | n <- [1..3] ]
+    it "works with mock_config_4" $ do
+        testFileTxt <- Tx.readFile "test/Mock/configs/mock_config_4"
+        P.parseConfigTxt testFileTxt `shouldBe`
+            Right [ ( ("key" <>) . Tx.pack . show $ n, "value" )
+                    | n <- [1..5] ]

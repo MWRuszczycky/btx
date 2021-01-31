@@ -1,0 +1,38 @@
+# This is mock_config_1 for testing the parseConfigTxt function
+# in Model.Parsers.Core
+
+key1:value
+key2:  value
+key3:value  
+key4:  value  
+key5  :value
+key6  :  value
+key7  :value  
+key8  :  value  
+key9:
+value
+key10:
+  value
+key11:
+
+value
+key12:
+  value
+key13:
+  value  
+key14 :
+value
+key15
+:value
+key16
+:  value
+key17
+:  value   
+key18
+
+:
+
+value
+
+    key19:value
+    key20 : value

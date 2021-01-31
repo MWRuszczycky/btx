@@ -1,0 +1,7 @@
+
+# This is mock_config_3 for testing the parseConfigTxt function
+# in Model.Parsers.Core
+
+key1:value
+key2:value
+key3:value
