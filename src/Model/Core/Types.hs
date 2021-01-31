@@ -58,16 +58,18 @@ data BtxState = BtxState {
 
 -- |Configuration
 data Config = Config {
-      cHelp   :: [String]
-    , cScript :: Text
-    , cStyles :: StyleMap
+      cHelp    :: [String]
+    , cScript  :: Text
+    , cStyles  :: StyleMap
+    , cUseANSI :: Bool
     }
 
 defaultConfig :: Config
 defaultConfig = Config {
-      cHelp   = []
-    , cScript = Tx.empty
-    , cStyles = Map.empty
+      cHelp    = []
+    , cScript  = Tx.empty
+    , cStyles  = Map.empty
+    , cUseANSI = True
     }
 
 type Configurator = Config -> ErrMonad Config

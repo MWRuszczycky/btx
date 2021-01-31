@@ -3,22 +3,21 @@
 
 module Model.Parsers.Config
     ( formatInput
+    , parseConfig
     , parseConfigTxt
     , parseInput
     , parseScript
     ) where
 
-import qualified Data.Attoparsec.Text   as At
-import qualified Model.Core.ErrMonad    as E
-import qualified Model.Core.Types       as T
-import qualified Model.Parsers.Core     as P
-import qualified Data.Text              as Tx
-import           Data.Text                    ( Text          )
-import           Data.Char                    ( isAlphaNum    )
-import           Control.Monad.Except         ( throwError
-                                              , liftIO        )
-import           Control.Applicative          ( (<|>), liftA2
-                                              , many, some    )
+import qualified Data.Attoparsec.Text as At
+import qualified Model.Core.ErrMonad  as E
+import qualified Model.Parsers.Core   as P
+import qualified Model.Core.Types     as T
+import qualified Data.Text            as Tx
+import           Data.Text                  ( Text               )
+import           Data.Char                  ( isAlphaNum         )
+import           Control.Monad.Except       ( throwError, liftIO )
+import           Control.Applicative        ( (<|>), many, some  )
 
 -- =============================================================== -- 
 -- Formatting input
@@ -34,6 +33,15 @@ parseInput txt = do
     (opts, script) <- At.parseOnly parseCmdLine txt
     pure $ configScript script : map readOption opts
 
+parseConfig :: Text -> Either T.ErrString [T.Configurator]
+parseConfig txt = map readKeyVal <$> parseConfigTxt txt
+
+parseScript :: Text -> Either T.ErrString (Maybe FilePath, [T.ParsedCommand])
+parseScript txt = At.parseOnly commands txt >>= readCmds
+
+-- ------------------------------------------------------------------
+-- Parsing Options
+
 parseCmdLine :: At.Parser ([T.Option], Text)
 parseCmdLine = do
     At.skipSpace
@@ -41,9 +49,6 @@ parseCmdLine = do
     rest <- At.takeText
     At.endOfInput
     pure (flags, rest)
-
--- ------------------------------------------------------------------
--- Parsing Options
 
 helpOpt :: At.Parser T.Option
 helpOpt = do
@@ -62,9 +67,6 @@ runOpt = do
 
 ---------------------------------------------------------------------
 -- Parsing scripts
-
-parseScript :: Text -> Either T.ErrString (Maybe FilePath, [T.ParsedCommand])
-parseScript txt = At.parseOnly commands txt >>= readCmds
 
 commands :: At.Parser [T.ParsedCommand]
 -- ^Parse text script into parsed command-argument pairs
@@ -155,6 +157,25 @@ configRun []      config = do script <- Tx.pack <$> liftIO getContents
 configRun (fp:[]) config = do script <- E.readFileExcept fp
                               pure $ config { T.cScript = script }
 configRun _       _      = throwError "run takes at most one argument"
+
+---------------------------------------------------------------------
+-- Configuration key-value pairs
+
+readKeyVal :: (Text, Text) -> T.Configurator
+readKeyVal ("color",x) = \ c ->
+    readFlag x >>= \ y -> pure $ c { T.cUseANSI = y }
+readKeyVal (_,_)       = \ c -> pure c
+
+readFlag :: Text -> T.ErrMonad Bool
+readFlag "yes"   = pure True
+readFlag "true"  = pure True
+readFlag "no"    = pure False
+readFlag "false" = pure False
+readFlag x       = throwError errMsg
+    where errMsg = concat [ "Invalid flag value: "
+                          , Tx.unpack x
+                          , ", expected: 'yes', 'true', 'no' or 'false'"
+                          ]
 
 -- =============================================================== -- 
 -- Error messages
