@@ -5,10 +5,6 @@ module Controller.Controller
     , runBtx
     ) where
 
--- =============================================================== --
--- Provides the interface between the user and the model
--- =============================================================== --
-
 import qualified Controller.Commands      as C
 import qualified Model.Core.ErrMonad      as E
 import qualified View.Help                as H
@@ -56,9 +52,34 @@ configFinal config = do
        then pure $ config { T.cStyles = V.defaultStyles }
        else pure $ config { T.cStyles = V.noStyles      }
 
+-- =============================================================== --
+-- Running btx after configuration
+
+-- TODO: integrate the configuration into the BtxState.
+
+runBtx :: T.Config -> T.ErrMonad Text
+runBtx config =
+    case T.cDirective config of
+         T.Help xs       -> pure $ H.getHelp (T.cStyles config) C.hub xs
+         T.Version       -> pure $ H.getHelp (T.cStyles config) C.hub ["version"]
+         T.RunFile fp    -> E.readFileExcept fp >>= runScript config
+         T.RunStdIn      -> liftIO getContents  >>= runScript config . Tx.pack
+         T.Script script -> runScript config script
+
+runScript :: T.Config -> Text -> T.ErrMonad Text
+runScript config script = do
+    (path, cmds) <- liftEither . PC.parseScript $ script
+    inBib        <- getInBib path
+    let btx = T.BtxState inBib Nothing Nothing cmds Tx.empty (T.cStyles config)
+    runCommands btx >>= pure . T.logger
+
+runCommands :: T.BtxState -> T.ErrMonad T.BtxState
+runCommands btx = execStateT ( foldM runCmd [] cmds ) btx
+    where cmds   = T.commands btx
+          runCmd = flip . uncurry $ T.cmdCmd . C.route
+
 ---------------------------------------------------------------------
--- Finding the working BibTeX bibliography that the user wants to use
--- and initializing the btx state with it
+-- Finding the initial working BibTeX bibliography
 
 getInBib :: Maybe FilePath -> T.ErrMonad T.Bibliography
 -- ^Find and parse the in bibliography
@@ -73,24 +94,3 @@ findUniqueBibFile = do
     case filter ( (== "bib.") . take 4 . reverse ) fps of
          (fp:[]) -> pure fp
          _       -> throwError . H.uniqueBibErr $ cwd
-
--- =============================================================== --
--- Running btx after configuration
-
-runBtx :: T.Config -> T.ErrMonad Text
-runBtx config
-    | helpReq   = pure $ H.getHelp (T.cStyles config) C.hub (T.cHelp config)
-    | otherwise = initBtx config >>= runCommands >>= finish
-    where helpReq = not . null . T.cHelp $ config
-          finish  = pure . T.logger
-
-initBtx :: T.Config -> T.ErrMonad T.BtxState
-initBtx config = do
-    (path, cmds) <- liftEither . PC.parseScript . T.cScript $ config
-    inBib        <- getInBib path
-    pure $ T.BtxState inBib Nothing Nothing cmds Tx.empty (T.cStyles config)
-
-runCommands :: T.BtxState -> T.ErrMonad T.BtxState
-runCommands btx = execStateT ( foldM runCmd [] cmds ) btx
-    where cmds   = T.commands btx
-          runCmd = flip . uncurry $ T.cmdCmd . C.route

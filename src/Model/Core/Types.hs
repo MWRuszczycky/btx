@@ -8,6 +8,7 @@ module Model.Core.Types
     , ErrString
     , Config            (..)
     , defaultConfig
+    , Directive         (..)
     , Configurator
     , Option
     -- StyleMaps
@@ -51,26 +52,32 @@ data BtxState = BtxState {
       inBib    :: Bibliography       -- Current bibliography
     , toBib    :: Maybe Bibliography -- Target bibliography
     , fromBib  :: Maybe Bibliography -- Source bibliography
-    , commands :: [ParsedCommand]    -- Parsed script to run
+    , commands :: [ParsedCommand]    -- Commands to run
     , logger   :: Text               -- Log of actions performed
     , styles   :: StyleMap           -- Functions for styling text
     }
 
 -- |Configuration
 data Config = Config {
-      cHelp    :: [String]
-    , cScript  :: Text
-    , cStyles  :: StyleMap
-    , cUseANSI :: Bool
+      cDirective :: Directive
+    , cStyles    :: StyleMap
+    , cUseANSI   :: Bool
     }
 
 defaultConfig :: Config
 defaultConfig = Config {
-      cHelp    = []
-    , cScript  = Tx.empty
-    , cStyles  = Map.empty
-    , cUseANSI = True
+      cDirective = Script Tx.empty
+    , cStyles    = Map.empty
+    , cUseANSI   = True
     }
+
+data Directive =
+      Help     [String]
+    | RunFile  FilePath
+    | RunStdIn
+    | Script   Text
+    | Version
+      deriving (Eq, Show)
 
 type Configurator = Config -> ErrMonad Config
 

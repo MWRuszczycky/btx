@@ -10,14 +10,13 @@ module Model.Parsers.Config
     ) where
 
 import qualified Data.Attoparsec.Text as At
-import qualified Model.Core.ErrMonad  as E
 import qualified Model.Parsers.Core   as P
 import qualified Model.Core.Types     as T
 import qualified Data.Text            as Tx
-import           Data.Text                  ( Text               )
-import           Data.Char                  ( isAlphaNum         )
-import           Control.Monad.Except       ( throwError, liftIO )
-import           Control.Applicative        ( (<|>), many, some  )
+import           Data.Text                  ( Text                )
+import           Data.Char                  ( isAlphaNum, isSpace )
+import           Control.Monad.Except       ( throwError          )
+import           Control.Applicative        ( (<|>), many, some   )
 
 -- =============================================================== -- 
 -- Formatting input
@@ -29,41 +28,50 @@ formatInput = Tx.unwords . map Tx.pack
 -- Parsers
 
 parseInput :: Text -> Either T.ErrString [T.Configurator]
-parseInput txt = do
-    (opts, script) <- At.parseOnly parseCmdLine txt
-    pure $ configScript script : map readOption opts
+parseInput txt = At.parseOnly foo txt >>= bar
+    where bar d = pure [ \ c -> pure $ c { T.cDirective = d } ]
+          foo   = do At.skipSpace
+                     dir <- directive
+                     At.endOfInput
+                     pure dir
 
 parseConfig :: Text -> Either T.ErrString [T.Configurator]
 parseConfig txt = map readKeyVal <$> parseConfigTxt txt
 
 parseScript :: Text -> Either T.ErrString (Maybe FilePath, [T.ParsedCommand])
-parseScript txt = At.parseOnly commands txt >>= readCmds
+parseScript txt = At.parseOnly commands txt >>= readFirstInBib
 
 -- ------------------------------------------------------------------
--- Parsing Options
+-- Parsing the command line input
 
-parseCmdLine :: At.Parser ([T.Option], Text)
-parseCmdLine = do
-    At.skipSpace
-    flags <- many $ At.choice [ helpOpt, versionOpt, runOpt ]
-    rest <- At.takeText
-    At.endOfInput
-    pure (flags, rest)
+directive :: At.Parser T.Directive
+directive = At.choice [ helpDirective
+                      , versionDirective
+                      , runDirective
+                      , scriptDirective
+                      ]
 
-helpOpt :: At.Parser T.Option
-helpOpt = do
+helpDirective :: At.Parser T.Directive
+helpDirective = do
     At.choice [ At.string "help", At.string "--help", At.string "-h" ]
-    (,) "help" . words . Tx.unpack <$> At.takeText
+    T.Help . words . Tx.unpack <$> At.takeText
 
-versionOpt :: At.Parser T.Option
-versionOpt = do
+versionDirective :: At.Parser T.Directive
+versionDirective = do
     At.choice [ At.string "version", At.string "--version", At.string "-v" ]
-    pure ("version", [])
+    pure T.Version
 
-runOpt :: At.Parser T.Option
-runOpt = do
+runDirective :: At.Parser T.Directive
+runDirective = do
     At.string "run"
-    (,) "run" . words . Tx.unpack <$> At.takeText
+    ( some (At.satisfy isSpace) *> pure () ) <|> At.endOfInput
+    path <- Tx.strip <$> At.takeText
+    if Tx.null path
+       then pure   T.RunStdIn
+       else pure . T.RunFile . Tx.unpack $ path
+
+scriptDirective :: At.Parser T.Directive
+scriptDirective = At.takeText >>= pure . T.Script . Tx.strip
 
 ---------------------------------------------------------------------
 -- Parsing scripts
@@ -87,6 +95,13 @@ aToken = At.choice [ andKey, aWord, P.quotedStr ] <* At.skipSpace
           andKey = At.choice [ At.char   ','    *> pure ","
                              , At.string "and"  *> pure ","
                              ]
+
+readFirstInBib :: [T.ParsedCommand]
+                  -> Either T.ErrString (Maybe FilePath, [T.ParsedCommand])
+readFirstInBib (("in",[])   : _) = Left "Invalid use of <in>"
+readFirstInBib (("in",_:_:_): _) = Left "Invalid use of <in>"
+readFirstInBib (("in",p:_)  :xs) = pure ( Just p, xs  )
+readFirstInBib xs                = pure ( Nothing, xs )
 
 ---------------------------------------------------------------------
 -- Parsing configuration files
@@ -128,37 +143,6 @@ keyValPair = do
 -- Converting parsed values to configurators
 
 ---------------------------------------------------------------------
--- Scripts
-
-readCmds :: [T.ParsedCommand]
-            -> Either T.ErrString (Maybe FilePath, [T.ParsedCommand])
-readCmds []                = Left   noCommandsErr
-readCmds (("in",[])   :_)  = Left $ invalidUsageErr "in"
-readCmds (("in",_:_:_):_)  = Left $ invalidUsageErr "in"
-readCmds (("in",p:_)  :xs) = pure ( Just p, xs  )
-readCmds xs                = pure ( Nothing, xs )
-
-configScript :: Text -> T.Configurator
-configScript xs = \ c -> pure c { T.cScript = xs }
-
--- ------------------------------------------------------------------
--- Options
-
-readOption :: T.Option -> T.Configurator
-readOption ("help",   []) = \ c -> pure $ c { T.cHelp = ["btx"]     }
-readOption ("help",   xs) = \ c -> pure $ c { T.cHelp = xs          }
-readOption ("version", _) = \ c -> pure $ c { T.cHelp = ["version"] }
-readOption ("run",    xs) = configRun xs
-readOption (x,         _) = \ _ -> throwError $ "Unknown option: " <> x
-
-configRun :: [FilePath] -> T.Configurator
-configRun []      config = do script <- Tx.pack <$> liftIO getContents
-                              pure $ config { T.cScript = script }
-configRun (fp:[]) config = do script <- E.readFileExcept fp
-                              pure $ config { T.cScript = script }
-configRun _       _      = throwError "run takes at most one argument"
-
----------------------------------------------------------------------
 -- Configuration key-value pairs
 
 readKeyVal :: (Text, Text) -> T.Configurator
@@ -175,18 +159,4 @@ readFlag x       = throwError errMsg
     where errMsg = concat [ "Invalid flag value: "
                           , Tx.unpack x
                           , ", expected: 'yes', 'true', 'no' or 'false'"
-                          ]
-
--- =============================================================== -- 
--- Error messages
-
-invalidUsageErr :: String -> T.ErrString
-invalidUsageErr c = unwords [ "Invalid usage for command <" ++ c ++ ">."
-                            , "(Try: btx help " ++ c ++ ")\n"
-                            ]
-
-noCommandsErr :: T.ErrString
-noCommandsErr   = unwords [ "This won't do anything --"
-                          , "a script or command needs to be provided."
-                          , "(Try: btx help)\n"
                           ]

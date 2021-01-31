@@ -33,7 +33,6 @@ import           View.View                 ( style, padRight    )
 
 getHelp :: T.StyleMap -> [T.Command T.Context] -> [String] -> Text
 getHelp sm cmds []            = mainHelp sm (map T.cmdHelp cmds)
-getHelp sm cmds ("btx":_)     = getHelp sm cmds []
 getHelp _  _    ("copying":_) = copyingStr
 getHelp _  _    ("version":_) = versionStr
 getHelp sm cmds xs            = Tx.intercalate "\n" . map (showHelp sm hs) $ xs
