@@ -12,6 +12,7 @@ module Controller.Commands
 -- =============================================================== --
 
 import qualified View.Help                as H
+import qualified View.View                as V
 import qualified Model.Core.Types         as T
 import qualified Data.Text                as Tx
 import           Data.List                      ( find, foldl'     )
@@ -37,11 +38,6 @@ import           Model.BibTeX.Resources         ( genericKey
                                                 , uniqueKeys
                                                 , supported
                                                 , templates        )
-import           View.View                      ( viewRef
-                                                , viewRefTex
-                                                , summarize
-                                                , toAscii
-                                                , listEntry        )
 
 -- =============================================================== --
 -- Hub and router
@@ -239,7 +235,12 @@ infoCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
                ]
 
 infoCmd :: T.CommandMonad T.Context
-infoCmd xs rs = get >>= put . (addToLog . summarize xs rs <*> id) >> pure rs
+infoCmd xs rs = do
+    btx <- get
+    let info = V.summarize xs rs btx
+    put $ addToLog info btx
+    pure rs
+    -- get >>= put . (addToLog . V.summarize xs rs <*> id) >> pure rs
 
 -- view command -----------------------------------------------------
 
@@ -260,10 +261,10 @@ viewCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
 
 viewCmd :: T.CommandMonad T.Context
 viewCmd _  [] = modify ( addToLog "\nNo entries to view.\n" ) >> pure []
-viewCmd xs rs = gets T.styles >>= pure . go xs >>= modify . addToLog >> pure rs
-    where go ("list":_) sm = Tx.intercalate "\n" . map (listEntry sm) $ rs
-          go ("tex":_)  sm = Tx.intercalate "\n\n" . map (viewRefTex sm) $ rs
-          go _          sm = Tx.intercalate "\n\n" . map (viewRef sm) $ rs
+viewCmd xs rs = gets T.config >>= pure . go xs >>= modify . addToLog >> pure rs
+    where go ("list":_) c = Tx.intercalate "\n"   . map (V.listEntry  c) $ rs
+          go ("tex":_)  c = Tx.intercalate "\n\n" . map (V.viewRefTex c) $ rs
+          go _          c = Tx.intercalate "\n\n" . map (V.viewRef    c) $ rs
 
 -- =============================================================== --
 -- Context constructors
@@ -290,7 +291,7 @@ doiCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
 doiCmd :: T.CommandMonad T.Context
 doiCmd xs rs = do
     updateIn rs
-    lift . mapM (getDoi toAscii) $ xs
+    lift . mapM (getDoi V.toAscii) $ xs
 
 -- find command -----------------------------------------------------
 

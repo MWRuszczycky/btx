@@ -55,8 +55,6 @@ configFinal config = do
 -- =============================================================== --
 -- Running btx after configuration
 
--- TODO: integrate the configuration into the BtxState.
-
 runBtx :: T.Config -> T.ErrMonad Text
 runBtx config =
     case T.cDirective config of
@@ -70,13 +68,12 @@ runScript :: T.Config -> Text -> T.ErrMonad Text
 runScript config script = do
     (path, cmds) <- liftEither . PC.parseScript $ script
     inBib        <- getInBib path
-    let btx = T.BtxState inBib Nothing Nothing cmds Tx.empty (T.cStyles config)
-    runCommands btx >>= pure . T.logger
+    let btx = T.BtxState inBib Nothing Nothing Tx.empty config
+    runCommands btx cmds >>= pure . T.logger
 
-runCommands :: T.BtxState -> T.ErrMonad T.BtxState
-runCommands btx = execStateT ( foldM runCmd [] cmds ) btx
-    where cmds   = T.commands btx
-          runCmd = flip . uncurry $ T.cmdCmd . C.route
+runCommands :: T.BtxState -> [T.ParsedCommand] -> T.ErrMonad T.BtxState
+runCommands btx cmds = execStateT ( foldM runCmd [] cmds ) btx
+    where runCmd = flip . uncurry $ T.cmdCmd . C.route
 
 ---------------------------------------------------------------------
 -- Finding the initial working BibTeX bibliography

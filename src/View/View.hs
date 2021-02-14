@@ -39,15 +39,15 @@ import           System.Console.ANSI.Types         ( Color (..)
 -- Summarizing state and context
 
 summarize :: [String] -> T.Context -> T.BtxState -> Text
-summarize xs rs s
+summarize xs rs btx
     | null xs   = Tx.intercalate "\n" x
     | otherwise = h <> "\n" <> Tx.intercalate "\n" x
     where h  = Tx.pack . unwords $ "Info:" : xs
-          sm = T.styles s
+          sm = T.cStyles . T.config $ btx
           x  = [ style sm "header" "Bibliographies:"
-               , "  working: " <> summarizeBib sm ( Just . T.inBib $ s )
-               , "  import:  " <> summarizeBib sm ( T.fromBib s)
-               , "  export:  " <> summarizeBib sm ( T.toBib s )
+               , "  working: " <> summarizeBib sm ( Just . T.inBib $ btx )
+               , "  import:  " <> summarizeBib sm ( T.fromBib        btx )
+               , "  export:  " <> summarizeBib sm ( T.toBib          btx )
                , summarizeContext sm rs
                ]
 
@@ -100,12 +100,13 @@ fieldToBibtex (k, v) = Tx.concat [ "    ", k, " = ", "{", v, "}" ]
 ---------------------------------------------------------------------
 -- Pretty print references for use with <view> command
 
-listEntry :: T.StyleMap -> T.Ref -> Text
+listEntry :: T.Config -> T.Ref -> Text
 -- ^View an entry in abbreviated, list format.
-listEntry sm (T.Missing fp k e) = viewMissing sm fp k e
-listEntry sm (T.Ref     _  k v) = style sm "key" k <> meta
+listEntry c (T.Missing fp k e) = viewMissing (T.cStyles c) fp k e
+listEntry c (T.Ref     _  k v) = style sm "key" k <> meta
                                   <> style sm "emph" title
-    where meta  = ": " <> T.theType v <> ", "
+    where sm    = T.cStyles c
+          meta  = ": " <> T.theType v <> ", "
           room  = 80 - Tx.length k - Tx.length meta
           go x  | room < Tx.length x = Tx.take (room - 2) x <> ".."
                 | otherwise          = x
@@ -115,15 +116,15 @@ listEntry sm (T.Ref     _  k v) = style sm "key" k <> meta
                                      then " <empty title field>"
                                      else go t
 
-viewRef :: T.StyleMap -> T.Ref -> Text
+viewRef :: T.Config -> T.Ref -> Text
 -- ^Represent a Ref value as pretty-printed text.
-viewRef sm (T.Missing fp k e) = viewMissing sm fp k e
-viewRef sm (T.Ref     fp k v) = hdr <> viewEntry sm v
-    where hdr = style sm "key" k <> " in " <> Tx.pack fp <> "\n"
+viewRef c (T.Missing fp k e) = viewMissing (T.cStyles c) fp k e
+viewRef c (T.Ref     fp k v) = hdr <> viewEntry (T.cStyles c) v
+    where hdr = style (T.cStyles c) "key" k <> " in " <> Tx.pack fp <> "\n"
 
-viewRefTex :: T.StyleMap -> T.Ref -> Text
+viewRefTex :: T.Config -> T.Ref -> Text
 -- ^Represent a Ref value in BibTeX format.
-viewRefTex sm (T.Missing fp k e) = viewMissing sm fp k e
+viewRefTex c (T.Missing fp k e) = let sm = T.cStyles c in viewMissing sm fp k e
 viewRefTex _  (T.Ref     _  k v) = refToBibtex k v
 
 viewMissing :: T.StyleMap -> FilePath -> T.Key -> T.ErrString -> Text
