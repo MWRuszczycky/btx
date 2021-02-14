@@ -12,7 +12,7 @@ import qualified Model.Parsers.Config  as P
 import qualified Model.Core.Types      as T
 import qualified Data.Text             as Tx
 import qualified Data.Text.IO          as Tx
-import qualified View.View             as V
+import qualified View.Core             as Vc
 import           Data.Text                   ( Text, pack      )
 import           Test.Hspec                  ( Spec      (..)
                                              , around_
@@ -99,7 +99,7 @@ mock argStr = runExceptT $ mockConfig (words argStr)
 mockConfig :: [String] -> T.ErrMonad T.Config
 mockConfig args = do
     config <- C.configureBtx args
-    pure $ config { T.cStyles = V.noStyles }
+    pure $ config { T.cStyles = Vc.noStyles }
 
 -- =============================================================== --
 -- Utilities for preparing tests, running them and cleaning up after

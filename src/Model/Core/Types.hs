@@ -3,9 +3,10 @@
 module Model.Core.Types
     ( -- State
       BtxState          (..)
-    , BtxStateMonad
+    , BtxMonad
     , ErrMonad
     , ErrString
+    , ViewMonad
     , Config            (..)
     , defaultConfig
     , Directive         (..)
@@ -33,6 +34,10 @@ import qualified Data.Text                as Tx
 import           Data.Text                       ( Text    )
 import           Control.Monad.State.Lazy        ( StateT  )
 import           Control.Monad.Except            ( ExceptT )
+import           Control.Monad.Reader            ( Reader  )
+import           Control.Monad.Writer            ( WriterT )
+import           Data.Monoid                     ( Endo    )
+
 
 -- =============================================================== -- 
 -- State
@@ -44,8 +49,8 @@ type ErrString = String
 type ErrMonad = ExceptT ErrString IO
 
 -- |Transformer stack for managing program state in the IO Monad.
--- BtxStateMonad a = IO ( Either ErrString ( State BtxState a ) )
-type BtxStateMonad = StateT BtxState ErrMonad
+-- BtxMonad a = IO ( Either ErrString ( State BtxState a ) )
+type BtxMonad = StateT BtxState ErrMonad
 
 -- |Program state.
 data BtxState = BtxState {
@@ -55,6 +60,13 @@ data BtxState = BtxState {
     , logger   :: Text               -- Log of actions performed
     , config   :: Config             -- Configuration
     }
+
+-- The ViewMonad is a transformer stack with a Writer monad stacked
+-- on an inner Reader monad. The Reader monad provides access to the
+-- program configuration (e.g., to determine display styles). The
+-- Monoid for the Writer monad is composition of functions over lists
+-- of text blocks that are being composed together.
+type ViewMonad = WriterT (Endo [Text]) (Reader Config)
 
 -- |Configuration
 data Config = Config {
@@ -121,11 +133,11 @@ type Context = [Ref]
 -- =============================================================== -- 
 -- Commands
 
--- |Monadic Btx command that can be run in the BtxStateMonad
+-- |Monadic Btx command that can be run in the BtxMonad
 -- The a parameter is used for passing arguments between commands.
 -- This parameter is usually instantiated as either () or [Ref] so
 -- that lists of bibliography entries can be passed between commands.
-type CommandMonad a = [String] -> a -> BtxStateMonad a
+type CommandMonad a = [String] -> a -> BtxMonad a
 
 -- |Pair of the user command input and argument list.
 type ParsedCommand = (String, [String])

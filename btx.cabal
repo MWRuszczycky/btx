@@ -25,7 +25,7 @@ executable btx
 library btx-internal
   exposed-modules:      Controller.Commands
                       , Controller.Controller
-                      , Controller.BtxStateMonad
+                      , Controller.BtxMonad
                       , Model.BtxState
                       , Model.Core.External
                       , Model.Core.ErrMonad
@@ -37,6 +37,7 @@ library btx-internal
                       , Model.Parsers.Config
                       , Model.Parsers.Core
                       , View.View
+                      , View.Core
                       , View.Help
                       , Paths_btx
   hs-source-dirs:       src

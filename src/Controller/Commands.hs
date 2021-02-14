@@ -11,8 +11,10 @@ module Controller.Commands
 -- Commands are documented using their help strings.
 -- =============================================================== --
 
+import qualified Controller.BtxMonad      as B
 import qualified View.Help                as H
 import qualified View.View                as V
+import qualified View.Core                as Vc
 import qualified Model.Core.Types         as T
 import qualified Data.Text                as Tx
 import           Data.List                      ( find, foldl'     )
@@ -26,9 +28,6 @@ import           Model.BtxState                 ( addToLog
                                                 , dropRefByKey
                                                 , searchRefs
                                                 , getRef           )
-import           Controller.BtxStateMonad       ( bibToFile
-                                                , updateIn
-                                                , updateTo         )
 import           Model.Core.External            ( getDoi
                                                 , runExternal      )
 import           Model.Core.ErrMonad            ( readOrMakeFile
@@ -143,7 +142,7 @@ inCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
 inCmd :: T.CommandMonad T.Context
 inCmd []      _  = throwError "Command <in> requires a file path.\n"
 inCmd (_:_:_) _  = throwError "Command <in> allows only one argument.\n"
-inCmd (fp:_)  rs = do updateIn rs >>= bibToFile
+inCmd (fp:_)  rs = do B.updateIn rs >>= B.bibToFile
                       btxState <- get
                       content  <- lift . readOrMakeFile $ fp
                       bib      <- liftEither . parseBib fp $ content
@@ -170,8 +169,8 @@ saveCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
                ]
 
 saveCmd :: T.CommandMonad T.Context
-saveCmd _ rs = do updateIn rs >>= bibToFile
-                  get >>= maybe (pure ()) bibToFile . T.toBib
+saveCmd _ rs = do B.updateIn rs >>= B.bibToFile
+                  get >>= maybe (pure ()) B.bibToFile . T.toBib
                   pure []
 
 -- to command -------------------------------------------------------
@@ -201,7 +200,7 @@ toCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
                ]
 
 toCmd :: T.CommandMonad T.Context
-toCmd []      rs = gets T.toBib >>= maybe ( pure () ) bibToFile
+toCmd []      rs = gets T.toBib >>= maybe ( pure () ) B.bibToFile
                    >> modify ( \ b ->  b { T.toBib = Nothing } ) >> pure rs
 toCmd (_:_:_) _  = throwError "Command <to> allows only one or no argument.\n"
 toCmd (tp:_)  rs = do btxState <- get
@@ -234,13 +233,9 @@ infoCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
                , "See also <view>."
                ]
 
+-- TODO: Refactor this to use the ViewMonad correctly
 infoCmd :: T.CommandMonad T.Context
-infoCmd xs rs = do
-    btx <- get
-    let info = V.summarize xs rs btx
-    put $ addToLog info btx
-    pure rs
-    -- get >>= put . (addToLog . V.summarize xs rs <*> id) >> pure rs
+infoCmd xs rs = get >>= B.logView . V.summarize xs rs >> pure rs
 
 -- view command -----------------------------------------------------
 
@@ -259,12 +254,15 @@ viewCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
                , "See also the <info> command."
                ]
 
+-- TODO: Refactor this to use the ViewMonad correctly
 viewCmd :: T.CommandMonad T.Context
 viewCmd _  [] = modify ( addToLog "\nNo entries to view.\n" ) >> pure []
-viewCmd xs rs = gets T.config >>= pure . go xs >>= modify . addToLog >> pure rs
-    where go ("list":_) c = Tx.intercalate "\n"   . map (V.listEntry  c) $ rs
-          go ("tex":_)  c = Tx.intercalate "\n\n" . map (V.viewRefTex c) $ rs
-          go _          c = Tx.intercalate "\n\n" . map (V.viewRef    c) $ rs
+viewCmd xs rs = gets T.config >>= pure . go xs >>= B.logView >> pure rs
+    where go ("list":_) c = Vc.sepWith sep1 . map (V.listEntry  c) $ rs
+          go ("tex":_)  c = Vc.sepWith sep2 . map (V.viewRefTex c) $ rs
+          go _          c = Vc.sepWith sep2 . map (V.viewRef    c) $ rs
+          sep1            = Vc.write "\n"
+          sep2            = Vc.write "\n\n"
 
 -- =============================================================== --
 -- Context constructors
@@ -290,8 +288,8 @@ doiCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
 
 doiCmd :: T.CommandMonad T.Context
 doiCmd xs rs = do
-    updateIn rs
-    lift . mapM (getDoi V.toAscii) $ xs
+    B.updateIn rs
+    lift . mapM (getDoi Vc.toAscii) $ xs
 
 -- find command -----------------------------------------------------
 
@@ -342,7 +340,7 @@ findCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
 
 findCmd :: T.CommandMonad T.Context
 findCmd xs rs = do
-    updateIn rs
+    B.updateIn rs
     btxState <- get
     let bib = T.inBib btxState
         rs' = searchRefs bib xs
@@ -372,7 +370,7 @@ copyCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
                ]
 
 copyCmd :: T.CommandMonad T.Context
-copyCmd xs rs = do updateIn rs
+copyCmd xs rs = do B.updateIn rs
                    bib <- gets T.inBib
                    pure . map (getRef bib) . go bib $ xs
     where go b ("all":_) = allKeysToArgs b
@@ -403,7 +401,7 @@ newCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
 
 newCmd :: T.CommandMonad T.Context
 newCmd xs rs = do
-    updateIn rs
+    B.updateIn rs
     bib <- gets T.inBib
     pure . templates $ zip (uniqueKeys bib) xs
 
@@ -455,7 +453,7 @@ takeCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
 takeCmd :: T.CommandMonad T.Context
 takeCmd ("all":_) rs = do xs <- gets $ maybe [] allKeysToArgs . T.fromBib
                           takeCmd xs rs
-takeCmd xs        rs = do updateIn rs
+takeCmd xs        rs = do B.updateIn rs
                           gets T.fromBib >>= \case
                                Nothing  -> throwError $ H.missingFromBibErr
                                Just bib -> pure . map ( getRef bib ) $ xs
@@ -552,7 +550,7 @@ sendCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
 
 sendCmd :: T.CommandMonad T.Context
 sendCmd ("to":xs) rs = toCmd xs rs >>= sendCmd []
-sendCmd _         rs = updateTo rs >>  pure []
+sendCmd _         rs = B.updateTo rs >>  pure []
 
 -- toss command -----------------------------------------------------
 

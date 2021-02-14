@@ -12,7 +12,7 @@ import qualified Model.Parsers.BibTex     as PB
 import qualified Model.Parsers.Config     as PC
 import qualified Model.Core.Types         as T
 import qualified Data.Text                as Tx
-import qualified View.View                as V
+import qualified View.Core                as Vc
 import           Data.Text                      ( Text                )
 import           System.Directory               ( listDirectory
                                                 , getCurrentDirectory
@@ -49,8 +49,8 @@ configFinal :: T.Config -> T.ErrMonad T.Config
 configFinal config = do
     isTerm <- liftIO . hIsTerminalDevice $ stdout
     if isTerm && T.cUseANSI config
-       then pure $ config { T.cStyles = V.defaultStyles }
-       else pure $ config { T.cStyles = V.noStyles      }
+       then pure $ config { T.cStyles = Vc.defaultStyles }
+       else pure $ config { T.cStyles = Vc.noStyles      }
 
 -- =============================================================== --
 -- Running btx after configuration

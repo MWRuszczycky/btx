@@ -22,6 +22,7 @@ import           Data.Text               ( Text     )
 import           Data.List               ( foldl'   )
 import           Data.Maybe              ( mapMaybe )
 
+-- TODO: Remove this and just use the ViewMonad
 addToLog :: Text -> T.BtxState -> T.BtxState
 addToLog t bs
     | Tx.null btxLog = bs { T.logger = btxLog <> t }

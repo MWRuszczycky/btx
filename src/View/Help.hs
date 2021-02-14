@@ -22,11 +22,11 @@ module View.Help
 import qualified Model.Core.Types as T
 import qualified Data.Text        as Tx
 import qualified Paths_btx        as Paths
+import qualified View.Core        as Vc
 import qualified Data.Version     as Ver
 import           Data.Text                 ( Text               )
 import           Data.List                 ( intercalate, find  )
 import           Model.Macros              ( embedFile, gitHash )
-import           View.View                 ( style, padRight    )
 
 -- =============================================================== -- 
 -- Routing help requests
@@ -54,7 +54,7 @@ mainHelp sm commands = Tx.unlines
 
 mainHelpHeader :: T.StyleMap -> Text
 mainHelpHeader sm = Tx.unwords
-    [ style sm "emph" "Welcome to btx!"
+    [ Vc.style sm "emph" "Welcome to btx!"
     , "btx is a light-weight, command-line interface"
     , "for working with\nBibTeX bibliography files."
     ]
@@ -70,7 +70,7 @@ mainHelpFooter = Tx.unwords
 section :: T.StyleMap -> Text -> Text
 section sm name = Tx.unwords
     [ "\n--"
-    , style sm "header" name
+    , Vc.style sm "header" name
     , Tx.replicate (80 - Tx.length name - 5) "-"
     ]
 
@@ -84,13 +84,13 @@ showHelp sm hs x = let name = Tx.pack x
                        . find ( elem name . T.names ) $ hs
 
 formatAllNames :: T.StyleMap -> Int -> T.HelpInfo -> Text
-formatAllNames sm width h = padRight width ns
-    where ns = Tx.intercalate " | " . map (style sm "emph") . T.names $ h
+formatAllNames sm width h = Vc.padRight width ns
+    where ns = Tx.intercalate " | " . map (Vc.style sm "emph") . T.names $ h
 
 formatMainName :: T.StyleMap -> Int -> T.HelpInfo -> Text
 formatMainName sm width h = case T.names h of
-                                 []    -> padRight width Tx.empty
-                                 (n:_) -> style sm "emph" . padRight width $ n
+                                 []    -> Vc.padRight width Tx.empty
+                                 (n:_) -> Vc.style sm "emph" . Vc.padRight width $ n
 
 detailedHelp :: T.StyleMap -> T.HelpInfo -> Text
 detailedHelp sm h
@@ -100,14 +100,14 @@ detailedHelp sm h
           hdr = Tx.unwords [ formatAllNames sm 0 h
                            , T.usage h
                            , ":"
-                           , style sm "short" . T.shortHelp $ h
+                           , Vc.style sm "short" . T.shortHelp $ h
                            ]
 
 summaryHelp :: T.StyleMap -> Int -> Int -> T.HelpInfo -> Text
 summaryHelp sm nw uw h = Tx.unwords [ formatMainName sm nw h
-                                    , padRight uw . T.usage $ h
+                                    , Vc.padRight uw . T.usage $ h
                                     , ":"
-                                    , style sm "short" . T.shortHelp $ h
+                                    , Vc.style sm "short" . T.shortHelp $ h
                                     ]
 
 summaryList :: T.StyleMap -> [T.HelpInfo] -> Text
