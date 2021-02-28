@@ -30,7 +30,8 @@ logView v = Vc.view v >>= modify . B.addToLog
 
 bibToFile :: T.Bibliography -> T.BtxMonad ()
 -- ^Convert a bibliography to BibTeX and write to file.
-bibToFile b = lift . writeFileExcept (T.path b) . V.bibToBibtex $ b
+bibToFile bib = Vc.view bibView >>= lift . writeFileExcept (T.path bib)
+    where bibView = V.bibToBibtex bib
 
 updateIn :: T.Context -> T.BtxMonad T.Bibliography
 -- ^Save references in context to the in-bibliography and return the

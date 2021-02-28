@@ -66,11 +66,13 @@ summarizeRef (T.Missing fp k e ) = do
 -- There should be no text-styling in these functions, because they
 -- are used to write the .bib files.
 
-bibToBibtex :: T.Bibliography -> Text
+-- TODO: Fix all of this to use the ViewMonad correctly
+
+bibToBibtex :: T.Bibliography -> T.ViewMonad ()
 -- ^Generates a text representation of the bibliography.
 bibToBibtex b
-    | Tx.null h = rs
-    | otherwise = h <> "\n\n" <> rs
+    | Tx.null h = Vc.write rs
+    | otherwise = Vc.write $ h <> "\n\n" <> rs
     where h         = T.header b
           rs        = Tx.concat . Map.foldrWithKey go [] . T.refs $ b
           go k v [] = [ refToBibtex k v <> "\n" ]
@@ -91,7 +93,8 @@ fieldToBibtex (k, v) = Tx.concat [ "    ", k, " = ", "{", v, "}" ]
 ---------------------------------------------------------------------
 -- Pretty print references for use with <view> command
 
--- TODO: Fix this to use the ViewMonad correctly
+-- TODO: fix all of this to use the ViewMonad correctly
+
 listEntry :: T.Config -> T.Ref -> T.ViewMonad ()
 -- ^View an entry in abbreviated, list format.
 listEntry c (T.Missing fp k e) = Vc.write $ viewMissing (T.cStyles c) fp k e
@@ -108,14 +111,12 @@ listEntry c (T.Ref     _  k v) = Vc.write $ Vc.style sm "key" k <> meta
                                      then " <empty title field>"
                                      else go t
 
--- TODO: Fix this to use the ViewMonad correctly
 viewRef :: T.Config -> T.Ref -> T.ViewMonad ()
 -- ^Represent a Ref value as pretty-printed text.
 viewRef c (T.Missing fp k e) = Vc.write $ viewMissing (T.cStyles c) fp k e
 viewRef c (T.Ref     fp k v) = Vc.write $ hdr <> viewEntry (T.cStyles c) v
     where hdr = Vc.style (T.cStyles c) "key" k <> " in " <> Tx.pack fp <> "\n"
 
--- TODO: Fix this to use the ViewMonad correctly
 viewRefTex :: T.Config -> T.Ref -> T.ViewMonad ()
 -- ^Represent a Ref value in BibTeX format.
 viewRefTex c (T.Missing fp k e) = Vc.write $ viewMissing sm fp k e
