@@ -18,7 +18,8 @@ import qualified Data.Map.Strict  as Map
 import qualified Model.Core.Types as T
 import qualified Data.Text        as Tx
 import qualified View.Core        as Vc
-import           Data.Text               ( Text )
+import           Data.Text               ( Text   )
+import           Control.Monad           ( unless )
 
 -- =============================================================== --
 -- Bibliography formatting
@@ -26,38 +27,39 @@ import           Data.Text               ( Text )
 ---------------------------------------------------------------------
 -- Summarizing state and context
 
--- TODO: Fix this to use the ViewMonad Correctly
 summarize :: [String] -> T.Context -> T.BtxState -> T.ViewMonad ()
-summarize xs rs btx
-    | null xs   = Vc.write $ Tx.intercalate "\n" x
-    | otherwise = Vc.write $ h <> "\n" <> Tx.intercalate "\n" x
-    where h  = Tx.pack . unwords $ "Info:" : xs
-          sm = T.cStyles . T.config $ btx
-          x  = [ Vc.style sm "header" "Bibliographies:"
-               , "  working: " <> summarizeBib sm ( Just . T.inBib $ btx )
-               , "  import:  " <> summarizeBib sm ( T.fromBib        btx )
-               , "  export:  " <> summarizeBib sm ( T.toBib          btx )
-               , summarizeContext sm rs
-               ]
+summarize xs rs btx = do
+    unless (null xs) . Vc.writeLn . Tx.pack . unwords $ "Info:" : xs
+    Vc.writeLnAs "header" "Bibliographies:"
+    Vc.write "  working: " *> summarizeBib ( Just . T.inBib $ btx )
+    Vc.write "  import:  " *> summarizeBib ( T.fromBib        btx )
+    Vc.write "  export:  " *> summarizeBib ( T.toBib          btx )
+    summarizeContext rs
 
-summarizeBib :: T.StyleMap -> Maybe T.Bibliography -> Text
-summarizeBib _  Nothing  = "unset"
-summarizeBib sm (Just b) = let n     = Map.size . T.refs $ b
-                               name  = Vc.style sm "key"  (Tx.pack (T.path b))
-                               count = Vc.style sm "emph" (Tx.pack (show n))
-                           in  name <> " has " <> count
-                               <> if n == 1 then " entry" else " entries"
+summarizeBib :: Maybe T.Bibliography -> T.ViewMonad ()
+summarizeBib Nothing  = Vc.writeLn "unset"
+summarizeBib (Just b) =  do
+    let count = Map.size . T.refs $ b
+    Vc.writeAs "key" . Tx.pack . T.path $ b
+    Vc.write " has "
+    Vc.writeAs "emph" . Vc.tshow $ count
+    if count == 1 then Vc.write " entry" else Vc.write " entries"
+    Vc.newline
 
-summarizeContext :: T.StyleMap -> T.Context -> Text
-summarizeContext _ []  = "The context is currently empty."
-summarizeContext sm rs = Vc.style sm "header" "Context:\n" <> Tx.intercalate "\n" x
-    where x = map ( Tx.append "  " . summarizeRef sm ) $ rs
+summarizeContext :: T.Context -> T.ViewMonad ()
+summarizeContext [] = Vc.write "The context is currently empty."
+summarizeContext rs = do
+    let indent2 = Vc.write "  "
+    Vc.writeLnAs "header" "Context:"
+    Vc.sepWith Vc.newline . map ( \ r -> indent2 *> summarizeRef r ) $ rs
 
-summarizeRef :: T.StyleMap -> T.Ref -> Text
-summarizeRef sm (T.Ref     fp k _ ) = Vc.style sm "key" k <> " from " <> Tx.pack fp
-summarizeRef sm (T.Missing fp k e ) = Vc.style sm "warn" ( k <> " is missing" )
-                                          <> " from " <> Tx.pack fp
-                                          <> " (" <> Tx.pack e <> ")"
+summarizeRef :: T.Ref -> T.ViewMonad ()
+summarizeRef ( T.Ref    fp k _ ) = do
+    Vc.writeAs "key" k
+    Vc.write $ " from " <> Tx.pack fp
+summarizeRef (T.Missing fp k e ) = do
+    Vc.writeAs "warn" k
+    Vc.write $ " is missing from " <> Tx.pack fp <> " (" <> Tx.pack e <> ")"
 
 ---------------------------------------------------------------------
 -- Conversion to BibTeX format

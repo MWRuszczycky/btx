@@ -3,9 +3,13 @@
 module View.Core
     ( view
     , write
+    , writeAs
     , writeLn
+    , writeLnAs
     , newline
     , sepWith
+-- Text versus String
+    , tshow
 -- Formatting lines and blocks of text
     , padRight
     , overHang
@@ -29,7 +33,7 @@ import           Data.List                        ( foldl', intersperse )
 import           Data.Text                        ( Text                )
 import           Data.Monoid                      ( Endo (..), appEndo  )
 import           Control.Monad.State              ( get                 )
-import           Control.Monad.Reader             ( runReader           )
+import           Control.Monad.Reader             ( runReader, asks     )
 import           Control.Monad.Writer             ( execWriterT, tell   )
 import           System.Console.ANSI.Types        ( Color (..)
                                                   , ColorIntensity (..) )
@@ -44,14 +48,28 @@ view v = get >>= pure . Tx.concat . flip appEndo [] . run
 write :: Text -> T.ViewMonad ()
 write x = tell $ Endo ( [x] <> )
 
+writeAs :: Text -> Text -> T.ViewMonad ()
+writeAs s x = do
+    sm <- asks T.cStyles
+    write $ style sm s x
+
 writeLn :: Text -> T.ViewMonad ()
 writeLn x = write x *> newline
+
+writeLnAs :: Text -> Text -> T.ViewMonad ()
+writeLnAs s x = writeAs s x *> newline
 
 newline :: T.ViewMonad ()
 newline = write "\n"
 
 sepWith :: T.ViewMonad () -> [T.ViewMonad ()] -> T.ViewMonad ()
 sepWith sep = sequence_ . intersperse sep
+
+-- =============================================================== --
+-- Text versus String
+
+tshow :: Show a => a -> Text
+tshow = Tx.pack . show
 
 -- =============================================================== -- 
 -- Formatting lines and blocks of text
