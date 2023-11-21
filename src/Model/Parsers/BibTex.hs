@@ -48,8 +48,10 @@ errorMessage fp err = unlines hs
     where hs = [ "Unable to parse " ++ fp ++ " as a BibTeX bibliography"
                  ++ " (.bib) file."
                , "The btx BibTeX parser requires that:"
-               , "    1. All reference entries use the braced format."
-               , "    2. @PREAMBLE and @STRING entries precede all other"
+               , "    1. All reference fields should use the braced format."
+               , "    2. Single alphanumeric fields do not require braces;"
+               , "       however, they will be saved in the braced format."
+               , "    3. @PREAMBLE and @STRING entries precede all other"
                , "       entries. In contrast, @COMMENT entries can follow"
                , "       reference entries and will be parsed as metadata"
                , "       associated with the reference entry they follow.\n"
@@ -135,7 +137,8 @@ refKey = At.takeWhile1 ( At.notInClass ",{}@ \t\n\r\f\v" )
 
 kvPair :: At.Parser T.Field
 -- ^Parse individiual key-value pairs in the BibTeX reference fields.
--- Values must be enclosed by braces and not double quotes.
+-- Values can be either a single alpha-numeric string or enclosed by
+-- braces. Strings enclosed only in double quotes are not recognized.
 kvPair = do
     At.char ','
     At.skipSpace
@@ -143,7 +146,7 @@ kvPair = do
     At.skipSpace
     At.char '='
     At.skipSpace
-    v <- valParse
+    v <- At.choice [ bracedValue, unbracedValue ]
     At.skipSpace
     pure (k, v)
 
@@ -153,27 +156,31 @@ keyParse :: At.Parser Text
 keyParse = pack <$> many ( At.satisfy good )
     where good x = isAlphaNum x || x == '-' || x == '_'
 
-valParse :: At.Parser Text
--- ^Parser for BibTeX reference field values. These must be enclosed
--- in braces and not double quotes.
-valParse = do
+bracedValue :: At.Parser Text
+-- ^Parser for braced BibTeX reference field values. These must be
+-- enclosed in braces and not double quotes.
+bracedValue = do
     At.char '{'
-    vs <- value
+    vs <- bracedValueRecurse
     pure vs
 
-value :: At.Parser Text
+bracedValueRecurse :: At.Parser Text
 -- ^Recursive parser for BibTeX reference field values.
-value = do
+bracedValueRecurse = do
     start <- At.takeWhile ( \ x -> x /= '{' && x /= '}' && x /= '\\' )
     next  <- At.peekChar'
     case next of
          '\\' -> do escaped <- At.take 2
-                    rest    <- value
+                    rest    <- bracedValueRecurse
                     pure $ start <> escaped <> rest
-         '{'  -> do inBraces <- valParse
-                    rest     <- value
+         '{'  -> do inBraces <- bracedValue
+                    rest     <- bracedValueRecurse
                     pure $ start <> ( "{" <> inBraces <> "}" ) <> rest
          _    -> At.char '}' >> pure start
+
+unbracedValue :: At.Parser Text
+-- ^Parser for single unbraced alpha-numberic strings.
+unbracedValue = At.takeWhile1 isAlphaNum
 
 ---------------------------------------------------------------------
 -- Parsing metadata and headers
