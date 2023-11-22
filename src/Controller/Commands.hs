@@ -251,7 +251,8 @@ viewCmdHelp = T.HelpInfo ns us sh (Tx.unlines lh)
                , "  view      : Pretty-print each entry."
                , "  view list : Print abbreviated entry."
                , "  view tex  : Print entries in BibTeX format."
-               , "  view json : Print entries in JSON format.\n"
+               , "  view json : Print entries in JSON format."
+               , "  view sxp  : Print entries as an S-expression.\n"
                , "See also the <info> command."
                ]
 
@@ -262,6 +263,7 @@ viewCmd xs rs = gets T.config >>= pure . go xs >>= B.logView >> pure rs
     where go ("list":_) c = Vc.sepWith sep1 . map (V.listEntry  c) $ rs
           go ("tex":_)  c = Vc.sepWith sep2 . map (V.viewRefTex c) $ rs
           go ("json":_) c = V.viewRefsJson c rs
+          go ("sxp":_)  c = V.viewRefsSxp  c rs
           go _          c = Vc.sepWith sep2 . map (V.viewRef    c) $ rs
           sep1            = Vc.write "\n"
           sep2            = Vc.write "\n\n"

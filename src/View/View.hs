@@ -8,6 +8,7 @@ module View.View
     , viewRef
     , viewRefTex
     , viewRefsJson
+    , viewRefsSxp
     , summarize
     ) where
 
@@ -118,6 +119,34 @@ viewRefJson c (T.Missing fp k e) = viewRefJson c . T.Ref fp k $ entry
 viewFieldAsJson :: T.Field -> T.ViewMonad ()
 viewFieldAsJson (key,val) = do
     Vc.dQuote key *> Vc.write ":"
+    Vc.dQuote . Vc.addEscapes $ val
+
+---------------------------------------------------------------------
+-- Conversion to S-expressions
+
+viewRefsSxp :: T.Config -> [T.Ref] -> T.ViewMonad ()
+viewRefsSxp c rs = do
+    Vc.write "("
+    Vc.sepWith (Vc.write " ") . map (viewRefSxp c) $ rs
+    Vc.write ")"
+
+viewRefSxp :: T.Config -> T.Ref -> T.ViewMonad ()
+viewRefSxp _ (T.Ref     _ k v) = do
+    let space = Vc.write " "
+    Vc.write k *> Vc.write "("
+    Vc.write . T.theType $ v
+    Vc.write "("
+    Vc.sepWith space . map viewFieldAsSxp . T.fields $ v
+    Vc.write ")"
+    Vc.write "("
+    Vc.sepWith space . map (Vc.dQuote . Vc.addEscapes) . T.metadata $ v
+    Vc.write "))"
+viewRefSxp c (T.Missing fp k e) = viewRefSxp c . T.Ref fp k $ entry
+    where entry = T.Entry "MISSING" [] [Tx.pack e]
+
+viewFieldAsSxp :: T.Field -> T.ViewMonad ()
+viewFieldAsSxp (key,val) = do
+    Vc.write key *> Vc.write " "
     Vc.dQuote . Vc.addEscapes $ val
 
 ---------------------------------------------------------------------
