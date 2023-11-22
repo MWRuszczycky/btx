@@ -11,6 +11,8 @@ module View.Core
 -- Text versus String
     , tshow
 -- Formatting lines and blocks of text
+    , addEscapes
+    , dQuote
     , padRight
     , overHang
     , breakToFit
@@ -62,6 +64,9 @@ writeLnAs s x = writeAs s x *> newline
 newline :: T.ViewMonad ()
 newline = write "\n"
 
+dQuote :: Text -> T.ViewMonad ()
+dQuote t = write . Tx.concat $ ["\"", t, "\""]
+
 sepWith :: T.ViewMonad () -> [T.ViewMonad ()] -> T.ViewMonad ()
 sepWith sep = sequence_ . intersperse sep
 
@@ -73,6 +78,15 @@ tshow = Tx.pack . show
 
 -- =============================================================== -- 
 -- Formatting lines and blocks of text
+
+addEscapes :: Text -> Text
+-- ^Add escapes for quotes and backslashes:
+-- """ converted to "\""
+-- "\" converted to "\\"
+addEscapes = Tx.concatMap go
+    where go '"'  = "\\\""
+          go '\\' = "\\\\"
+          go x    = Tx.singleton x
 
 padRight :: Int -> Text -> Text
 -- ^Add padding spaces after a text so the total length is n.

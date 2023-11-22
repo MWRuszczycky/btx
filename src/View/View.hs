@@ -7,6 +7,7 @@ module View.View
     , listEntry
     , viewRef
     , viewRefTex
+    , viewRefsJson
     , summarize
     ) where
 
@@ -89,6 +90,35 @@ refToBibtex k v  = Tx.concat [ key, fields, close, coms ]
 fieldToBibtex :: T.Field -> Text
 -- ^Generates a text representation of a bibliography entry field.
 fieldToBibtex (k, v) = Tx.concat [ "    ", k, " = ", "{", v, "}" ]
+
+---------------------------------------------------------------------
+-- Conversion to JSON format
+
+viewRefsJson :: T.Config -> [T.Ref] -> T.ViewMonad ()
+viewRefsJson c rs = do
+    Vc.write "{"
+    Vc.sepWith (Vc.write ",") . map (viewRefJson c) $ rs
+    Vc.write "}"
+
+viewRefJson :: T.Config -> T.Ref -> T.ViewMonad ()
+viewRefJson _ (T.Ref     _ k v) = do
+    let comma = Vc.write ","
+    Vc.dQuote k *> Vc.write ":{"
+    Vc.dQuote "type" *> Vc.write ":"
+    Vc.dQuote (T.theType v) *> Vc.write ","
+    Vc.dQuote "fields" *> Vc.write ":{"
+    Vc.sepWith comma . map viewFieldAsJson . T.fields $ v
+    Vc.write "},"
+    Vc.dQuote "meta" *> Vc.write ":["
+    Vc.sepWith comma . map (Vc.dQuote . Vc.addEscapes) . T.metadata $ v
+    Vc.write "]}"
+viewRefJson c (T.Missing fp k e) = viewRefJson c . T.Ref fp k $ entry
+    where entry = T.Entry "MISSING" [] [Tx.pack e]
+
+viewFieldAsJson :: T.Field -> T.ViewMonad ()
+viewFieldAsJson (key,val) = do
+    Vc.dQuote key *> Vc.write ":"
+    Vc.dQuote . Vc.addEscapes $ val
 
 ---------------------------------------------------------------------
 -- Pretty print references for use with <view> command
