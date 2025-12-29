@@ -24,7 +24,8 @@ import           System.Process             ( callProcess          )
 import           System.IO                  ( stdout, hFlush
                                             , stdin, hIsClosed     )
 import           System.IO.Error            ( isDoesNotExistError  )
-import           Control.Monad.Except       ( ExceptT (..), liftIO )
+import           Control.Monad.IO.Class     ( liftIO               )
+import           Control.Monad.Except       ( ExceptT (..)         )
 import           Control.Exception          ( IOException
                                             , displayException
                                             , catch                )

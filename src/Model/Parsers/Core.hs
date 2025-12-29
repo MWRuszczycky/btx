@@ -9,8 +9,8 @@ module Model.Parsers.Core
 
 import qualified Data.Attoparsec.Text   as At
 import qualified Data.Text              as Tx
-import           Data.Text                    ( Text                )
-import           Control.Applicative          ( (<|>), liftA2, many )
+import           Data.Text                    ( Text        )
+import           Control.Applicative          ( (<|>), many )
 
 comment :: At.Parser ()
 comment = At.char '#' *> At.skipWhile (not . At.isEndOfLine) *> At.endOfLine

@@ -17,8 +17,8 @@ import           Data.Text                      ( Text         )
 import           Data.Char                      ( isDigit
                                                 , isAlphaNum
                                                 , isSpace      )
-import           Control.Monad.State.Lazy       ( (<=<)
-                                                , StateT
+import           Control.Monad                  ( (<=<)        )
+import           Control.Monad.State.Lazy       ( StateT
                                                 , StateT (..)
                                                 , runStateT    )
 import           Control.Applicative            ( many, empty  )

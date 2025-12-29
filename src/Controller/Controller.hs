@@ -20,8 +20,9 @@ import           System.Directory               ( listDirectory
                                                 , doesFileExist       )
 import           System.IO                      ( stdout
                                                 , hIsTerminalDevice   )
+import           Control.Monad                  ( foldM               )
 import           Control.Monad.State.Lazy       ( execStateT
-                                                , foldM, liftIO       )
+                                                , liftIO              )
 import           Control.Monad.Except           ( throwError
                                                 , liftEither          )
 

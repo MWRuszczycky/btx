@@ -2,8 +2,8 @@
 
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
-# ghc-9.4.8
-resolver: lts-21.22
+# Using ghc-9.10.3
+resolver: lts-24.26
 
 nix:
     packages: [ zlib ]

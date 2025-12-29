@@ -19,7 +19,6 @@ import qualified Model.Core.Types as T
 import qualified Data.Text        as Tx
 import           Model.Matcher           ( hasMatch )
 import           Data.Text               ( Text     )
-import           Data.List               ( foldl'   )
 import           Data.Maybe              ( mapMaybe )
 
 -- TODO: Remove this and just use the ViewMonad

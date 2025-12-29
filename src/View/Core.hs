@@ -31,7 +31,7 @@ import qualified Data.Map.Strict           as Map
 import qualified Model.Core.Types          as T
 import qualified Data.Text                 as Tx
 import qualified Data.Text.Encoding        as Tx
-import           Data.List                        ( foldl', intersperse )
+import           Data.List                        ( intersperse         )
 import           Data.Text                        ( Text                )
 import           Data.Monoid                      ( Endo (..), appEndo  )
 import           Control.Monad.State              ( get                 )

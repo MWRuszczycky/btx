@@ -17,26 +17,27 @@ import qualified View.View                as V
 import qualified View.Core                as Vc
 import qualified Model.Core.Types         as T
 import qualified Data.Text                as Tx
-import           Data.List                      ( find, foldl'     )
+import           Data.List                      ( find           )
+import           Control.Monad                  ( when           )
 import           Control.Monad.Except           ( throwError
-                                                , when, liftEither )
+                                                , liftEither     )
 import           Control.Monad.State.Lazy       ( get, gets, put
-                                                , modify, lift     )
+                                                , modify, lift   )
 import           Model.BtxState                 ( addToLog
                                                 , allKeysToArgs
                                                 , deleteRefs
                                                 , dropRefByKey
                                                 , searchRefs
-                                                , getRef           )
+                                                , getRef         )
 import           Model.Core.External            ( getDoi
-                                                , runExternal      )
+                                                , runExternal    )
 import           Model.Core.ErrMonad            ( readOrMakeFile
-                                                , readFileExcept   )
-import           Model.Parsers.BibTex           ( parseBib         )
+                                                , readFileExcept )
+import           Model.Parsers.BibTex           ( parseBib       )
 import           Model.BibTeX.Resources         ( genericKey
                                                 , uniqueKeys
                                                 , supported
-                                                , templates        )
+                                                , templates      )
 
 -- =============================================================== --
 -- Hub and router
